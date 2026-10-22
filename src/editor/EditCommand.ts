@@ -31,7 +31,14 @@ export interface SetChange {
   readonly value: string | undefined;
 }
 
-export type EditChange = ShapeChange | MoveChange | ScaleChange | SetChange;
+export interface GroupChange {
+  readonly kind: "group";
+  readonly label: string;
+  readonly action: "grouped" | "ungrouped";
+  readonly childCount: number;
+}
+
+export type EditChange = ShapeChange | MoveChange | ScaleChange | SetChange | GroupChange;
 
 /** A request whose inverse is specific to the operation it performed. */
 export interface EditCommand<TChange extends EditChange = EditChange> {

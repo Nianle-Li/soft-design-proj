@@ -35,6 +35,13 @@ export interface SetReceipt {
   readonly plan: PreparedSet;
 }
 
+export interface GroupReceipt {
+  readonly group: GroupShape;
+  readonly parent: GroupShape | null;
+  readonly index: number;
+  readonly members: readonly DeletionReceipt[];
+}
+
 interface ShapeEntry {
   readonly shape: Shape;
   readonly parent: GroupShape | null;
@@ -86,12 +93,7 @@ export class SvgDocument {
     parameters: readonly string[],
     parentId?: string
   ): CreationReceipt {
-    if (id.trim() === "" || /\s/u.test(id)) {
-      throw new EditorError(`invalid id: ${id}`);
-    }
-    if (this.shapes.has(id)) {
-      throw new EditorError(`id already exists: ${id}`);
-    }
+    this.ensureAvailableId(id);
 
     let parent: GroupShape | null = null;
     if (parentId !== undefined) {
@@ -180,6 +182,126 @@ export class SvgDocument {
     receipt.shape.visitSubtree((shape, parent) => {
       this.shapes.set(shape.id, { shape, parent });
     }, receipt.parent);
+  }
+
+  /** Groups existing subtrees at their nearest shared parent, in original document order. */
+  group(id: string, targetIds: readonly string[]): GroupReceipt {
+    this.ensureAvailableId(id);
+    if (targetIds.length === 0) {
+      throw new EditorError("group requires at least one shape");
+    }
+
+    const selected = new Set<Shape>();
+    for (const targetId of targetIds) {
+      const entry = this.shapes.get(targetId);
+      if (entry === undefined) {
+        throw new EditorError(`no such shape: ${targetId}`);
+      }
+      if (selected.has(entry.shape)) {
+        throw new EditorError(`duplicate group target: ${targetId}`);
+      }
+      selected.add(entry.shape);
+    }
+    for (const shape of selected) {
+      let ancestor = this.shapes.get(shape.id)?.parent ?? null;
+      while (ancestor !== null) {
+        if (selected.has(ancestor)) {
+          throw new EditorError(`cannot group a container into its own descendant: ${ancestor.id}`);
+        }
+        ancestor = this.shapes.get(ancestor.id)?.parent ?? null;
+      }
+    }
+
+    const members: DeletionReceipt[] = [];
+    for (const root of this.roots) {
+      root.visitSubtree((shape, parent) => {
+        if (selected.has(shape)) {
+          members.push({ shape, parent, index: this.childIndex(shape, parent) });
+        }
+      }, null);
+    }
+    const parent = this.nearestSharedParent(members);
+    const firstMember = members[0];
+    if (firstMember === undefined) {
+      throw new Error("validated group targets are missing from the document tree");
+    }
+    let branch = firstMember.shape;
+    while (this.shapes.get(branch.id)?.parent !== parent) {
+      const ancestor = this.shapes.get(branch.id)?.parent;
+      if (ancestor === undefined || ancestor === null) {
+        throw new Error("selected shape is outside the shared parent");
+      }
+      branch = ancestor;
+    }
+    const receipt = {
+      group: new GroupShape(id),
+      parent,
+      index: this.childIndex(branch, parent),
+      members
+    };
+    this.redoGroup(receipt);
+    return receipt;
+  }
+
+  private ensureAvailableId(id: string): void {
+    if (id.trim() === "" || /\s/u.test(id)) {
+      throw new EditorError(`invalid id: ${id}`);
+    }
+    if (this.shapes.has(id)) {
+      throw new EditorError(`id already exists: ${id}`);
+    }
+  }
+
+  undoGroup(receipt: GroupReceipt): void {
+    if (this.shapes.get(receipt.group.id)?.shape !== receipt.group) {
+      throw new Error("group receipt no longer matches the document");
+    }
+    this.delete(receipt.group.id);
+    for (const member of receipt.members) {
+      receipt.group.removeChild(member.shape);
+      this.restoreDeletion(member);
+    }
+  }
+
+  redoGroup(receipt: GroupReceipt): void {
+    for (const member of [...receipt.members].reverse()) {
+      this.delete(member.shape.id);
+    }
+    this.restoreCreation({ shape: receipt.group, parent: receipt.parent, index: receipt.index });
+    receipt.members.forEach((member, index) => {
+      this.restoreDeletion({ shape: member.shape, parent: receipt.group, index });
+    });
+  }
+
+  private childIndex(shape: Shape, parent: GroupShape | null): number {
+    const index = parent === null ? this.roots.indexOf(shape) : parent.childIndex(shape);
+    if (index < 0) {
+      throw new Error("shape is missing from root");
+    }
+    return index;
+  }
+
+  private parentChain(parent: GroupShape | null): GroupShape[] {
+    const chain: GroupShape[] = [];
+    let current = parent;
+    while (current !== null) {
+      chain.unshift(current);
+      current = this.shapes.get(current.id)?.parent ?? null;
+    }
+    return chain;
+  }
+
+  private nearestSharedParent(members: readonly DeletionReceipt[]): GroupShape | null {
+    const chains = members.map((member) => this.parentChain(member.parent));
+    let shared: GroupShape | null = null;
+    const first = chains[0] ?? [];
+    for (const [depth, group] of first.entries()) {
+      if (!chains.every((chain) => chain[depth] === group)) {
+        break;
+      }
+      shared = group;
+    }
+    return shared;
   }
 
   move(id: string, dx: number, dy: number): MoveReceipt {

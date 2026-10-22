@@ -15,11 +15,16 @@ export class GroupShape extends Shape {
     this.children.splice(index, 0, shape);
   }
 
-  removeChild(shape: Shape): number {
+  childIndex(shape: Shape): number {
     const index = this.children.indexOf(shape);
     if (index < 0) {
       throw new Error("shape is not a child of this group");
     }
+    return index;
+  }
+
+  removeChild(shape: Shape): number {
+    const index = this.childIndex(shape);
     this.children.splice(index, 1);
     return index;
   }

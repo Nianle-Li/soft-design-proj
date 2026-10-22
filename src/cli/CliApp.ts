@@ -38,6 +38,8 @@ export class CliApp {
           return this.scale(tokens.slice(1));
         case "set":
           return this.set(tokens.slice(1));
+        case "group":
+          return this.group(tokens.slice(1));
         case "tree":
           return this.tree(tokens.slice(1));
         case "undo":
@@ -49,7 +51,7 @@ export class CliApp {
         case "help":
           this.noArguments(tokens);
           return [
-            "Commands available now: init, canvas, create, delete, move, scale, set, tree, undo, redo"
+            "Commands available now: init, canvas, create, delete, move, scale, set, group, tree, undo, redo"
           ];
         default:
           throw new EditorError(`unknown command: ${command}`);
@@ -137,6 +139,14 @@ export class CliApp {
     return [this.describeChange(this.session.set(id, attribute, value))];
   }
 
+  private group(arguments_: readonly string[]): string[] {
+    const id = arguments_[0];
+    if (id === undefined || arguments_.length < 2) {
+      throw new EditorError("usage: group <newGid> <id1> [id2...]");
+    }
+    return [this.describeChange(this.session.group(id, arguments_.slice(1)))];
+  }
+
   private finiteNumber(value: string | undefined): number {
     const number = Number(value);
     if (value === undefined || value.trim() === "" || !Number.isFinite(number)) {
@@ -170,6 +180,11 @@ export class CliApp {
       }
       const verb = change.action === "set" ? "set to" : "restored to";
       return `${change.label} ${change.attribute} ${verb} ${change.value}`;
+    }
+    if (change.kind === "group") {
+      return change.action === "grouped"
+        ? `${change.label} created with ${String(change.childCount)} children`
+        : `${change.label} grouping undone`;
     }
     if (change.action === "removed") {
       return `${change.label} creation undone`;
