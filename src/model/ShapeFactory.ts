@@ -9,6 +9,52 @@ import { TextShape } from "./TextShape";
 
 /** The sole shape-name dispatch point; future plugin work may replace it with registration. */
 export class ShapeFactory {
+  private readonly svgGeometry = new Map<string, readonly string[]>([
+    ["g", []],
+    ["rect", ["x", "y", "width", "height"]],
+    ["circle", ["cx", "cy", "r"]],
+    ["ellipse", ["cx", "cy", "rx", "ry"]],
+    ["line", ["x1", "y1", "x2", "y2"]],
+    ["text", ["x", "y"]]
+  ]);
+
+  /** The only shape-name mapping also owns the supported import schema. */
+  createFromSvg(
+    type: string,
+    id: string,
+    attributes: ReadonlyMap<string, string>,
+    text: string | undefined
+  ): Shape {
+    const geometry = this.svgGeometry.get(type);
+    if (geometry === undefined) {
+      throw new EditorError(`unsupported SVG element: <${type}>`);
+    }
+    const styles = ["fill", "stroke", "stroke-width"] as const;
+    const allowed = new Set(["id", ...geometry, ...styles]);
+    for (const attribute of attributes.keys()) {
+      if (!allowed.has(attribute)) {
+        throw new EditorError(`unsupported SVG attribute: ${attribute} on <${type}>`);
+      }
+    }
+    if (type !== "text" && text !== undefined) {
+      throw new EditorError(`unsupported text content in <${type}>`);
+    }
+    const parameters = geometry.map((name) => {
+      const value = attributes.get(name);
+      if (value === undefined) {
+        throw new EditorError(`missing SVG attribute: ${name} on <${type}>`);
+      }
+      return value;
+    });
+    if (type === "text") parameters.push(text ?? "");
+    const shape = this.create(type, id, parameters);
+    for (const style of styles) {
+      const value = attributes.get(style);
+      if (value !== undefined) shape.prepareSet(style, value).apply();
+    }
+    return shape;
+  }
+
   create(type: string, id: string, parameters: readonly string[]): Shape {
     switch (type) {
       case "g":

@@ -17,6 +17,17 @@ export class TextShape extends Shape {
     return "text";
   }
 
+  override toSvgNode() {
+    return this.svgNode(
+      [
+        ["x", String(this.x)],
+        ["y", String(this.y)]
+      ],
+      [],
+      this.content
+    );
+  }
+
   override prepareMove(dx: number, dy: number): PreparedMove {
     const previousX = this.x;
     const previousY = this.y;

@@ -11,6 +11,13 @@ export class GroupShape extends Shape {
     return "g";
   }
 
+  override toSvgNode() {
+    return this.svgNode(
+      [],
+      this.children.map((child) => child.toSvgNode())
+    );
+  }
+
   insertChild(index: number, shape: Shape): void {
     this.children.splice(index, 0, shape);
   }

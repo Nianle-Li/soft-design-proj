@@ -20,6 +20,15 @@ export class EllipseShape extends Shape {
     return "ellipse";
   }
 
+  override toSvgNode() {
+    return this.svgNode([
+      ["cx", String(this.cx)],
+      ["cy", String(this.cy)],
+      ["rx", String(this.rx)],
+      ["ry", String(this.ry)]
+    ]);
+  }
+
   override prepareMove(dx: number, dy: number): PreparedMove {
     const previousX = this.cx;
     const previousY = this.cy;

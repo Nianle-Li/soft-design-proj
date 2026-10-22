@@ -21,6 +21,15 @@ export class LineShape extends Shape {
     return "line";
   }
 
+  override toSvgNode() {
+    return this.svgNode([
+      ["x1", String(this.x1)],
+      ["y1", String(this.y1)],
+      ["x2", String(this.x2)],
+      ["y2", String(this.y2)]
+    ]);
+  }
+
   override prepareMove(dx: number, dy: number): PreparedMove {
     const previous = { x1: this.x1, y1: this.y1, x2: this.x2, y2: this.y2 };
     const moved = {

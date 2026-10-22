@@ -19,6 +19,14 @@ export class CircleShape extends Shape {
     return "circle";
   }
 
+  override toSvgNode() {
+    return this.svgNode([
+      ["cx", String(this.cx)],
+      ["cy", String(this.cy)],
+      ["r", String(this.radius)]
+    ]);
+  }
+
   override prepareMove(dx: number, dy: number): PreparedMove {
     const previousX = this.cx;
     const previousY = this.cy;

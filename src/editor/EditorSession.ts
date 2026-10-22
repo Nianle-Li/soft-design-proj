@@ -6,6 +6,7 @@ import { AddToShapeCommand } from "./AddToShapeCommand";
 import { CommandExecutor } from "./CommandExecutor";
 import { CreateShapeCommand } from "./CreateShapeCommand";
 import { DeleteShapeCommand } from "./DeleteShapeCommand";
+import type { DocumentStore } from "./DocumentStore";
 import type {
   AddToChange,
   EditChange,
@@ -27,13 +28,39 @@ import { UngroupShapeCommand } from "./UngroupShapeCommand";
 /** The current document and its edit history are one user session. */
 export class EditorSession {
   private document?: SvgDocument;
+  private readPath: string | undefined;
   private readonly executor = new CommandExecutor();
+
+  constructor(private readonly store?: DocumentStore) {}
 
   init(width = 800, height = 600): Readonly<{ width: number; height: number }> {
     const document = new SvgDocument(width, height);
     this.document = document;
+    this.readPath = undefined;
     this.executor.ioBarrier();
     return { width, height };
+  }
+
+  read(path: string): Readonly<{
+    count: number;
+    assignedIds: readonly Readonly<{ id: string; tag: string }>[];
+  }> {
+    const result = this.currentStore().read(path);
+    this.document = result.document;
+    this.readPath = path;
+    this.executor.ioBarrier();
+    return { count: result.count, assignedIds: result.assignedIds };
+  }
+
+  save(path?: string): Readonly<{ path: string; count: number }> {
+    const document = this.currentDocument();
+    const destination = path ?? this.readPath;
+    if (destination === undefined) {
+      throw new EditorError("no read path for save");
+    }
+    const count = this.currentStore().write(destination, document);
+    this.executor.ioBarrier();
+    return { path: destination, count };
   }
 
   canvas(): Readonly<{ width: number; height: number }> {
@@ -104,5 +131,12 @@ export class EditorSession {
       throw new EditorError("no document. use 'init' or 'read' first");
     }
     return this.document;
+  }
+
+  private currentStore(): DocumentStore {
+    if (this.store === undefined) {
+      throw new EditorError("document store unavailable");
+    }
+    return this.store;
   }
 }

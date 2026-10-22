@@ -20,6 +20,15 @@ export class RectShape extends Shape {
     return "rect";
   }
 
+  override toSvgNode() {
+    return this.svgNode([
+      ["x", String(this.x)],
+      ["y", String(this.y)],
+      ["width", String(this.width)],
+      ["height", String(this.height)]
+    ]);
+  }
+
   override prepareMove(dx: number, dy: number): PreparedMove {
     const previousX = this.x;
     const previousY = this.y;

@@ -25,6 +25,16 @@ export class CliApp {
           return this.init(tokens.slice(1));
         case "canvas":
           return this.canvas(tokens.slice(1));
+        case "read":
+          if (tokens.length !== 2 || tokens[1] === undefined) {
+            throw new EditorError("usage: read <file.svg>");
+          }
+          return this.read(tokens[1]);
+        case "save":
+          if (tokens.length > 2) {
+            throw new EditorError("usage: save [file.svg]");
+          }
+          return this.save(tokens[1]);
         case "create":
           return this.create(tokens.slice(1));
         case "delete":
@@ -65,7 +75,7 @@ export class CliApp {
         case "help":
           this.noArguments(tokens);
           return [
-            "Commands available now: init, canvas, create, delete, move, scale, set, group, ungroup, addto, front, back, tree, undo, redo"
+            "Commands available now: init, read, save, canvas, create, delete, move, scale, set, group, ungroup, addto, front, back, tree, undo, redo"
           ];
         default:
           throw new EditorError(`unknown command: ${command}`);
@@ -98,6 +108,19 @@ export class CliApp {
     }
     const size = this.session.resizeCanvas(Number(arguments_[0]), Number(arguments_[1]));
     return [`canvas ${String(size.width)}x${String(size.height)} resized`];
+  }
+
+  private read(path: string): string[] {
+    const result = this.session.read(path);
+    const warnings = result.assignedIds.map(
+      ({ id, tag }) => `warning: assigned id ${id} to unnamed <${tag}>`
+    );
+    return [...warnings, `read ${path} (${String(result.count)} elements)`];
+  }
+
+  private save(path?: string): string[] {
+    const result = this.session.save(path);
+    return [`saved to ${result.path} (${String(result.count)} elements)`];
   }
 
   private create(arguments_: readonly string[]): string[] {

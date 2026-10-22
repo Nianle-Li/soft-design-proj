@@ -4,6 +4,7 @@ import { Shape } from "./Shape";
 import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "./Shape";
 import type { ExplicitStyle } from "./PaintStyle";
 import { ShapeFactory } from "./ShapeFactory";
+import type { SvgDocumentView } from "./SvgNodeView";
 import type { TreeView } from "./TreeView";
 
 export interface CreationReceipt {
@@ -93,6 +94,39 @@ export class SvgDocument {
 
   canvasSize(): Readonly<{ width: number; height: number }> {
     return { width: this.canvasWidth, height: this.canvasHeight };
+  }
+
+  /** Exports a detached, ordered projection; persistence cannot mutate the live tree. */
+  toSvgView(): SvgDocumentView {
+    return {
+      width: this.canvasWidth,
+      height: this.canvasHeight,
+      roots: this.roots.map((shape) => shape.toSvgNode())
+    };
+  }
+
+  importSvgShape(
+    type: string,
+    id: string,
+    attributes: ReadonlyMap<string, string>,
+    text: string | undefined,
+    parentId?: string
+  ): void {
+    this.ensureAvailableId(id);
+    let parent: GroupShape | null = null;
+    if (parentId !== undefined) {
+      const candidate = this.shapes.get(parentId)?.shape;
+      if (!(candidate instanceof GroupShape)) {
+        throw new EditorError(`no such container: ${parentId}`);
+      }
+      parent = candidate;
+    }
+    const shape = this.shapeFactory.createFromSvg(type, id, attributes, text);
+    this.restoreCreation({
+      shape,
+      parent,
+      index: parent === null ? this.roots.length : parent.childCount
+    });
   }
 
   /** Resizing changes the canvas, not the geometry or membership of any shape. */

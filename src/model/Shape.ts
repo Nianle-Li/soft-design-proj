@@ -3,6 +3,7 @@ import type { ShapeView } from "./TreeView";
 import type { GroupShape } from "./GroupShape";
 import { PaintStyle } from "./PaintStyle";
 import type { ExplicitStyle } from "./PaintStyle";
+import type { SvgNodeView } from "./SvgNodeView";
 
 export type MoveLocation =
   { readonly kind: "point"; readonly x: number; readonly y: number } | { readonly kind: "offset" };
@@ -38,6 +39,27 @@ export abstract class Shape {
   }
 
   abstract toView(): ShapeView;
+
+  abstract toSvgNode(): SvgNodeView;
+
+  /** Keeps optional paint attributes absent unless explicitly assigned. */
+  protected svgNode(
+    geometry: readonly (readonly [string, string])[],
+    children: readonly SvgNodeView[] = [],
+    text?: string
+  ): SvgNodeView {
+    const attributes: [string, string][] = [
+      ["id", this.id],
+      ...geometry.map(([key, value]) => [key, value] as [string, string])
+    ];
+    const style = this.style.snapshot();
+    if (style.fill !== undefined) attributes.push(["fill", style.fill]);
+    if (style.stroke !== undefined) attributes.push(["stroke", style.stroke]);
+    if (style.strokeWidth !== undefined) attributes.push(["stroke-width", style.strokeWidth]);
+    return text === undefined
+      ? { tag: this.kind, attributes, children }
+      : { tag: this.kind, attributes, text, children };
+  }
 
   /** Prepares every affected coordinate before any part of a composite moves. */
   abstract prepareMove(dx: number, dy: number): PreparedMove;
