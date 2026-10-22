@@ -1,5 +1,6 @@
 import { Shape } from "./Shape";
 import type { PreparedMove, PreparedScale } from "./Shape";
+import type { PreparedSet } from "./Shape";
 import type { ShapeView } from "./TreeView";
 
 /** Composite shape; child order is SVG painting order. */
@@ -65,6 +66,10 @@ export class GroupShape extends Shape {
         });
       }
     };
+  }
+
+  protected override prepareSpecificSet(attribute: string): PreparedSet {
+    return this.unknownAttribute(attribute);
   }
 
   override toView(): ShapeView {

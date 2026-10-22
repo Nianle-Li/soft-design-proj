@@ -1,5 +1,7 @@
 import { Shape } from "./Shape";
 import type { PreparedMove, PreparedScale } from "./Shape";
+import type { PreparedSet } from "./Shape";
+import { PaintStyle } from "./PaintStyle";
 import type { ShapeView } from "./TreeView";
 
 export class CircleShape extends Shape {
@@ -8,9 +10,9 @@ export class CircleShape extends Shape {
     private cx: number,
     private cy: number,
     private radius: number,
-    private readonly fill?: string
+    fill?: string
   ) {
-    super(id);
+    super(id, new PaintStyle(fill));
   }
 
   override get kind(): string {
@@ -57,8 +59,28 @@ export class CircleShape extends Shape {
     };
   }
 
+  protected override prepareSpecificSet(attribute: string, value: string): PreparedSet {
+    switch (attribute) {
+      case "cx":
+        return this.numericSet(value, this.cx, (next) => {
+          this.cx = next;
+        });
+      case "cy":
+        return this.numericSet(value, this.cy, (next) => {
+          this.cy = next;
+        });
+      case "r":
+        return this.numericSet(value, this.radius, (next) => {
+          this.radius = next;
+        });
+      default:
+        return this.unknownAttribute(attribute);
+    }
+  }
+
   override toView(): ShapeView {
-    const style = this.fill === undefined ? "" : ` fill=${this.fill}`;
+    const fill = this.style.explicitFill;
+    const style = fill === undefined ? "" : ` fill=${fill}`;
     return {
       label: this.label,
       details: `cx=${String(this.cx)} cy=${String(this.cy)} r=${String(this.radius)}${style}`,

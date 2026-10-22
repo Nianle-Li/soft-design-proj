@@ -36,6 +36,8 @@ export class CliApp {
           return this.move(tokens.slice(1));
         case "scale":
           return this.scale(tokens.slice(1));
+        case "set":
+          return this.set(tokens.slice(1));
         case "tree":
           return this.tree(tokens.slice(1));
         case "undo":
@@ -47,7 +49,7 @@ export class CliApp {
         case "help":
           this.noArguments(tokens);
           return [
-            "Commands available now: init, canvas, create, delete, move, scale, tree, undo, redo"
+            "Commands available now: init, canvas, create, delete, move, scale, set, tree, undo, redo"
           ];
         default:
           throw new EditorError(`unknown command: ${command}`);
@@ -122,6 +124,19 @@ export class CliApp {
     return [this.describeChange(this.session.scale(arguments_[0], factor))];
   }
 
+  private set(arguments_: readonly string[]): string[] {
+    const [id, attribute, value] = arguments_;
+    if (
+      arguments_.length !== 3 ||
+      id === undefined ||
+      attribute === undefined ||
+      value === undefined
+    ) {
+      throw new EditorError("usage: set <id> <attr> <value>");
+    }
+    return [this.describeChange(this.session.set(id, attribute, value))];
+  }
+
   private finiteNumber(value: string | undefined): number {
     const number = Number(value);
     if (value === undefined || value.trim() === "" || !Number.isFinite(number)) {
@@ -148,6 +163,13 @@ export class CliApp {
       return change.action === "scaled"
         ? `${change.label} scaled by ${String(change.factor)}`
         : `${change.label} scale undone`;
+    }
+    if (change.kind === "set") {
+      if (change.value === undefined) {
+        return `${change.label} ${change.attribute} removed`;
+      }
+      const verb = change.action === "set" ? "set to" : "restored to";
+      return `${change.label} ${change.attribute} ${verb} ${change.value}`;
     }
     if (change.action === "removed") {
       return `${change.label} creation undone`;

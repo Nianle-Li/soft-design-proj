@@ -23,7 +23,15 @@ export interface ScaleChange {
   readonly factor: number;
 }
 
-export type EditChange = ShapeChange | MoveChange | ScaleChange;
+export interface SetChange {
+  readonly kind: "set";
+  readonly label: string;
+  readonly attribute: string;
+  readonly action: "set" | "restored";
+  readonly value: string | undefined;
+}
+
+export type EditChange = ShapeChange | MoveChange | ScaleChange | SetChange;
 
 /** A request whose inverse is specific to the operation it performed. */
 export interface EditCommand<TChange extends EditChange = EditChange> {

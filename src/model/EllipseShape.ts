@@ -1,5 +1,7 @@
 import { Shape } from "./Shape";
 import type { PreparedMove, PreparedScale } from "./Shape";
+import type { PreparedSet } from "./Shape";
+import { PaintStyle } from "./PaintStyle";
 import type { ShapeView } from "./TreeView";
 
 export class EllipseShape extends Shape {
@@ -9,9 +11,9 @@ export class EllipseShape extends Shape {
     private cy: number,
     private rx: number,
     private ry: number,
-    private readonly fill?: string
+    fill?: string
   ) {
-    super(id);
+    super(id, new PaintStyle(fill));
   }
 
   override get kind(): string {
@@ -61,8 +63,32 @@ export class EllipseShape extends Shape {
     };
   }
 
+  protected override prepareSpecificSet(attribute: string, value: string): PreparedSet {
+    switch (attribute) {
+      case "cx":
+        return this.numericSet(value, this.cx, (next) => {
+          this.cx = next;
+        });
+      case "cy":
+        return this.numericSet(value, this.cy, (next) => {
+          this.cy = next;
+        });
+      case "rx":
+        return this.numericSet(value, this.rx, (next) => {
+          this.rx = next;
+        });
+      case "ry":
+        return this.numericSet(value, this.ry, (next) => {
+          this.ry = next;
+        });
+      default:
+        return this.unknownAttribute(attribute);
+    }
+  }
+
   override toView(): ShapeView {
-    const style = this.fill === undefined ? "" : ` fill=${this.fill}`;
+    const fill = this.style.explicitFill;
+    const style = fill === undefined ? "" : ` fill=${fill}`;
     return {
       label: this.label,
       details: `cx=${String(this.cx)} cy=${String(this.cy)} rx=${String(this.rx)} ry=${String(this.ry)}${style}`,

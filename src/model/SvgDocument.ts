@@ -1,7 +1,8 @@
 import { EditorError } from "./EditorError";
 import { GroupShape } from "./GroupShape";
 import { Shape } from "./Shape";
-import type { MoveLocation, PreparedMove, PreparedScale } from "./Shape";
+import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "./Shape";
+import type { ExplicitStyle } from "./PaintStyle";
 import { ShapeFactory } from "./ShapeFactory";
 import type { TreeView } from "./TreeView";
 
@@ -26,6 +27,12 @@ export interface MoveReceipt {
 export interface ScaleReceipt {
   readonly shape: Shape;
   readonly plan: PreparedScale;
+}
+
+export interface SetReceipt {
+  readonly shape: Shape;
+  readonly attribute: string;
+  readonly plan: PreparedSet;
 }
 
 interface ShapeEntry {
@@ -232,6 +239,40 @@ export class SvgDocument {
   private ensureScaleTarget(receipt: ScaleReceipt): void {
     if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
       throw new Error("scale receipt no longer matches the document");
+    }
+  }
+
+  set(id: string, attribute: string, value: string): SetReceipt {
+    const shape = this.shapes.get(id)?.shape;
+    if (shape === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+    const plan = shape.prepareSet(attribute, value);
+    plan.apply();
+    return { shape, attribute, plan };
+  }
+
+  undoSet(receipt: SetReceipt): void {
+    this.ensureSetTarget(receipt);
+    receipt.plan.undo();
+  }
+
+  redoSet(receipt: SetReceipt): void {
+    this.ensureSetTarget(receipt);
+    receipt.plan.apply();
+  }
+
+  explicitStyle(id: string): ExplicitStyle {
+    const shape = this.shapes.get(id)?.shape;
+    if (shape === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+    return shape.explicitStyle();
+  }
+
+  private ensureSetTarget(receipt: SetReceipt): void {
+    if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
+      throw new Error("set receipt no longer matches the document");
     }
   }
 

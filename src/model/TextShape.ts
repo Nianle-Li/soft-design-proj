@@ -1,5 +1,6 @@
 import { Shape } from "./Shape";
 import type { PreparedMove, PreparedScale } from "./Shape";
+import type { PreparedSet } from "./Shape";
 import type { ShapeView } from "./TreeView";
 
 export class TextShape extends Shape {
@@ -7,7 +8,7 @@ export class TextShape extends Shape {
     id: string,
     private x: number,
     private y: number,
-    private readonly content: string
+    private content: string
   ) {
     super(id);
   }
@@ -50,6 +51,34 @@ export class TextShape extends Shape {
         this.y = previousY;
       }
     };
+  }
+
+  protected override prepareSpecificSet(attribute: string, value: string): PreparedSet {
+    switch (attribute) {
+      case "x":
+        return this.numericSet(value, this.x, (next) => {
+          this.x = next;
+        });
+      case "y":
+        return this.numericSet(value, this.y, (next) => {
+          this.y = next;
+        });
+      case "text": {
+        const previousValue = this.content;
+        return {
+          value,
+          previousValue,
+          apply: () => {
+            this.content = value;
+          },
+          undo: () => {
+            this.content = previousValue;
+          }
+        };
+      }
+      default:
+        return this.unknownAttribute(attribute);
+    }
   }
 
   override toView(): ShapeView {

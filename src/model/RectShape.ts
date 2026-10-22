@@ -1,5 +1,7 @@
 import { Shape } from "./Shape";
 import type { PreparedMove, PreparedScale } from "./Shape";
+import type { PreparedSet } from "./Shape";
+import { PaintStyle } from "./PaintStyle";
 import type { ShapeView } from "./TreeView";
 
 export class RectShape extends Shape {
@@ -9,9 +11,9 @@ export class RectShape extends Shape {
     private y: number,
     private width: number,
     private height: number,
-    private readonly fill?: string
+    fill?: string
   ) {
-    super(id);
+    super(id, new PaintStyle(fill));
   }
 
   override get kind(): string {
@@ -61,8 +63,32 @@ export class RectShape extends Shape {
     };
   }
 
+  protected override prepareSpecificSet(attribute: string, value: string): PreparedSet {
+    switch (attribute) {
+      case "x":
+        return this.numericSet(value, this.x, (next) => {
+          this.x = next;
+        });
+      case "y":
+        return this.numericSet(value, this.y, (next) => {
+          this.y = next;
+        });
+      case "width":
+        return this.numericSet(value, this.width, (next) => {
+          this.width = next;
+        });
+      case "height":
+        return this.numericSet(value, this.height, (next) => {
+          this.height = next;
+        });
+      default:
+        return this.unknownAttribute(attribute);
+    }
+  }
+
   override toView(): ShapeView {
-    const style = this.fill === undefined ? "" : ` fill=${this.fill}`;
+    const fill = this.style.explicitFill;
+    const style = fill === undefined ? "" : ` fill=${fill}`;
     return {
       label: this.label,
       details: `x=${String(this.x)} y=${String(this.y)} w=${String(this.width)} h=${String(this.height)}${style}`,

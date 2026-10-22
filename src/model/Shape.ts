@@ -1,6 +1,8 @@
 import { EditorError } from "./EditorError";
 import type { ShapeView } from "./TreeView";
 import type { GroupShape } from "./GroupShape";
+import { PaintStyle } from "./PaintStyle";
+import type { ExplicitStyle } from "./PaintStyle";
 
 export type MoveLocation =
   { readonly kind: "point"; readonly x: number; readonly y: number } | { readonly kind: "offset" };
@@ -15,9 +17,19 @@ export interface PreparedScale {
   undo(): void;
 }
 
+export interface PreparedSet {
+  readonly value: string;
+  readonly previousValue: string | undefined;
+  apply(): void;
+  undo(): void;
+}
+
 /** Common addressable SVG element; each concrete shape owns its description. */
 export abstract class Shape {
-  constructor(readonly id: string) {}
+  constructor(
+    readonly id: string,
+    protected readonly style = new PaintStyle()
+  ) {}
 
   abstract get kind(): string;
 
@@ -32,6 +44,42 @@ export abstract class Shape {
 
   /** Prepares all geometry before any part of a composite is scaled. */
   abstract prepareScale(factor: number): PreparedScale;
+
+  /** Prepares a single explicit attribute change without touching the shape. */
+  prepareSet(attribute: string, value: string): PreparedSet {
+    return this.style.prepareSet(attribute, value) ?? this.prepareSpecificSet(attribute, value);
+  }
+
+  explicitStyle(): ExplicitStyle {
+    return this.style.snapshot();
+  }
+
+  protected abstract prepareSpecificSet(attribute: string, value: string): PreparedSet;
+
+  protected numericSet(
+    value: string,
+    previous: number,
+    assign: (next: number) => void
+  ): PreparedSet {
+    const next = Number(value);
+    if (value.trim() === "" || !Number.isFinite(next)) {
+      throw new EditorError(`invalid number: ${value}`);
+    }
+    return {
+      value: String(next),
+      previousValue: String(previous),
+      apply: () => {
+        assign(next);
+      },
+      undo: () => {
+        assign(previous);
+      }
+    };
+  }
+
+  protected unknownAttribute(attribute: string): never {
+    throw new EditorError(`unknown attribute: ${attribute}`);
+  }
 
   protected translatedCoordinate(value: number, delta: number): number {
     const moved = value + delta;

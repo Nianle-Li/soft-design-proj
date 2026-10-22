@@ -1,5 +1,7 @@
 import { Shape } from "./Shape";
 import type { PreparedMove, PreparedScale } from "./Shape";
+import type { PreparedSet } from "./Shape";
+import { PaintStyle } from "./PaintStyle";
 import type { ShapeView } from "./TreeView";
 
 export class LineShape extends Shape {
@@ -10,9 +12,9 @@ export class LineShape extends Shape {
     private x2: number,
     private y2: number,
     // The course tree example displays line geometry but not its stroke.
-    private readonly stroke?: string
+    stroke?: string
   ) {
-    super(id);
+    super(id, new PaintStyle(undefined, stroke));
   }
 
   override get kind(): string {
@@ -67,6 +69,29 @@ export class LineShape extends Shape {
         this.y2 = previous.y2;
       }
     };
+  }
+
+  protected override prepareSpecificSet(attribute: string, value: string): PreparedSet {
+    switch (attribute) {
+      case "x1":
+        return this.numericSet(value, this.x1, (next) => {
+          this.x1 = next;
+        });
+      case "y1":
+        return this.numericSet(value, this.y1, (next) => {
+          this.y1 = next;
+        });
+      case "x2":
+        return this.numericSet(value, this.x2, (next) => {
+          this.x2 = next;
+        });
+      case "y2":
+        return this.numericSet(value, this.y2, (next) => {
+          this.y2 = next;
+        });
+      default:
+        return this.unknownAttribute(attribute);
+    }
   }
 
   override toView(): ShapeView {
