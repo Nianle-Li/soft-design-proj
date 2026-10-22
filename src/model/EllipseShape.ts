@@ -14,6 +14,8 @@ export class EllipseShape extends Shape {
     fill?: string
   ) {
     super(id, new PaintStyle(fill));
+    this.requireNonNegative(rx, "rx");
+    this.requireNonNegative(ry, "ry");
   }
 
   override get kind(): string {
@@ -83,13 +85,23 @@ export class EllipseShape extends Shape {
           this.cy = next;
         });
       case "rx":
-        return this.numericSet(value, this.rx, (next) => {
-          this.rx = next;
-        });
+        return this.numericSet(
+          value,
+          this.rx,
+          (next) => {
+            this.rx = next;
+          },
+          "rx"
+        );
       case "ry":
-        return this.numericSet(value, this.ry, (next) => {
-          this.ry = next;
-        });
+        return this.numericSet(
+          value,
+          this.ry,
+          (next) => {
+            this.ry = next;
+          },
+          "ry"
+        );
       default:
         return this.unknownAttribute(attribute);
     }

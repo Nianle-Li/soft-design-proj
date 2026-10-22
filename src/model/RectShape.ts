@@ -14,6 +14,8 @@ export class RectShape extends Shape {
     fill?: string
   ) {
     super(id, new PaintStyle(fill));
+    this.requireNonNegative(width, "width");
+    this.requireNonNegative(height, "height");
   }
 
   override get kind(): string {
@@ -83,13 +85,23 @@ export class RectShape extends Shape {
           this.y = next;
         });
       case "width":
-        return this.numericSet(value, this.width, (next) => {
-          this.width = next;
-        });
+        return this.numericSet(
+          value,
+          this.width,
+          (next) => {
+            this.width = next;
+          },
+          "width"
+        );
       case "height":
-        return this.numericSet(value, this.height, (next) => {
-          this.height = next;
-        });
+        return this.numericSet(
+          value,
+          this.height,
+          (next) => {
+            this.height = next;
+          },
+          "height"
+        );
       default:
         return this.unknownAttribute(attribute);
     }

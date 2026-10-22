@@ -59,4 +59,15 @@ describe("six built-in create types through the CLI", () => {
     expect(app.runLine("undo")).toEqual(["ellipse#e1 creation undone"]);
     expect(app.runLine("redo")).toEqual(["ellipse#e1 created"]);
   });
+
+  it("preserves the redo entry when a negative dimension rejects creation", () => {
+    const app = new CliApp(new EditorSession());
+    app.runLine("init");
+    app.runLine("create rect existing 0 0 1 1");
+    expect(app.runLine("undo")).toEqual(["rect#existing creation undone"]);
+
+    expect(app.runLine("create circle bad 0 0 -1")).toEqual(["error: invalid r: -1"]);
+    expect(app.runLine("tree")).toEqual(["svg (800x600)"]);
+    expect(app.runLine("redo")).toEqual(["rect#existing created"]);
+  });
 });

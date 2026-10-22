@@ -13,6 +13,7 @@ export class CircleShape extends Shape {
     fill?: string
   ) {
     super(id, new PaintStyle(fill));
+    this.requireNonNegative(radius, "r");
   }
 
   override get kind(): string {
@@ -78,9 +79,14 @@ export class CircleShape extends Shape {
           this.cy = next;
         });
       case "r":
-        return this.numericSet(value, this.radius, (next) => {
-          this.radius = next;
-        });
+        return this.numericSet(
+          value,
+          this.radius,
+          (next) => {
+            this.radius = next;
+          },
+          "r"
+        );
       default:
         return this.unknownAttribute(attribute);
     }

@@ -105,11 +105,15 @@ export abstract class Shape {
   protected numericSet(
     value: string,
     previous: number,
-    assign: (next: number) => void
+    assign: (next: number) => void,
+    nonNegativeAttribute?: string
   ): PreparedSet {
     const next = Number(value);
     if (value.trim() === "" || !Number.isFinite(next)) {
       throw new EditorError(`invalid number: ${value}`);
+    }
+    if (nonNegativeAttribute !== undefined) {
+      this.requireNonNegative(next, nonNegativeAttribute);
     }
     return {
       value: String(next),
@@ -121,6 +125,13 @@ export abstract class Shape {
         assign(previous);
       }
     };
+  }
+
+  /** SVG dimensions and radii may be zero, but cannot be negative. */
+  protected requireNonNegative(value: number, attribute: string): void {
+    if (!Number.isFinite(value) || value < 0) {
+      throw new EditorError(`invalid ${attribute}: ${String(value)}`);
+    }
   }
 
   protected unknownAttribute(attribute: string): never {

@@ -45,4 +45,23 @@ describe("set CLI command", () => {
     expect(app.runLine("undo")).toEqual(["g#group fill removed"]);
     expect(app.runLine("redo")).toEqual(["g#group fill set to blue"]);
   });
+
+  it.each([
+    ["rect", "1 2 3 4", "width"],
+    ["rect", "1 2 3 4", "height"],
+    ["circle", "1 2 3", "r"],
+    ["ellipse", "1 2 3 4", "rx"],
+    ["ellipse", "1 2 3 4", "ry"]
+  ])("rejects a negative %s %s without losing redo", (type, parameters, attribute) => {
+    const app = new CliApp(new EditorSession());
+    app.runLine("init");
+    app.runLine(`create ${type} target ${parameters}`);
+    app.runLine("create g later");
+    expect(app.runLine("undo")).toEqual(["g#later creation undone"]);
+    const before = app.runLine("tree");
+
+    expect(app.runLine(`set target ${attribute} -1`)).toEqual([`error: invalid ${attribute}: -1`]);
+    expect(app.runLine("tree")).toEqual(before);
+    expect(app.runLine("redo")).toEqual(["g#later created"]);
+  });
 });

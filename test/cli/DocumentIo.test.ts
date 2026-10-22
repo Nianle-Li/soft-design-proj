@@ -83,4 +83,27 @@ describe("read/save CLI", () => {
       rmdirSync(directory);
     }
   });
+
+  it("rejects a later negative radius without replacing the document or clearing history", () => {
+    const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-svg-"));
+    const path = join(directory, "negative-radius.svg");
+    try {
+      writeFileSync(
+        path,
+        '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30" viewBox="0 0 40 30"><rect x="0" y="0" width="1" height="1"/><circle id="bad" cx="0" cy="0" r="-2"/></svg>',
+        "utf8"
+      );
+      const app = new CliApp(new EditorSession(new SvgFileStore()));
+      app.runLine("init");
+      app.runLine("create rect old 0 0 1 1");
+      const before = app.runLine("tree");
+
+      expect(app.runLine(`read ${path}`)).toEqual(["error: invalid r: -2"]);
+      expect(app.runLine("tree")).toEqual(before);
+      expect(app.runLine("undo")).toEqual(["rect#old creation undone"]);
+    } finally {
+      unlinkSync(path);
+      rmdirSync(directory);
+    }
+  });
 });

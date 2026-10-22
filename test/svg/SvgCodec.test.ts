@@ -101,4 +101,14 @@ describe("strict SVG codec", () => {
       codec.decode(wrap('<g id="same"/><rect id="same" x="0" y="0" width="1" height="1"/>'))
     ).toThrow("id already exists: same");
   });
+
+  it.each([
+    ["rect width", '<rect id="r" x="0" y="0" width="-1" height="2"/>', "width"],
+    ["rect height", '<rect id="r" x="0" y="0" width="1" height="-2"/>', "height"],
+    ["circle radius", '<circle id="c" cx="0" cy="0" r="-1"/>', "r"],
+    ["ellipse rx", '<ellipse id="e" cx="0" cy="0" rx="-1" ry="2"/>', "rx"],
+    ["ellipse ry", '<ellipse id="e" cx="0" cy="0" rx="1" ry="-2"/>', "ry"]
+  ])("rejects imported negative %s", (_case, content, attribute) => {
+    expect(() => codec.decode(wrap(content))).toThrow(`invalid ${attribute}:`);
+  });
 });

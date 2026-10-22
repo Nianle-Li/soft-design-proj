@@ -48,4 +48,35 @@ describe("all Phase 1 built-in shapes", () => {
       "cx=4 cy=5 rx=6 ry=7 fill=#abc"
     ]);
   });
+
+  it.each([
+    ["rect", ["0", "0", "-1", "10"], "width"],
+    ["rect", ["0", "0", "10", "-1"], "height"],
+    ["circle", ["0", "0", "-1"], "r"],
+    ["ellipse", ["0", "0", "-1", "2"], "rx"],
+    ["ellipse", ["0", "0", "2", "-1"], "ry"]
+  ])("rejects a negative %s %s without inserting a shape", (type, parameters, attribute) => {
+    const document = new SvgDocument(800, 600);
+    document.create("rect", "existing", ["1", "2", "3", "4"]);
+    const before = document.tree();
+
+    expect(() => document.create(type, "bad", parameters)).toThrow(`invalid ${attribute}: -1`);
+    expect(document.tree()).toEqual(before);
+    expect(() => document.show("bad")).toThrow("no such shape: bad");
+  });
+
+  it("allows zero dimensions and negative coordinates", () => {
+    const document = new SvgDocument(800, 600);
+    document.create("rect", "r", ["-2", "-3", "0", "0"]);
+    document.create("circle", "c", ["-4", "-5", "0"]);
+    document.create("ellipse", "e", ["-6", "-7", "0", "0"]);
+    document.set("r", "width", "0");
+    document.set("c", "cx", "-8");
+
+    expect(document.tree().roots.map((shape) => shape.details)).toEqual([
+      "x=-2 y=-3 w=0 h=0",
+      "cx=-8 cy=-5 r=0",
+      "cx=-6 cy=-7 rx=0 ry=0"
+    ]);
+  });
 });
