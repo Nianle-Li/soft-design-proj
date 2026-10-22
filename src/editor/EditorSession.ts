@@ -1,5 +1,6 @@
 import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../model/SvgDocument";
+import type { StackingEdge } from "../model/SvgDocument";
 import type { TreeView } from "../model/TreeView";
 import { AddToShapeCommand } from "./AddToShapeCommand";
 import { CommandExecutor } from "./CommandExecutor";
@@ -10,6 +11,7 @@ import type {
   EditChange,
   GroupChange,
   MoveChange,
+  ReorderChange,
   ScaleChange,
   SetChange,
   ShapeChange,
@@ -17,6 +19,7 @@ import type {
 } from "./EditCommand";
 import { GroupShapeCommand } from "./GroupShapeCommand";
 import { MoveShapeCommand } from "./MoveShapeCommand";
+import { ReorderShapeCommand } from "./ReorderShapeCommand";
 import { ScaleShapeCommand } from "./ScaleShapeCommand";
 import { SetShapeCommand } from "./SetShapeCommand";
 import { UngroupShapeCommand } from "./UngroupShapeCommand";
@@ -76,6 +79,10 @@ export class EditorSession {
     return this.executor.execute(
       new AddToShapeCommand(this.currentDocument(), destinationId, sourceId)
     );
+  }
+
+  reorder(id: string, edge: StackingEdge): ReorderChange {
+    return this.executor.execute(new ReorderShapeCommand(this.currentDocument(), id, edge));
   }
 
   tree(id?: string): TreeView {

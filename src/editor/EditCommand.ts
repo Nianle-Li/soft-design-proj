@@ -1,4 +1,5 @@
 import type { MoveLocation } from "../model/Shape";
+import type { StackingEdge } from "../model/SvgDocument";
 
 export interface ShapeChange {
   readonly kind: "shape";
@@ -59,8 +60,22 @@ export type AddToChange =
       readonly parentLabel?: string;
     };
 
+export interface ReorderChange {
+  readonly kind: "reorder";
+  readonly label: string;
+  readonly action: "moved" | "restored";
+  readonly edge: StackingEdge;
+}
+
 export type EditChange =
-  ShapeChange | MoveChange | ScaleChange | SetChange | GroupChange | UngroupChange | AddToChange;
+  | ShapeChange
+  | MoveChange
+  | ScaleChange
+  | SetChange
+  | GroupChange
+  | UngroupChange
+  | AddToChange
+  | ReorderChange;
 
 /** A request whose inverse is specific to the operation it performed. */
 export interface EditCommand<TChange extends EditChange = EditChange> {

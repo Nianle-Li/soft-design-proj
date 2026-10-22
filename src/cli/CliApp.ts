@@ -50,6 +50,10 @@ export class CliApp {
             throw new EditorError("usage: addto <gid> <id>");
           }
           return [this.describeChange(this.session.addTo(tokens[1], tokens[2]))];
+        case "front":
+          return this.reorder(tokens, "front");
+        case "back":
+          return this.reorder(tokens, "back");
         case "tree":
           return this.tree(tokens.slice(1));
         case "undo":
@@ -61,7 +65,7 @@ export class CliApp {
         case "help":
           this.noArguments(tokens);
           return [
-            "Commands available now: init, canvas, create, delete, move, scale, set, group, ungroup, addto, tree, undo, redo"
+            "Commands available now: init, canvas, create, delete, move, scale, set, group, ungroup, addto, front, back, tree, undo, redo"
           ];
         default:
           throw new EditorError(`unknown command: ${command}`);
@@ -157,6 +161,13 @@ export class CliApp {
     return [this.describeChange(this.session.group(id, arguments_.slice(1)))];
   }
 
+  private reorder(tokens: readonly string[], edge: "front" | "back"): string[] {
+    if (tokens.length !== 2 || tokens[1] === undefined) {
+      throw new EditorError(`usage: ${edge} <id>`);
+    }
+    return [this.describeChange(this.session.reorder(tokens[1], edge))];
+  }
+
   private finiteNumber(value: string | undefined): number {
     const number = Number(value);
     if (value === undefined || value.trim() === "" || !Number.isFinite(number)) {
@@ -210,6 +221,11 @@ export class CliApp {
       return change.parentLabel === undefined
         ? `${change.label} restored to canvas`
         : `${change.label} restored into ${change.parentLabel}`;
+    }
+    if (change.kind === "reorder") {
+      return change.action === "moved"
+        ? `${change.label} moved to ${change.edge}`
+        : `${change.label} order restored`;
     }
     if (change.action === "removed") {
       return `${change.label} creation undone`;

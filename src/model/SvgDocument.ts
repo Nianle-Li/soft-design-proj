@@ -54,6 +54,16 @@ export interface AddToReceipt {
   readonly destination: GroupShape;
 }
 
+export type StackingEdge = "front" | "back";
+
+export interface ReorderReceipt {
+  readonly shape: Shape;
+  readonly parent: GroupShape | null;
+  readonly originalIndex: number;
+  readonly targetIndex: number;
+  readonly edge: StackingEdge;
+}
+
 interface ShapeEntry {
   readonly shape: Shape;
   readonly parent: GroupShape | null;
@@ -410,6 +420,53 @@ export class SvgDocument {
       parent: receipt.destination,
       index: receipt.destination.childCount
     });
+  }
+
+  /** SVG paints later siblings over earlier ones: front is the tail, back is the head. */
+  reorder(id: string, edge: StackingEdge): ReorderReceipt {
+    const entry = this.shapes.get(id);
+    if (entry === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+    const originalIndex = this.childIndex(entry.shape, entry.parent);
+    const siblingCount = entry.parent === null ? this.roots.length : entry.parent.childCount;
+    const receipt = {
+      shape: entry.shape,
+      parent: entry.parent,
+      originalIndex,
+      targetIndex: edge === "front" ? siblingCount - 1 : 0,
+      edge
+    };
+    this.moveSibling(receipt.shape, receipt.parent, receipt.targetIndex);
+    return receipt;
+  }
+
+  undoReorder(receipt: ReorderReceipt): void {
+    this.ensureReorderTarget(receipt);
+    this.moveSibling(receipt.shape, receipt.parent, receipt.originalIndex);
+  }
+
+  redoReorder(receipt: ReorderReceipt): void {
+    this.ensureReorderTarget(receipt);
+    this.moveSibling(receipt.shape, receipt.parent, receipt.targetIndex);
+  }
+
+  private ensureReorderTarget(receipt: ReorderReceipt): void {
+    const entry = this.shapes.get(receipt.shape.id);
+    if (entry?.shape !== receipt.shape || entry.parent !== receipt.parent) {
+      throw new Error("reorder receipt no longer matches the document");
+    }
+  }
+
+  private moveSibling(shape: Shape, parent: GroupShape | null, index: number): void {
+    if (parent === null) {
+      const previousIndex = this.childIndex(shape, null);
+      this.roots.splice(previousIndex, 1);
+      this.roots.splice(index, 0, shape);
+    } else {
+      parent.removeChild(shape);
+      parent.insertChild(index, shape);
+    }
   }
 
   move(id: string, dx: number, dy: number): MoveReceipt {
