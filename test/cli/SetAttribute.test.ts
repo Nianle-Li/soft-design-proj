@@ -8,12 +8,14 @@ describe("set CLI command", () => {
     app.runLine("init");
     app.runLine('create text label 1 2 "old text"');
 
-    expect(app.runLine('set label text "new text"')).toEqual(["text#label text set to new text"]);
+    expect(app.runLine('set label text "new text"')).toEqual([
+      'text#label updated: text="new text"'
+    ]);
     expect(app.runLine("tree label")).toEqual(['text#label (1,2) "new text"']);
     expect(app.runLine("set label x 10.5")).toEqual(["text#label x set to 10.5"]);
     expect(app.runLine("undo")).toEqual(["text#label x restored to 1"]);
-    expect(app.runLine("undo")).toEqual(["text#label text restored to old text"]);
-    expect(app.runLine("redo")).toEqual(["text#label text set to new text"]);
+    expect(app.runLine("undo")).toEqual(['text#label updated: text="old text"']);
+    expect(app.runLine("redo")).toEqual(['text#label updated: text="new text"']);
   });
 
   it("reports the specified unknown-attribute error and leaves history unchanged", () => {

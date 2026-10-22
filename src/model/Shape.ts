@@ -1,5 +1,5 @@
 import { EditorError } from "./EditorError";
-import type { ShapeView } from "./TreeView";
+import type { ShapeDetailsView, ShapeView } from "./TreeView";
 import type { GroupShape } from "./GroupShape";
 import { PaintStyle } from "./PaintStyle";
 import type { ExplicitStyle } from "./PaintStyle";
@@ -40,7 +40,31 @@ export abstract class Shape {
 
   abstract toView(): ShapeView;
 
-  abstract toSvgNode(): SvgNodeView;
+  toSvgNode(): SvgNodeView {
+    return this.svgNode(this.geometryAttributes(), this.svgChildren(), this.textContent());
+  }
+
+  toDetailsView(parentLabel: string): ShapeDetailsView {
+    const details = {
+      label: this.label,
+      parentLabel,
+      geometry: this.geometryAttributes(),
+      style: this.style.snapshot()
+    };
+    const text = this.textContent();
+    return text === undefined ? details : { ...details, text };
+  }
+
+  /** Shape-specific attributes have one source for inspection and SVG output. */
+  protected abstract geometryAttributes(): readonly (readonly [string, string])[];
+
+  protected svgChildren(): readonly SvgNodeView[] {
+    return [];
+  }
+
+  protected textContent(): string | undefined {
+    return undefined;
+  }
 
   /** Keeps optional paint attributes absent unless explicitly assigned. */
   protected svgNode(

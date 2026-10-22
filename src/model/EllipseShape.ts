@@ -20,13 +20,13 @@ export class EllipseShape extends Shape {
     return "ellipse";
   }
 
-  override toSvgNode() {
-    return this.svgNode([
+  protected override geometryAttributes(): readonly (readonly [string, string])[] {
+    return [
       ["cx", String(this.cx)],
       ["cy", String(this.cy)],
       ["rx", String(this.rx)],
       ["ry", String(this.ry)]
-    ]);
+    ];
   }
 
   override prepareMove(dx: number, dy: number): PreparedMove {

@@ -17,15 +17,15 @@ export class TextShape extends Shape {
     return "text";
   }
 
-  override toSvgNode() {
-    return this.svgNode(
-      [
-        ["x", String(this.x)],
-        ["y", String(this.y)]
-      ],
-      [],
-      this.content
-    );
+  protected override geometryAttributes(): readonly (readonly [string, string])[] {
+    return [
+      ["x", String(this.x)],
+      ["y", String(this.y)]
+    ];
+  }
+
+  protected override textContent(): string {
+    return this.content;
   }
 
   override prepareMove(dx: number, dy: number): PreparedMove {

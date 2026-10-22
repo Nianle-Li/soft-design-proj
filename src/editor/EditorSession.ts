@@ -1,7 +1,7 @@
 import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../model/SvgDocument";
 import type { StackingEdge } from "../model/SvgDocument";
-import type { TreeView } from "../model/TreeView";
+import type { ShapeDetailsView, TreeView } from "../model/TreeView";
 import { AddToShapeCommand } from "./AddToShapeCommand";
 import { CommandExecutor } from "./CommandExecutor";
 import { CreateShapeCommand } from "./CreateShapeCommand";
@@ -114,6 +114,10 @@ export class EditorSession {
 
   tree(id?: string): TreeView {
     return this.currentDocument().tree(id);
+  }
+
+  show(id: string): ShapeDetailsView {
+    return this.currentDocument().show(id);
   }
 
   undo(): EditChange {

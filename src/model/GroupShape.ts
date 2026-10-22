@@ -11,11 +11,12 @@ export class GroupShape extends Shape {
     return "g";
   }
 
-  override toSvgNode() {
-    return this.svgNode(
-      [],
-      this.children.map((child) => child.toSvgNode())
-    );
+  protected override geometryAttributes(): readonly (readonly [string, string])[] {
+    return [];
+  }
+
+  protected override svgChildren() {
+    return this.children.map((child) => child.toSvgNode());
   }
 
   insertChild(index: number, shape: Shape): void {

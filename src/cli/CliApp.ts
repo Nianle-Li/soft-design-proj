@@ -66,6 +66,11 @@ export class CliApp {
           return this.reorder(tokens, "back");
         case "tree":
           return this.tree(tokens.slice(1));
+        case "show":
+          if (tokens.length !== 2 || tokens[1] === undefined) {
+            throw new EditorError("usage: show <id>");
+          }
+          return this.show(tokens[1]);
         case "undo":
           this.noArguments(tokens);
           return [this.describeChange(this.session.undo())];
@@ -75,7 +80,26 @@ export class CliApp {
         case "help":
           this.noArguments(tokens);
           return [
-            "Commands available now: init, read, save, canvas, create, delete, move, scale, set, group, ungroup, addto, front, back, tree, undo, redo"
+            "Commands:",
+            "  init [w] [h]",
+            "  read <file.svg>",
+            "  save [file.svg]",
+            "  canvas [w] [h]",
+            "  create <type> <id> [params...] [in <containerId>]",
+            "  delete <id>",
+            "  move <id> <dx> <dy>",
+            "  scale <id> <factor>",
+            "  set <id> <attr> <value>",
+            "  group <newGid> <id1> [id2...]",
+            "  ungroup <gid>",
+            "  addto <gid> <id>",
+            "  front <id>",
+            "  back <id>",
+            "  tree [id]",
+            "  show <id>",
+            "  help",
+            "  undo",
+            "  redo"
           ];
         default:
           throw new EditorError(`unknown command: ${command}`);
@@ -144,6 +168,23 @@ export class CliApp {
       throw new EditorError("usage: tree [id]");
     }
     return this.treeFormatter.format(this.session.tree(arguments_[0]), arguments_[0] !== undefined);
+  }
+
+  private show(id: string): string[] {
+    const details = this.session.show(id);
+    const lines = [`${details.label}  parent=${details.parentLabel}`];
+    if (details.geometry.length > 0) {
+      lines.push(`  ${details.geometry.map(([name, value]) => `${name}=${value}`).join(" ")}`);
+    }
+    if (details.text !== undefined) lines.push(`  text="${details.text}"`);
+    const style = details.style;
+    const explicit = [
+      style.fill === undefined ? undefined : `fill=${style.fill}`,
+      style.stroke === undefined ? undefined : `stroke=${style.stroke}`,
+      style.strokeWidth === undefined ? undefined : `stroke-width=${style.strokeWidth}`
+    ].filter((value) => value !== undefined);
+    if (explicit.length > 0) lines.push(`  ${explicit.join(" ")}`);
+    return lines;
   }
 
   private move(arguments_: readonly string[]): string[] {
@@ -221,6 +262,9 @@ export class CliApp {
     if (change.kind === "set") {
       if (change.value === undefined) {
         return `${change.label} ${change.attribute} removed`;
+      }
+      if (change.attribute === "text") {
+        return `${change.label} updated: text="${change.value}"`;
       }
       const verb = change.action === "set" ? "set to" : "restored to";
       return `${change.label} ${change.attribute} ${verb} ${change.value}`;

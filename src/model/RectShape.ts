@@ -20,13 +20,13 @@ export class RectShape extends Shape {
     return "rect";
   }
 
-  override toSvgNode() {
-    return this.svgNode([
+  protected override geometryAttributes(): readonly (readonly [string, string])[] {
+    return [
       ["x", String(this.x)],
       ["y", String(this.y)],
       ["width", String(this.width)],
       ["height", String(this.height)]
-    ]);
+    ];
   }
 
   override prepareMove(dx: number, dy: number): PreparedMove {

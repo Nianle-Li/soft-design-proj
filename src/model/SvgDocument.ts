@@ -5,7 +5,7 @@ import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "./S
 import type { ExplicitStyle } from "./PaintStyle";
 import { ShapeFactory } from "./ShapeFactory";
 import type { SvgDocumentView } from "./SvgNodeView";
-import type { TreeView } from "./TreeView";
+import type { ShapeDetailsView, TreeView } from "./TreeView";
 
 export interface CreationReceipt {
   readonly shape: Shape;
@@ -610,5 +610,13 @@ export class SvgDocument {
       height: this.height,
       roots: this.roots.map((shape) => shape.toView())
     };
+  }
+
+  show(id: string): ShapeDetailsView {
+    const entry = this.shapes.get(id);
+    if (entry === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+    return entry.shape.toDetailsView(entry.parent?.label ?? "svg");
   }
 }
