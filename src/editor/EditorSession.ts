@@ -3,6 +3,7 @@ import { SvgDocument } from "../model/SvgDocument";
 import type { TreeView } from "../model/TreeView";
 import { CommandExecutor } from "./CommandExecutor";
 import { CreateShapeCommand } from "./CreateShapeCommand";
+import { DeleteShapeCommand } from "./DeleteShapeCommand";
 import type { ShapeChange } from "./EditCommand";
 
 /** The current document and its edit history are one user session. */
@@ -20,6 +21,10 @@ export class EditorSession {
   create(type: string, id: string, parameters: readonly string[], parentId?: string): ShapeChange {
     const command = new CreateShapeCommand(this.currentDocument(), type, id, parameters, parentId);
     return this.executor.execute(command);
+  }
+
+  delete(id: string): ShapeChange {
+    return this.executor.execute(new DeleteShapeCommand(this.currentDocument(), id));
   }
 
   tree(id?: string): TreeView {

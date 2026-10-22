@@ -10,10 +10,21 @@ export interface CreationReceipt {
   readonly index: number;
 }
 
+export interface DeletionReceipt {
+  readonly shape: Shape;
+  readonly parent: GroupShape | null;
+  readonly index: number;
+}
+
+interface ShapeEntry {
+  readonly shape: Shape;
+  readonly parent: GroupShape | null;
+}
+
 /** Receiver for document business operations and owner of the id index. */
 export class SvgDocument {
   private readonly roots: Shape[] = [];
-  private readonly shapes = new Map<string, Shape>();
+  private readonly shapes = new Map<string, ShapeEntry>();
   private readonly shapeFactory = new ShapeFactory();
 
   constructor(
@@ -40,7 +51,7 @@ export class SvgDocument {
 
     let parent: GroupShape | null = null;
     if (parentId !== undefined) {
-      const candidate = this.shapes.get(parentId);
+      const candidate = this.shapes.get(parentId)?.shape;
       if (candidate === undefined) {
         throw new EditorError(`no such container: ${parentId}`);
       }
@@ -59,7 +70,7 @@ export class SvgDocument {
   }
 
   undoCreation(receipt: CreationReceipt): void {
-    if (this.shapes.get(receipt.shape.id) !== receipt.shape) {
+    if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
       throw new Error("creation receipt no longer matches the document");
     }
     if (receipt.shape instanceof GroupShape && receipt.shape.childCount > 0) {
@@ -86,12 +97,50 @@ export class SvgDocument {
     } else {
       receipt.parent.insertChild(receipt.index, receipt.shape);
     }
-    this.shapes.set(receipt.shape.id, receipt.shape);
+    this.shapes.set(receipt.shape.id, { shape: receipt.shape, parent: receipt.parent });
+  }
+
+  delete(id: string): DeletionReceipt {
+    const entry = this.shapes.get(id);
+    if (entry === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+
+    const { shape, parent } = entry;
+    const index = parent === null ? this.roots.indexOf(shape) : parent.removeChild(shape);
+    if (parent === null) {
+      if (index < 0) {
+        throw new Error("shape is missing from root");
+      }
+      this.roots.splice(index, 1);
+    }
+    shape.visitSubtree((node) => this.shapes.delete(node.id), parent);
+    return { shape, parent, index };
+  }
+
+  restoreDeletion(receipt: DeletionReceipt): void {
+    if (receipt.parent !== null && this.shapes.get(receipt.parent.id)?.shape !== receipt.parent) {
+      throw new Error("cannot restore into a detached parent");
+    }
+    receipt.shape.visitSubtree((node) => {
+      if (this.shapes.has(node.id)) {
+        throw new Error(`cannot restore a shape with an existing id: ${node.id}`);
+      }
+    }, receipt.parent);
+
+    if (receipt.parent === null) {
+      this.roots.splice(receipt.index, 0, receipt.shape);
+    } else {
+      receipt.parent.insertChild(receipt.index, receipt.shape);
+    }
+    receipt.shape.visitSubtree((shape, parent) => {
+      this.shapes.set(shape.id, { shape, parent });
+    }, receipt.parent);
   }
 
   tree(id?: string): TreeView {
     if (id !== undefined) {
-      const shape = this.shapes.get(id);
+      const shape = this.shapes.get(id)?.shape;
       if (shape === undefined) {
         throw new EditorError(`no such shape: ${id}`);
       }

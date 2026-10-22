@@ -25,6 +25,11 @@ export class CliApp {
           return this.init(tokens.slice(1));
         case "create":
           return this.create(tokens.slice(1));
+        case "delete":
+          if (tokens.length !== 2 || tokens[1] === undefined) {
+            throw new EditorError("usage: delete <id>");
+          }
+          return [this.describeChange(this.session.delete(tokens[1]))];
         case "tree":
           return this.tree(tokens.slice(1));
         case "undo":
@@ -35,7 +40,7 @@ export class CliApp {
           return [this.describeChange(this.session.redo())];
         case "help":
           this.noArguments(tokens);
-          return ["Commands available now: init, create, tree, undo, redo"];
+          return ["Commands available now: init, create, delete, tree, undo, redo"];
         default:
           throw new EditorError(`unknown command: ${command}`);
       }
@@ -89,6 +94,13 @@ export class CliApp {
   private describeChange(change: ShapeChange): string {
     if (change.action === "removed") {
       return `${change.label} creation undone`;
+    }
+    if (change.action === "deleted") {
+      return `${change.label} deleted`;
+    }
+    if (change.action === "restored") {
+      const parent = change.parentLabel === undefined ? "" : ` into ${change.parentLabel}`;
+      return `${change.label} restored${parent}`;
     }
     const parent = change.parentLabel === undefined ? "" : ` in ${change.parentLabel}`;
     return `${change.label} created${parent}`;

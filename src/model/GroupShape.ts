@@ -22,6 +22,16 @@ export class GroupShape extends Shape {
     return index;
   }
 
+  override visitSubtree(
+    visitor: (shape: Shape, parent: GroupShape | null) => void,
+    parent: GroupShape | null
+  ): void {
+    visitor(this, parent);
+    for (const child of this.children) {
+      child.visitSubtree(visitor, this);
+    }
+  }
+
   get childCount(): number {
     return this.children.length;
   }
