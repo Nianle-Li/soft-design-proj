@@ -16,7 +16,14 @@ export interface MoveChange {
   readonly dy: number;
 }
 
-export type EditChange = ShapeChange | MoveChange;
+export interface ScaleChange {
+  readonly kind: "scale";
+  readonly label: string;
+  readonly action: "scaled" | "scale-undone";
+  readonly factor: number;
+}
+
+export type EditChange = ShapeChange | MoveChange | ScaleChange;
 
 /** A request whose inverse is specific to the operation it performed. */
 export interface EditCommand<TChange extends EditChange = EditChange> {

@@ -1,5 +1,5 @@
 import { Shape } from "./Shape";
-import type { PreparedMove } from "./Shape";
+import type { PreparedMove, PreparedScale } from "./Shape";
 import type { ShapeView } from "./TreeView";
 
 export class CircleShape extends Shape {
@@ -7,7 +7,7 @@ export class CircleShape extends Shape {
     id: string,
     private cx: number,
     private cy: number,
-    private readonly radius: number,
+    private radius: number,
     private readonly fill?: string
   ) {
     super(id);
@@ -32,6 +32,27 @@ export class CircleShape extends Shape {
         this.cx = previousX;
         this.cy = previousY;
         return { kind: "point", x: previousX, y: previousY };
+      }
+    };
+  }
+
+  override prepareScale(factor: number): PreparedScale {
+    const previous = { cx: this.cx, cy: this.cy, radius: this.radius };
+    const scaled = {
+      cx: this.scaledGeometry(previous.cx, factor),
+      cy: this.scaledGeometry(previous.cy, factor),
+      radius: this.scaledGeometry(previous.radius, factor)
+    };
+    return {
+      apply: () => {
+        this.cx = scaled.cx;
+        this.cy = scaled.cy;
+        this.radius = scaled.radius;
+      },
+      undo: () => {
+        this.cx = previous.cx;
+        this.cy = previous.cy;
+        this.radius = previous.radius;
       }
     };
   }

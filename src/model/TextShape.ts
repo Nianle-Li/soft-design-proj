@@ -1,5 +1,5 @@
 import { Shape } from "./Shape";
-import type { PreparedMove } from "./Shape";
+import type { PreparedMove, PreparedScale } from "./Shape";
 import type { ShapeView } from "./TreeView";
 
 export class TextShape extends Shape {
@@ -31,6 +31,23 @@ export class TextShape extends Shape {
         this.x = previousX;
         this.y = previousY;
         return { kind: "point", x: previousX, y: previousY };
+      }
+    };
+  }
+
+  override prepareScale(factor: number): PreparedScale {
+    const previousX = this.x;
+    const previousY = this.y;
+    const x = this.scaledGeometry(previousX, factor);
+    const y = this.scaledGeometry(previousY, factor);
+    return {
+      apply: () => {
+        this.x = x;
+        this.y = y;
+      },
+      undo: () => {
+        this.x = previousX;
+        this.y = previousY;
       }
     };
   }

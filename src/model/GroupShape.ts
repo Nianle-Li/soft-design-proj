@@ -1,5 +1,5 @@
 import { Shape } from "./Shape";
-import type { PreparedMove } from "./Shape";
+import type { PreparedMove, PreparedScale } from "./Shape";
 import type { ShapeView } from "./TreeView";
 
 /** Composite shape; child order is SVG painting order. */
@@ -47,6 +47,22 @@ export class GroupShape extends Shape {
       undo: () => {
         children.forEach((child) => child.undo());
         return { kind: "offset" };
+      }
+    };
+  }
+
+  override prepareScale(factor: number): PreparedScale {
+    const children = this.children.map((child) => child.prepareScale(factor));
+    return {
+      apply: () => {
+        children.forEach((child) => {
+          child.apply();
+        });
+      },
+      undo: () => {
+        children.forEach((child) => {
+          child.undo();
+        });
       }
     };
   }

@@ -1,5 +1,5 @@
 import { Shape } from "./Shape";
-import type { PreparedMove } from "./Shape";
+import type { PreparedMove, PreparedScale } from "./Shape";
 import type { ShapeView } from "./TreeView";
 
 export class RectShape extends Shape {
@@ -7,8 +7,8 @@ export class RectShape extends Shape {
     id: string,
     private x: number,
     private y: number,
-    private readonly width: number,
-    private readonly height: number,
+    private width: number,
+    private height: number,
     private readonly fill?: string
   ) {
     super(id);
@@ -33,6 +33,30 @@ export class RectShape extends Shape {
         this.x = previousX;
         this.y = previousY;
         return { kind: "point", x: previousX, y: previousY };
+      }
+    };
+  }
+
+  override prepareScale(factor: number): PreparedScale {
+    const previous = { x: this.x, y: this.y, width: this.width, height: this.height };
+    const scaled = {
+      x: this.scaledGeometry(previous.x, factor),
+      y: this.scaledGeometry(previous.y, factor),
+      width: this.scaledGeometry(previous.width, factor),
+      height: this.scaledGeometry(previous.height, factor)
+    };
+    return {
+      apply: () => {
+        this.x = scaled.x;
+        this.y = scaled.y;
+        this.width = scaled.width;
+        this.height = scaled.height;
+      },
+      undo: () => {
+        this.x = previous.x;
+        this.y = previous.y;
+        this.width = previous.width;
+        this.height = previous.height;
       }
     };
   }

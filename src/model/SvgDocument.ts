@@ -1,7 +1,7 @@
 import { EditorError } from "./EditorError";
 import { GroupShape } from "./GroupShape";
 import { Shape } from "./Shape";
-import type { MoveLocation, PreparedMove } from "./Shape";
+import type { MoveLocation, PreparedMove, PreparedScale } from "./Shape";
 import { ShapeFactory } from "./ShapeFactory";
 import type { TreeView } from "./TreeView";
 
@@ -21,6 +21,11 @@ export interface MoveReceipt {
   readonly shape: Shape;
   readonly plan: PreparedMove;
   readonly location: MoveLocation;
+}
+
+export interface ScaleReceipt {
+  readonly shape: Shape;
+  readonly plan: PreparedScale;
 }
 
 interface ShapeEntry {
@@ -172,6 +177,36 @@ export class SvgDocument {
   private ensureMoveTarget(receipt: MoveReceipt): void {
     if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
       throw new Error("move receipt no longer matches the document");
+    }
+  }
+
+  scale(id: string, factor: number): ScaleReceipt {
+    const shape = this.shapes.get(id)?.shape;
+    if (shape === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+    if (!Number.isFinite(factor) || factor <= 0) {
+      throw new EditorError("scale factor must be positive");
+    }
+
+    const plan = shape.prepareScale(factor);
+    plan.apply();
+    return { shape, plan };
+  }
+
+  undoScale(receipt: ScaleReceipt): void {
+    this.ensureScaleTarget(receipt);
+    receipt.plan.undo();
+  }
+
+  redoScale(receipt: ScaleReceipt): void {
+    this.ensureScaleTarget(receipt);
+    receipt.plan.apply();
+  }
+
+  private ensureScaleTarget(receipt: ScaleReceipt): void {
+    if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
+      throw new Error("scale receipt no longer matches the document");
     }
   }
 
