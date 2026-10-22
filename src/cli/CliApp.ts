@@ -1,5 +1,5 @@
 import { EditorSession } from "../editor/EditorSession";
-import type { ShapeChange } from "../editor/EditCommand";
+import type { EditChange } from "../editor/EditCommand";
 import { EditorError } from "../editor/EditorError";
 import { CommandLineParser } from "./CommandLineParser";
 import { TreeFormatter } from "./TreeFormatter";
@@ -30,6 +30,8 @@ export class CliApp {
             throw new EditorError("usage: delete <id>");
           }
           return [this.describeChange(this.session.delete(tokens[1]))];
+        case "move":
+          return this.move(tokens.slice(1));
         case "tree":
           return this.tree(tokens.slice(1));
         case "undo":
@@ -40,7 +42,7 @@ export class CliApp {
           return [this.describeChange(this.session.redo())];
         case "help":
           this.noArguments(tokens);
-          return ["Commands available now: init, create, delete, tree, undo, redo"];
+          return ["Commands available now: init, create, delete, move, tree, undo, redo"];
         default:
           throw new EditorError(`unknown command: ${command}`);
       }
@@ -85,13 +87,37 @@ export class CliApp {
     return this.treeFormatter.format(this.session.tree(arguments_[0]), arguments_[0] !== undefined);
   }
 
+  private move(arguments_: readonly string[]): string[] {
+    if (arguments_.length !== 3 || arguments_[0] === undefined) {
+      throw new EditorError("usage: move <id> <dx> <dy>");
+    }
+    const dx = this.finiteNumber(arguments_[1]);
+    const dy = this.finiteNumber(arguments_[2]);
+    return [this.describeChange(this.session.move(arguments_[0], dx, dy))];
+  }
+
+  private finiteNumber(value: string | undefined): number {
+    const number = Number(value);
+    if (value === undefined || value.trim() === "" || !Number.isFinite(number)) {
+      throw new EditorError(`invalid number: ${value ?? ""}`);
+    }
+    return number;
+  }
+
   private noArguments(tokens: readonly string[]): void {
     if (tokens.length !== 1) {
       throw new EditorError(`usage: ${tokens[0] ?? ""}`);
     }
   }
 
-  private describeChange(change: ShapeChange): string {
+  private describeChange(change: EditChange): string {
+    if (change.kind === "move") {
+      const verb = change.action === "moved" ? "moved" : "moved back";
+      if (change.location.kind === "point") {
+        return `${change.label} ${verb} to (${String(change.location.x)},${String(change.location.y)})`;
+      }
+      return `${change.label} ${verb} by (${String(change.dx)},${String(change.dy)})`;
+    }
     if (change.action === "removed") {
       return `${change.label} creation undone`;
     }

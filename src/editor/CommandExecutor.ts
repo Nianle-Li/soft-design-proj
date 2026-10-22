@@ -1,5 +1,5 @@
 import { EditorError } from "../model/EditorError";
-import type { EditCommand, ShapeChange } from "./EditCommand";
+import type { EditChange, EditCommand } from "./EditCommand";
 
 /** Invoker: the only owner of edit history and I/O barriers. */
 export class CommandExecutor {
@@ -7,7 +7,7 @@ export class CommandExecutor {
   private readonly redoStack: EditCommand[] = [];
   private blockedByIo = false;
 
-  execute(command: EditCommand): ShapeChange {
+  execute<TChange extends EditChange>(command: EditCommand<TChange>): TChange {
     const change = command.execute();
     this.undoStack.push(command);
     this.redoStack.length = 0;
@@ -15,7 +15,7 @@ export class CommandExecutor {
     return change;
   }
 
-  undo(): ShapeChange {
+  undo(): EditChange {
     this.ensureAllowed();
     const command = this.undoStack.at(-1);
     if (command === undefined) {
@@ -27,7 +27,7 @@ export class CommandExecutor {
     return change;
   }
 
-  redo(): ShapeChange {
+  redo(): EditChange {
     this.ensureAllowed();
     const command = this.redoStack.at(-1);
     if (command === undefined) {

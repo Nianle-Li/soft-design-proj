@@ -1,4 +1,5 @@
 import { Shape } from "./Shape";
+import type { PreparedMove } from "./Shape";
 import type { ShapeView } from "./TreeView";
 
 /** Composite shape; child order is SVG painting order. */
@@ -34,6 +35,20 @@ export class GroupShape extends Shape {
 
   get childCount(): number {
     return this.children.length;
+  }
+
+  override prepareMove(dx: number, dy: number): PreparedMove {
+    const children = this.children.map((child) => child.prepareMove(dx, dy));
+    return {
+      apply: () => {
+        children.forEach((child) => child.apply());
+        return { kind: "offset" };
+      },
+      undo: () => {
+        children.forEach((child) => child.undo());
+        return { kind: "offset" };
+      }
+    };
   }
 
   override toView(): ShapeView {

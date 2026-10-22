@@ -1,6 +1,7 @@
 import { EditorError } from "./EditorError";
 import { GroupShape } from "./GroupShape";
 import { Shape } from "./Shape";
+import type { MoveLocation, PreparedMove } from "./Shape";
 import { ShapeFactory } from "./ShapeFactory";
 import type { TreeView } from "./TreeView";
 
@@ -14,6 +15,12 @@ export interface DeletionReceipt {
   readonly shape: Shape;
   readonly parent: GroupShape | null;
   readonly index: number;
+}
+
+export interface MoveReceipt {
+  readonly shape: Shape;
+  readonly plan: PreparedMove;
+  readonly location: MoveLocation;
 }
 
 interface ShapeEntry {
@@ -136,6 +143,36 @@ export class SvgDocument {
     receipt.shape.visitSubtree((shape, parent) => {
       this.shapes.set(shape.id, { shape, parent });
     }, receipt.parent);
+  }
+
+  move(id: string, dx: number, dy: number): MoveReceipt {
+    const shape = this.shapes.get(id)?.shape;
+    if (shape === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+    if (!Number.isFinite(dx) || !Number.isFinite(dy)) {
+      throw new EditorError("invalid move delta");
+    }
+
+    const plan = shape.prepareMove(dx, dy);
+    const location = plan.apply();
+    return { shape, plan, location };
+  }
+
+  undoMove(receipt: MoveReceipt): MoveLocation {
+    this.ensureMoveTarget(receipt);
+    return receipt.plan.undo();
+  }
+
+  redoMove(receipt: MoveReceipt): MoveLocation {
+    this.ensureMoveTarget(receipt);
+    return receipt.plan.apply();
+  }
+
+  private ensureMoveTarget(receipt: MoveReceipt): void {
+    if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
+      throw new Error("move receipt no longer matches the document");
+    }
   }
 
   tree(id?: string): TreeView {

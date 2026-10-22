@@ -3,7 +3,7 @@ import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, ShapeChange } from "./EditCommand";
 
 /** Stores only the detached subtree and its original location for precise undo. */
-export class DeleteShapeCommand implements EditCommand {
+export class DeleteShapeCommand implements EditCommand<ShapeChange> {
   private receipt?: DeletionReceipt;
 
   constructor(
@@ -36,6 +36,7 @@ export class DeleteShapeCommand implements EditCommand {
   private change(action: "deleted" | "restored"): ShapeChange {
     const receipt = this.deletedReceipt();
     const change: ShapeChange = {
+      kind: "shape",
       label: receipt.shape.label,
       action
     };

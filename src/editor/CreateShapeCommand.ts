@@ -3,7 +3,7 @@ import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, ShapeChange } from "./EditCommand";
 
 /** Binds a create request to its Receiver and retains only its created node and position. */
-export class CreateShapeCommand implements EditCommand {
+export class CreateShapeCommand implements EditCommand<ShapeChange> {
   private receipt?: CreationReceipt;
 
   constructor(
@@ -37,9 +37,10 @@ export class CreateShapeCommand implements EditCommand {
     return this.receipt;
   }
 
-  private change(action: ShapeChange["action"]): ShapeChange {
+  private change(action: "created" | "removed"): ShapeChange {
     const receipt = this.executedReceipt();
     const change: ShapeChange = {
+      kind: "shape",
       label: receipt.shape.label,
       action
     };

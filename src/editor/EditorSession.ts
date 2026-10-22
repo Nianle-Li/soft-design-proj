@@ -4,7 +4,8 @@ import type { TreeView } from "../model/TreeView";
 import { CommandExecutor } from "./CommandExecutor";
 import { CreateShapeCommand } from "./CreateShapeCommand";
 import { DeleteShapeCommand } from "./DeleteShapeCommand";
-import type { ShapeChange } from "./EditCommand";
+import type { EditChange, MoveChange, ShapeChange } from "./EditCommand";
+import { MoveShapeCommand } from "./MoveShapeCommand";
 
 /** The current document and its edit history are one user session. */
 export class EditorSession {
@@ -27,16 +28,20 @@ export class EditorSession {
     return this.executor.execute(new DeleteShapeCommand(this.currentDocument(), id));
   }
 
+  move(id: string, dx: number, dy: number): MoveChange {
+    return this.executor.execute(new MoveShapeCommand(this.currentDocument(), id, dx, dy));
+  }
+
   tree(id?: string): TreeView {
     return this.currentDocument().tree(id);
   }
 
-  undo(): ShapeChange {
+  undo(): EditChange {
     this.currentDocument();
     return this.executor.undo();
   }
 
-  redo(): ShapeChange {
+  redo(): EditChange {
     this.currentDocument();
     return this.executor.redo();
   }
