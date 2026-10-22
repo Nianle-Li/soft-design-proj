@@ -8,6 +8,8 @@
     "lint": "eslint .",
     "format": "prettier --write . --ignore-path .gitignore",
     "format:check": "prettier --check . --ignore-path .gitignore",
+    "deps:check": "node scripts/check-dependencies.mjs",
+    "tracked:check": "node scripts/check-tracked-files.mjs",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest --passWithNoTests",
     "typecheck": "tsc --noEmit",

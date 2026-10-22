@@ -11,7 +11,9 @@ export default defineConfig({
     },
     coverage: {
       provider: "v8",
-      reporter: ["text", "html"]
+      reporter: ["text", "html"],
+      include: ["src/**/*.ts"],
+      exclude: ["src/main.ts", "src/**/TreeView.ts", "src/editor/EditCommand.ts"]
     }
   }
 });
