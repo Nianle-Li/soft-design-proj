@@ -2,7 +2,17 @@ node_modules/
 .npm-cache/
 coverage/
 dist/
+.cache/
+tmp/
+*.tsbuildinfo
 *.log
 *.svg
 !fixtures/**/*.svg
 !test/fixtures/**/*.svg
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
