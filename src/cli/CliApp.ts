@@ -23,6 +23,8 @@ export class CliApp {
       switch (command) {
         case "init":
           return this.init(tokens.slice(1));
+        case "canvas":
+          return this.canvas(tokens.slice(1));
         case "create":
           return this.create(tokens.slice(1));
         case "delete":
@@ -44,7 +46,9 @@ export class CliApp {
           return [this.describeChange(this.session.redo())];
         case "help":
           this.noArguments(tokens);
-          return ["Commands available now: init, create, delete, move, scale, tree, undo, redo"];
+          return [
+            "Commands available now: init, canvas, create, delete, move, scale, tree, undo, redo"
+          ];
         default:
           throw new EditorError(`unknown command: ${command}`);
       }
@@ -64,6 +68,18 @@ export class CliApp {
     const height = arguments_.length === 0 ? 600 : Number(arguments_[1]);
     const canvas = this.session.init(width, height);
     return [`canvas ${String(canvas.width)}x${String(canvas.height)} created`];
+  }
+
+  private canvas(arguments_: readonly string[]): string[] {
+    if (arguments_.length === 0) {
+      const size = this.session.canvas();
+      return [`canvas ${String(size.width)}x${String(size.height)}`];
+    }
+    if (arguments_.length !== 2) {
+      throw new EditorError("usage: canvas [w] [h]");
+    }
+    const size = this.session.resizeCanvas(Number(arguments_[0]), Number(arguments_[1]));
+    return [`canvas ${String(size.width)}x${String(size.height)} resized`];
   }
 
   private create(arguments_: readonly string[]): string[] {

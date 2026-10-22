@@ -20,6 +20,16 @@ export class EditorSession {
     return { width, height };
   }
 
+  canvas(): Readonly<{ width: number; height: number }> {
+    return this.currentDocument().canvasSize();
+  }
+
+  resizeCanvas(width: number, height: number): Readonly<{ width: number; height: number }> {
+    const size = this.currentDocument().resizeCanvas(width, height);
+    this.executor.ioBarrier();
+    return size;
+  }
+
   create(type: string, id: string, parameters: readonly string[], parentId?: string): ShapeChange {
     const command = new CreateShapeCommand(this.currentDocument(), type, id, parameters, parentId);
     return this.executor.execute(command);

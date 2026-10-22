@@ -38,11 +38,36 @@ export class SvgDocument {
   private readonly roots: Shape[] = [];
   private readonly shapes = new Map<string, ShapeEntry>();
   private readonly shapeFactory = new ShapeFactory();
+  private canvasWidth: number;
+  private canvasHeight: number;
 
-  constructor(
-    readonly width: number,
-    readonly height: number
-  ) {
+  constructor(width: number, height: number) {
+    SvgDocument.validateCanvasSize(width, height);
+    this.canvasWidth = width;
+    this.canvasHeight = height;
+  }
+
+  get width(): number {
+    return this.canvasWidth;
+  }
+
+  get height(): number {
+    return this.canvasHeight;
+  }
+
+  canvasSize(): Readonly<{ width: number; height: number }> {
+    return { width: this.canvasWidth, height: this.canvasHeight };
+  }
+
+  /** Resizing changes the canvas, not the geometry or membership of any shape. */
+  resizeCanvas(width: number, height: number): Readonly<{ width: number; height: number }> {
+    SvgDocument.validateCanvasSize(width, height);
+    this.canvasWidth = width;
+    this.canvasHeight = height;
+    return this.canvasSize();
+  }
+
+  private static validateCanvasSize(width: number, height: number): void {
     if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
       throw new EditorError("canvas dimensions must be positive finite numbers");
     }
