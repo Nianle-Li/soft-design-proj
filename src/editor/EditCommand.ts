@@ -45,8 +45,22 @@ export interface UngroupChange {
   readonly childCount: number;
 }
 
+export type AddToChange =
+  | {
+      readonly kind: "addto";
+      readonly label: string;
+      readonly action: "added";
+      readonly parentLabel: string;
+    }
+  | {
+      readonly kind: "addto";
+      readonly label: string;
+      readonly action: "restored";
+      readonly parentLabel?: string;
+    };
+
 export type EditChange =
-  ShapeChange | MoveChange | ScaleChange | SetChange | GroupChange | UngroupChange;
+  ShapeChange | MoveChange | ScaleChange | SetChange | GroupChange | UngroupChange | AddToChange;
 
 /** A request whose inverse is specific to the operation it performed. */
 export interface EditCommand<TChange extends EditChange = EditChange> {

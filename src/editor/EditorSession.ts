@@ -1,10 +1,12 @@
 import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../model/SvgDocument";
 import type { TreeView } from "../model/TreeView";
+import { AddToShapeCommand } from "./AddToShapeCommand";
 import { CommandExecutor } from "./CommandExecutor";
 import { CreateShapeCommand } from "./CreateShapeCommand";
 import { DeleteShapeCommand } from "./DeleteShapeCommand";
 import type {
+  AddToChange,
   EditChange,
   GroupChange,
   MoveChange,
@@ -68,6 +70,12 @@ export class EditorSession {
 
   ungroup(id: string): UngroupChange {
     return this.executor.execute(new UngroupShapeCommand(this.currentDocument(), id));
+  }
+
+  addTo(destinationId: string, sourceId: string): AddToChange {
+    return this.executor.execute(
+      new AddToShapeCommand(this.currentDocument(), destinationId, sourceId)
+    );
   }
 
   tree(id?: string): TreeView {

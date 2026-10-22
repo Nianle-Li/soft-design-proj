@@ -49,6 +49,11 @@ export interface UngroupReceipt {
   readonly children: readonly Shape[];
 }
 
+export interface AddToReceipt {
+  readonly source: DeletionReceipt;
+  readonly destination: GroupShape;
+}
+
 interface ShapeEntry {
   readonly shape: Shape;
   readonly parent: GroupShape | null;
@@ -360,6 +365,50 @@ export class SvgDocument {
         parent: receipt.parent,
         index: receipt.index + offset
       });
+    });
+  }
+
+  /** Moves an existing subtree to a group's tail after validating the destination is not below it. */
+  addTo(destinationId: string, sourceId: string): AddToReceipt {
+    const destination = this.shapes.get(destinationId)?.shape;
+    if (destination === undefined) {
+      throw new EditorError(`no such container: ${destinationId}`);
+    }
+    if (!(destination instanceof GroupShape)) {
+      throw new EditorError(`not a container: ${destinationId}`);
+    }
+    const source = this.shapes.get(sourceId)?.shape;
+    if (source === undefined) {
+      throw new EditorError(`no such shape: ${sourceId}`);
+    }
+    let ancestor: GroupShape | null = destination;
+    while (ancestor !== null) {
+      if (ancestor === source) {
+        throw new EditorError(`cannot add a container into itself or its descendant: ${sourceId}`);
+      }
+      ancestor = this.shapes.get(ancestor.id)?.parent ?? null;
+    }
+
+    const receipt = { source: this.delete(sourceId), destination };
+    this.restoreDeletion({
+      shape: receipt.source.shape,
+      parent: destination,
+      index: destination.childCount
+    });
+    return receipt;
+  }
+
+  undoAddTo(receipt: AddToReceipt): void {
+    this.delete(receipt.source.shape.id);
+    this.restoreDeletion(receipt.source);
+  }
+
+  redoAddTo(receipt: AddToReceipt): void {
+    this.delete(receipt.source.shape.id);
+    this.restoreDeletion({
+      shape: receipt.source.shape,
+      parent: receipt.destination,
+      index: receipt.destination.childCount
     });
   }
 

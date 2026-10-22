@@ -204,7 +204,7 @@ Phase 1 内置类型严格限定为 `rect`、`circle`、`ellipse`、`line`、`te
 | AC-011 | group 同父/跨父目标保持顺序且一次 undo 全部还原               | REQ-024、INV-006~007       | 正常/历史       | 已测 |
 | AC-012 | group 包含容器及其后代时原子失败                              | REQ-024、INV-002、INV-009  | 失败            | 已测 |
 | AC-013 | ungroup 嵌套组提升子节点并保持位置；根级组拒绝                | REQ-025、INV-002、INV-009  | 正常/失败/历史  | 已测 |
-| AC-014 | addto 跨父移动至最后，并可 undo 恢复原父和索引                | REQ-026、INV-007、INV-009  | 正常/历史       | 待测 |
+| AC-014 | addto 跨父移动至最后，并可 undo 恢复原父和索引                | REQ-026、INV-007、INV-009  | 正常/历史       | 已测 |
 | AC-015 | front/back 仅改变同级顺序，undo/redo 精确恢复                 | REQ-027~028、INV-007       | 正常/历史       | 待测 |
 | AC-016 | tree 全文档与子树，show 叶子与容器；执行前后历史不变          | REQ-030~032、INV-010       | 显示/回归       | 待测 |
 | AC-017 | 连续编辑→undo→redo；连续 undo；undo 后新编辑使旧 redo 不可用  | REQ-033~034、INV-006~007   | 历史            | 待测 |

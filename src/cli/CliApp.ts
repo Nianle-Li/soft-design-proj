@@ -45,6 +45,11 @@ export class CliApp {
             throw new EditorError("usage: ungroup <gid>");
           }
           return [this.describeChange(this.session.ungroup(tokens[1]))];
+        case "addto":
+          if (tokens.length !== 3 || tokens[1] === undefined || tokens[2] === undefined) {
+            throw new EditorError("usage: addto <gid> <id>");
+          }
+          return [this.describeChange(this.session.addTo(tokens[1], tokens[2]))];
         case "tree":
           return this.tree(tokens.slice(1));
         case "undo":
@@ -56,7 +61,7 @@ export class CliApp {
         case "help":
           this.noArguments(tokens);
           return [
-            "Commands available now: init, canvas, create, delete, move, scale, set, group, ungroup, tree, undo, redo"
+            "Commands available now: init, canvas, create, delete, move, scale, set, group, ungroup, addto, tree, undo, redo"
           ];
         default:
           throw new EditorError(`unknown command: ${command}`);
@@ -197,6 +202,14 @@ export class CliApp {
       }
       const unit = change.childCount === 1 ? "child" : "children";
       return `${change.label} restored with ${String(change.childCount)} ${unit}`;
+    }
+    if (change.kind === "addto") {
+      if (change.action === "added") {
+        return `${change.label} added to ${change.parentLabel}`;
+      }
+      return change.parentLabel === undefined
+        ? `${change.label} restored to canvas`
+        : `${change.label} restored into ${change.parentLabel}`;
     }
     if (change.action === "removed") {
       return `${change.label} creation undone`;
