@@ -43,6 +43,11 @@ export class GroupShape extends Shape {
     return this.children.length;
   }
 
+  /** Returns a stable list of direct children without exposing the mutable child array. */
+  directChildren(): readonly Shape[] {
+    return [...this.children];
+  }
+
   override prepareMove(dx: number, dy: number): PreparedMove {
     const children = this.children.map((child) => child.prepareMove(dx, dy));
     return {

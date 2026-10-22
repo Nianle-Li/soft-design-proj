@@ -10,12 +10,14 @@ import type {
   MoveChange,
   ScaleChange,
   SetChange,
-  ShapeChange
+  ShapeChange,
+  UngroupChange
 } from "./EditCommand";
 import { GroupShapeCommand } from "./GroupShapeCommand";
 import { MoveShapeCommand } from "./MoveShapeCommand";
 import { ScaleShapeCommand } from "./ScaleShapeCommand";
 import { SetShapeCommand } from "./SetShapeCommand";
+import { UngroupShapeCommand } from "./UngroupShapeCommand";
 
 /** The current document and its edit history are one user session. */
 export class EditorSession {
@@ -62,6 +64,10 @@ export class EditorSession {
 
   group(id: string, targetIds: readonly string[]): GroupChange {
     return this.executor.execute(new GroupShapeCommand(this.currentDocument(), id, targetIds));
+  }
+
+  ungroup(id: string): UngroupChange {
+    return this.executor.execute(new UngroupShapeCommand(this.currentDocument(), id));
   }
 
   tree(id?: string): TreeView {

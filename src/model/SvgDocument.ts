@@ -42,6 +42,13 @@ export interface GroupReceipt {
   readonly members: readonly DeletionReceipt[];
 }
 
+export interface UngroupReceipt {
+  readonly group: GroupShape;
+  readonly parent: GroupShape;
+  readonly index: number;
+  readonly children: readonly Shape[];
+}
+
 interface ShapeEntry {
   readonly shape: Shape;
   readonly parent: GroupShape | null;
@@ -302,6 +309,58 @@ export class SvgDocument {
       shared = group;
     }
     return shared;
+  }
+
+  /** Promotes only direct children; nested subtrees retain their own structure. */
+  ungroup(id: string): UngroupReceipt {
+    const entry = this.shapes.get(id);
+    if (entry === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+    if (!(entry.shape instanceof GroupShape)) {
+      throw new EditorError(`not a container: ${id}`);
+    }
+    if (entry.parent === null) {
+      throw new EditorError(`cannot ungroup top-level container: ${id}`);
+    }
+
+    const receipt = {
+      group: entry.shape,
+      parent: entry.parent,
+      index: entry.parent.childIndex(entry.shape),
+      children: entry.shape.directChildren()
+    };
+    this.redoUngroup(receipt);
+    return receipt;
+  }
+
+  undoUngroup(receipt: UngroupReceipt): void {
+    for (const child of [...receipt.children].reverse()) {
+      this.delete(child.id);
+    }
+    this.restoreCreation({
+      shape: receipt.group,
+      parent: receipt.parent,
+      index: receipt.index
+    });
+    receipt.children.forEach((child, index) => {
+      this.restoreDeletion({ shape: child, parent: receipt.group, index });
+    });
+  }
+
+  redoUngroup(receipt: UngroupReceipt): void {
+    if (this.shapes.get(receipt.group.id)?.shape !== receipt.group) {
+      throw new Error("ungroup receipt no longer matches the document");
+    }
+    this.delete(receipt.group.id);
+    receipt.children.forEach((child, offset) => {
+      receipt.group.removeChild(child);
+      this.restoreDeletion({
+        shape: child,
+        parent: receipt.parent,
+        index: receipt.index + offset
+      });
+    });
   }
 
   move(id: string, dx: number, dy: number): MoveReceipt {
