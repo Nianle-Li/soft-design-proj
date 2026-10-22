@@ -2,6 +2,24 @@ import { describe, expect, it } from "vitest";
 import { EditorSession } from "../../src/editor/EditorSession";
 
 describe("EditorSession initial edit history", () => {
+  it.each([
+    { type: "circle", parameters: ["1", "2", "3"] },
+    { type: "ellipse", parameters: ["1", "2", "3", "4"] },
+    { type: "line", parameters: ["1", "2", "3", "4", "black"] },
+    { type: "text", parameters: ["1", "2", "label"] }
+  ])("undoes and redoes a nested $type creation", ({ type, parameters }) => {
+    const session = new EditorSession();
+    session.init();
+    session.create("g", "parent", []);
+    session.create(type, "child", parameters, "parent");
+
+    expect(session.tree("parent").roots[0]?.children).toHaveLength(1);
+    session.undo();
+    expect(session.tree("parent").roots[0]?.children).toHaveLength(0);
+    session.redo();
+    expect(session.tree("parent").roots[0]?.children).toHaveLength(1);
+  });
+
   it("creates shapes as commands and undoes/redoes the latest creation", () => {
     const session = new EditorSession();
     session.init();

@@ -35,7 +35,7 @@ export class CliApp {
           return [this.describeChange(this.session.redo())];
         case "help":
           this.noArguments(tokens);
-          return ["Commands available now: init, create g, create rect, tree, undo, redo"];
+          return ["Commands available now: init, create, tree, undo, redo"];
         default:
           throw new EditorError(`unknown command: ${command}`);
       }

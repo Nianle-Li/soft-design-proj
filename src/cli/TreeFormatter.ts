@@ -8,25 +8,41 @@ export class TreeFormatter {
       if (root === undefined) {
         return [];
       }
-      return [this.line(root, root.label.length + 1), ...this.children(root.children, "", 1)];
+      const column = this.attributeColumn(root.children);
+      return [this.line(root, root.label.length + 1), ...this.children(root.children, "", column)];
     }
+    const column = this.attributeColumn(tree.roots);
     return [
       `svg (${String(tree.width)}x${String(tree.height)})`,
-      ...this.children(tree.roots, "", 0)
+      ...this.children(tree.roots, "", column)
     ];
   }
 
-  private children(nodes: readonly ShapeView[], prefix: string, depth: number): string[] {
+  private children(nodes: readonly ShapeView[], prefix: string, column: number): string[] {
     const lines: string[] = [];
-    const longest = Math.max(0, ...nodes.map((node) => node.label.length));
-    const column = Math.max(depth === 0 ? 15 : 11, longest + 1);
 
     nodes.forEach((node, index) => {
       const last = index === nodes.length - 1;
-      lines.push(`${prefix}${last ? "└──" : "├──"} ${this.line(node, column)}`);
-      lines.push(...this.children(node.children, `${prefix}${last ? "    " : "│   "}`, depth + 1));
+      lines.push(`${prefix}${last ? "└──" : "├──"} ${this.line(node, column - prefix.length - 4)}`);
+      lines.push(...this.children(node.children, `${prefix}${last ? "    " : "│   "}`, column));
     });
     return lines;
+  }
+
+  private attributeColumn(nodes: readonly ShapeView[]): number {
+    const deepestLabelEnd = (shapes: readonly ShapeView[], depth: number): number =>
+      Math.max(
+        0,
+        ...shapes.map((shape) =>
+          Math.max(
+            shape.details === "" ? 0 : depth * 4 + 4 + shape.label.length + 1,
+            deepestLabelEnd(shape.children, depth + 1)
+          )
+        )
+      );
+
+    // Long ids overflow with one space instead of pushing every detail far right.
+    return Math.min(29, Math.max(19, deepestLabelEnd(nodes, 0)));
   }
 
   private line(node: ShapeView, column: number): string {
