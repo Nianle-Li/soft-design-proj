@@ -1,0 +1,27 @@
+{
+  "name": "sw-design-lab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Software Design Lab: SVG CLI editor",
+  "scripts": {
+    "cli": "tsx src/main.ts",
+    "lint": "eslint .",
+    "format": "prettier --write . --ignore-path .gitignore",
+    "format:check": "prettier --check . --ignore-path .gitignore",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest --passWithNoTests",
+    "typecheck": "tsc --noEmit",
+    "coverage": "vitest run --coverage --passWithNoTests"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/node": "^24.10.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "eslint": "^9.39.1",
+    "prettier": "^3.6.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.2",
+    "vitest": "^3.2.4"
+  }
+}
