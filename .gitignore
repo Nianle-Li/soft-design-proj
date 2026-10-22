@@ -5,3 +5,4 @@ dist/
 *.log
 *.svg
 !fixtures/**/*.svg
+!test/fixtures/**/*.svg
