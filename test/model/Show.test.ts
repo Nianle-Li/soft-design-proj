@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
+import { createFromCommand } from "../support/createFromCommand";
 
 describe("shape inspection", () => {
   it("returns detached geometry, explicit styles and parent without traversing children", () => {
     const document = new SvgDocument(800, 600);
-    document.create("g", "markers", []);
-    document.create("circle", "c1", ["100", "100", "20", "red"], "markers");
+    createFromCommand(document, "g", "markers", []);
+    createFromCommand(document, "circle", "c1", ["100", "100", "20", "red"], "markers");
     document.set("c1", "stroke-width", "1.5");
-    document.create("text", "caption", ["20", "40", "Hello"], "markers");
+    createFromCommand(document, "text", "caption", ["20", "40", "Hello"], "markers");
     document.set("caption", "stroke", "blue");
 
     expect(document.show("c1")).toEqual({
@@ -41,9 +42,9 @@ describe("shape inspection", () => {
 
   it("reports the remaining built-in geometry from the same shape projection used by SVG output", () => {
     const document = new SvgDocument(80, 60);
-    document.create("rect", "r", ["1", "2", "3", "4"]);
-    document.create("ellipse", "e", ["5", "6", "7", "8"]);
-    document.create("line", "l", ["9", "10", "11", "12"]);
+    createFromCommand(document, "rect", "r", ["1", "2", "3", "4"]);
+    createFromCommand(document, "ellipse", "e", ["5", "6", "7", "8"]);
+    createFromCommand(document, "line", "l", ["9", "10", "11", "12"]);
     expect(document.show("r").geometry).toEqual([
       ["x", "1"],
       ["y", "2"],

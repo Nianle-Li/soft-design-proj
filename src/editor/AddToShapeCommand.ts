@@ -39,14 +39,13 @@ export class AddToShapeCommand implements EditCommand<AddToChange> {
     if (action === "added") {
       return {
         kind: "addto",
-        label: receipt.source.shape.label,
+        label: receipt.label,
         action,
-        parentLabel: receipt.destination.label
+        parentLabel: receipt.destinationLabel
       };
     }
-    const parent = receipt.source.parent;
-    return parent === null
-      ? { kind: "addto", label: receipt.source.shape.label, action }
-      : { kind: "addto", label: receipt.source.shape.label, action, parentLabel: parent.label };
+    return receipt.sourceParentLabel === undefined
+      ? { kind: "addto", label: receipt.label, action }
+      : { kind: "addto", label: receipt.label, action, parentLabel: receipt.sourceParentLabel };
   }
 }

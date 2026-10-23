@@ -1,9 +1,22 @@
 import type { ExplicitStyle } from "./PaintStyle";
 
 /** A detached projection: callers cannot mutate the document through this view. */
+export type TreeDetailPart =
+  | Readonly<{ kind: "attribute"; name: string; value: string }>
+  | Readonly<{
+      kind: "segment";
+      from: Readonly<{ x: string; y: string }>;
+      to: Readonly<{ x: string; y: string }>;
+    }>
+  | Readonly<{
+      kind: "positionedText";
+      position: Readonly<{ x: string; y: string }>;
+      text: string;
+    }>;
+
 export interface ShapeView {
   readonly label: string;
-  readonly details: string;
+  readonly details: readonly TreeDetailPart[];
   readonly children: readonly ShapeView[];
 }
 

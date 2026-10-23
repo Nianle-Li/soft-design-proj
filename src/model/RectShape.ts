@@ -108,11 +108,9 @@ export class RectShape extends Shape {
   }
 
   override toView(): ShapeView {
-    const fill = this.style.explicitFill;
-    const style = fill === undefined ? "" : ` fill=${fill}`;
     return {
       label: this.label,
-      details: `x=${String(this.x)} y=${String(this.y)} w=${String(this.width)} h=${String(this.height)}${style}`,
+      details: this.attributeDetails(true),
       children: []
     };
   }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
+import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument set", () => {
   it("sets each leaf's own geometric attributes and restores their previous values", () => {
@@ -14,7 +15,7 @@ describe("SvgDocument set", () => {
     for (const [type, parameters, attributes] of cases) {
       for (const attribute of attributes) {
         const document = new SvgDocument(800, 600);
-        document.create(type, "target", parameters);
+        createFromCommand(document, type, "target", parameters);
         const before = document.tree();
 
         const receipt = document.set("target", attribute, "10.5");
@@ -29,14 +30,14 @@ describe("SvgDocument set", () => {
 
   it("sets text content without confusing it with a geometry or style attribute", () => {
     const document = new SvgDocument(800, 600);
-    document.create("text", "label", ["1", "2", "old"]);
+    createFromCommand(document, "text", "label", ["1", "2", "old"]);
 
     const receipt = document.set("label", "text", "a new label");
-    expect(document.tree("label").roots[0]?.details).toBe('(1,2) "a new label"');
+    expect(document.show("label").text).toBe("a new label");
     document.undoSet(receipt);
-    expect(document.tree("label").roots[0]?.details).toBe('(1,2) "old"');
+    expect(document.show("label").text).toBe("old");
     document.redoSet(receipt);
-    expect(document.tree("label").roots[0]?.details).toBe('(1,2) "a new label"');
+    expect(document.show("label").text).toBe("a new label");
   });
 
   it("keeps common style attributes on the target element and restores absence exactly", () => {
@@ -50,7 +51,7 @@ describe("SvgDocument set", () => {
         text: ["1", "2", "hello"],
         g: []
       };
-      document.create(type, "target", params[type] ?? []);
+      createFromCommand(document, type, "target", params[type] ?? []);
       expect(document.explicitStyle("target")).toEqual({});
 
       const fill = document.set("target", "fill", "red");
@@ -69,22 +70,22 @@ describe("SvgDocument set", () => {
     }
 
     const document = new SvgDocument(800, 600);
-    document.create("rect", "filled", ["1", "2", "3", "4", "red"]);
-    document.create("line", "outlined", ["1", "2", "3", "4", "black"]);
+    createFromCommand(document, "rect", "filled", ["1", "2", "3", "4", "red"]);
+    createFromCommand(document, "line", "outlined", ["1", "2", "3", "4", "black"]);
     expect(document.explicitStyle("filled")).toEqual({ fill: "red" });
     expect(document.explicitStyle("outlined")).toEqual({ stroke: "black" });
   });
 
   it("sets group style locally while preserving descendant overrides and future inheritance", () => {
     const document = new SvgDocument(800, 600);
-    document.create("g", "outer", []);
-    document.create("g", "inner", [], "outer");
-    document.create("rect", "explicit", ["1", "2", "3", "4", "green"], "inner");
-    document.create("rect", "implicit", ["5", "6", "7", "8"], "inner");
+    createFromCommand(document, "g", "outer", []);
+    createFromCommand(document, "g", "inner", [], "outer");
+    createFromCommand(document, "rect", "explicit", ["1", "2", "3", "4", "green"], "inner");
+    createFromCommand(document, "rect", "implicit", ["5", "6", "7", "8"], "inner");
     const before = document.tree();
 
     const receipt = document.set("outer", "fill", "red");
-    document.create("circle", "later", ["1", "2", "3"], "inner");
+    createFromCommand(document, "circle", "later", ["1", "2", "3"], "inner");
     expect(document.explicitStyle("outer")).toEqual({ fill: "red" });
     expect(document.explicitStyle("inner")).toEqual({});
     expect(document.explicitStyle("explicit")).toEqual({ fill: "green" });
@@ -100,8 +101,8 @@ describe("SvgDocument set", () => {
 
   it("rejects unknown attributes and invalid numeric values without touching the document", () => {
     const document = new SvgDocument(800, 600);
-    document.create("g", "group", []);
-    document.create("rect", "rect", ["1", "2", "3", "4"], "group");
+    createFromCommand(document, "g", "group", []);
+    createFromCommand(document, "rect", "rect", ["1", "2", "3", "4"], "group");
     const before = document.tree();
 
     expect(() => document.set("rect", "opacity", "0.5")).toThrow("unknown attribute: opacity");

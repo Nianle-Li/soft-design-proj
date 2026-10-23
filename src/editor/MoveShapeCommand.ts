@@ -42,6 +42,6 @@ export class MoveShapeCommand implements EditCommand<MoveChange> {
     dx: number,
     dy: number
   ): MoveChange {
-    return { kind: "move", label: this.executedReceipt().shape.label, action, location, dx, dy };
+    return { kind: "move", label: this.executedReceipt().label, action, location, dx, dy };
   }
 }

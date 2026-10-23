@@ -106,7 +106,13 @@ export class LineShape extends Shape {
   override toView(): ShapeView {
     return {
       label: this.label,
-      details: `(${String(this.x1)},${String(this.y1)}) -> (${String(this.x2)},${String(this.y2)})`,
+      details: [
+        {
+          kind: "segment",
+          from: { x: String(this.x1), y: String(this.y1) },
+          to: { x: String(this.x2), y: String(this.y2) }
+        }
+      ],
       children: []
     };
   }

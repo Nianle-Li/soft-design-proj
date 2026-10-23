@@ -23,7 +23,12 @@ describe("canvas session history", () => {
 
     session.move("r1", 1, 1);
     session.undo();
-    expect(session.tree("r1").roots[0]?.details).toBe("x=1 y=2 w=3 h=4");
+    expect(session.show("r1").geometry).toEqual([
+      ["x", "1"],
+      ["y", "2"],
+      ["width", "3"],
+      ["height", "4"]
+    ]);
   });
 
   it("does not replace the document after resizing", () => {

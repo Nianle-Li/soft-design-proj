@@ -4,65 +4,80 @@ import { Shape } from "./Shape";
 import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "./Shape";
 import type { ExplicitStyle } from "./PaintStyle";
 import { ShapeFactory } from "./ShapeFactory";
+import type { ShapeSpec } from "./ShapeSpec";
 import type { SvgDocumentView } from "./SvgNodeView";
 import type { ShapeDetailsView, TreeView } from "./TreeView";
 
-export interface CreationReceipt {
+declare const receiptBrand: unique symbol;
+type Receipt<TKind extends string, TSummary extends object> = Readonly<
+  TSummary & { readonly [receiptBrand]: TKind }
+>;
+
+/** Public receipts reveal feedback only; the document privately owns exact inverse data. */
+export type CreationReceipt = Receipt<"create", { label: string; parentLabel?: string }>;
+export type DeletionReceipt = Receipt<"delete", { label: string; parentLabel?: string }>;
+export type MoveReceipt = Receipt<"move", { label: string; location: MoveLocation }>;
+export type ScaleReceipt = Receipt<"scale", { label: string }>;
+export type SetReceipt = Receipt<
+  "set",
+  { label: string; attribute: string; value: string; previousValue: string | undefined }
+>;
+export type GroupReceipt = Receipt<"group", { label: string; childCount: number }>;
+export type UngroupReceipt = Receipt<"ungroup", { label: string; childCount: number }>;
+export type AddToReceipt = Receipt<
+  "addto",
+  { label: string; destinationLabel: string; sourceParentLabel?: string }
+>;
+
+export type StackingEdge = "front" | "back";
+
+export type ReorderReceipt = Receipt<"reorder", { label: string; edge: StackingEdge }>;
+
+interface ShapePosition {
   readonly shape: Shape;
   readonly parent: GroupShape | null;
   readonly index: number;
 }
 
-export interface DeletionReceipt {
-  readonly shape: Shape;
-  readonly parent: GroupShape | null;
-  readonly index: number;
-}
-
-export interface MoveReceipt {
-  readonly shape: Shape;
-  readonly plan: PreparedMove;
-  readonly location: MoveLocation;
-}
-
-export interface ScaleReceipt {
-  readonly shape: Shape;
-  readonly plan: PreparedScale;
-}
-
-export interface SetReceipt {
-  readonly shape: Shape;
-  readonly attribute: string;
-  readonly plan: PreparedSet;
-}
-
-export interface GroupReceipt {
+interface GroupData {
   readonly group: GroupShape;
   readonly parent: GroupShape | null;
   readonly index: number;
-  readonly members: readonly DeletionReceipt[];
+  readonly members: readonly ShapePosition[];
 }
 
-export interface UngroupReceipt {
+interface UngroupData {
   readonly group: GroupShape;
   readonly parent: GroupShape;
   readonly index: number;
   readonly children: readonly Shape[];
 }
 
-export interface AddToReceipt {
-  readonly source: DeletionReceipt;
+interface AddToData {
+  readonly source: ShapePosition;
   readonly destination: GroupShape;
 }
 
-export type StackingEdge = "front" | "back";
-
-export interface ReorderReceipt {
+interface ReorderData {
   readonly shape: Shape;
   readonly parent: GroupShape | null;
   readonly originalIndex: number;
   readonly targetIndex: number;
-  readonly edge: StackingEdge;
+}
+
+interface MoveData {
+  readonly shape: Shape;
+  readonly plan: PreparedMove;
+}
+
+interface ScaleData {
+  readonly shape: Shape;
+  readonly plan: PreparedScale;
+}
+
+interface SetData {
+  readonly shape: Shape;
+  readonly plan: PreparedSet;
 }
 
 interface ShapeEntry {
@@ -74,6 +89,7 @@ interface ShapeEntry {
 export class SvgDocument {
   private readonly roots: Shape[] = [];
   private readonly shapes = new Map<string, ShapeEntry>();
+  private readonly receipts = new WeakMap<object, Readonly<{ kind: string; data: unknown }>>();
   private readonly shapeFactory = new ShapeFactory();
   private canvasWidth: number;
   private canvasHeight: number;
@@ -82,6 +98,20 @@ export class SvgDocument {
     SvgDocument.validateCanvasSize(width, height);
     this.canvasWidth = width;
     this.canvasHeight = height;
+  }
+
+  private issueReceipt<T extends object>(kind: string, summary: T, data: unknown): Readonly<T> {
+    const receipt = Object.freeze(summary);
+    this.receipts.set(receipt, { kind, data });
+    return receipt;
+  }
+
+  private receiptData(receipt: object, kind: string): unknown {
+    const record = this.receipts.get(receipt);
+    if (record?.kind !== kind) {
+      throw new Error(`${kind} receipt does not belong to this document`);
+    }
+    return record.data;
   }
 
   get width(): number {
@@ -105,14 +135,8 @@ export class SvgDocument {
     };
   }
 
-  importSvgShape(
-    type: string,
-    id: string,
-    attributes: ReadonlyMap<string, string>,
-    text: string | undefined,
-    parentId?: string
-  ): void {
-    this.ensureAvailableId(id);
+  importShape(spec: ShapeSpec, parentId?: string): void {
+    this.ensureAvailableId(spec.id);
     let parent: GroupShape | null = null;
     if (parentId !== undefined) {
       const candidate = this.shapes.get(parentId)?.shape;
@@ -121,8 +145,8 @@ export class SvgDocument {
       }
       parent = candidate;
     }
-    const shape = this.shapeFactory.createFromSvg(type, id, attributes, text);
-    this.restoreCreation({
+    const shape = this.shapeFactory.create(spec);
+    this.restoreCreatedShape({
       shape,
       parent,
       index: parent === null ? this.roots.length : parent.childCount
@@ -143,13 +167,8 @@ export class SvgDocument {
     }
   }
 
-  create(
-    type: string,
-    id: string,
-    parameters: readonly string[],
-    parentId?: string
-  ): CreationReceipt {
-    this.ensureAvailableId(id);
+  create(spec: ShapeSpec, parentId?: string): CreationReceipt {
+    this.ensureAvailableId(spec.id);
 
     let parent: GroupShape | null = null;
     if (parentId !== undefined) {
@@ -164,45 +183,61 @@ export class SvgDocument {
     }
 
     // Validate and construct before touching the document.
-    const shape = this.shapeFactory.create(type, id, parameters);
+    const shape = this.shapeFactory.create(spec);
     const index = parent === null ? this.roots.length : parent.childCount;
-    const receipt = { shape, parent, index };
-    this.restoreCreation(receipt);
-    return receipt;
+    const position = { shape, parent, index };
+    this.restoreCreatedShape(position);
+    const summary =
+      parent === null ? { label: shape.label } : { label: shape.label, parentLabel: parent.label };
+    return this.issueReceipt("create", summary, position) as CreationReceipt;
   }
 
   undoCreation(receipt: CreationReceipt): void {
-    if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
+    const position = this.receiptData(receipt, "create") as ShapePosition;
+    if (this.shapes.get(position.shape.id)?.shape !== position.shape) {
       throw new Error("creation receipt no longer matches the document");
     }
-    if (receipt.shape instanceof GroupShape && receipt.shape.childCount > 0) {
+    if (position.shape instanceof GroupShape && position.shape.childCount > 0) {
       throw new Error("cannot undo creation of a non-empty group");
     }
-    if (receipt.parent === null) {
-      const index = this.roots.indexOf(receipt.shape);
+    if (position.parent === null) {
+      const index = this.roots.indexOf(position.shape);
       if (index < 0) {
         throw new Error("created shape is missing from root");
       }
       this.roots.splice(index, 1);
     } else {
-      receipt.parent.removeChild(receipt.shape);
+      position.parent.removeChild(position.shape);
     }
-    this.shapes.delete(receipt.shape.id);
+    this.shapes.delete(position.shape.id);
   }
 
   restoreCreation(receipt: CreationReceipt): void {
-    if (this.shapes.has(receipt.shape.id)) {
+    this.restoreCreatedShape(this.receiptData(receipt, "create") as ShapePosition);
+  }
+
+  private restoreCreatedShape(position: ShapePosition): void {
+    if (this.shapes.has(position.shape.id)) {
       throw new Error("cannot restore a shape with an existing id");
     }
-    if (receipt.parent === null) {
-      this.roots.splice(receipt.index, 0, receipt.shape);
+    if (position.parent === null) {
+      this.roots.splice(position.index, 0, position.shape);
     } else {
-      receipt.parent.insertChild(receipt.index, receipt.shape);
+      position.parent.insertChild(position.index, position.shape);
     }
-    this.shapes.set(receipt.shape.id, { shape: receipt.shape, parent: receipt.parent });
+    this.shapes.set(position.shape.id, { shape: position.shape, parent: position.parent });
   }
 
   delete(id: string): DeletionReceipt {
+    const position = this.removeShape(id);
+    const summary =
+      position.parent === null
+        ? { label: position.shape.label }
+        : { label: position.shape.label, parentLabel: position.parent.label };
+    return this.issueReceipt("delete", summary, position) as DeletionReceipt;
+  }
+
+  private removeShape(id: string): ShapePosition {
     const entry = this.shapes.get(id);
     if (entry === undefined) {
       throw new EditorError(`no such shape: ${id}`);
@@ -221,23 +256,30 @@ export class SvgDocument {
   }
 
   restoreDeletion(receipt: DeletionReceipt): void {
-    if (receipt.parent !== null && this.shapes.get(receipt.parent.id)?.shape !== receipt.parent) {
+    this.restoreDeletedShape(this.receiptData(receipt, "delete") as ShapePosition);
+  }
+
+  private restoreDeletedShape(position: ShapePosition): void {
+    if (
+      position.parent !== null &&
+      this.shapes.get(position.parent.id)?.shape !== position.parent
+    ) {
       throw new Error("cannot restore into a detached parent");
     }
-    receipt.shape.visitSubtree((node) => {
+    position.shape.visitSubtree((node) => {
       if (this.shapes.has(node.id)) {
         throw new Error(`cannot restore a shape with an existing id: ${node.id}`);
       }
-    }, receipt.parent);
+    }, position.parent);
 
-    if (receipt.parent === null) {
-      this.roots.splice(receipt.index, 0, receipt.shape);
+    if (position.parent === null) {
+      this.roots.splice(position.index, 0, position.shape);
     } else {
-      receipt.parent.insertChild(receipt.index, receipt.shape);
+      position.parent.insertChild(position.index, position.shape);
     }
-    receipt.shape.visitSubtree((shape, parent) => {
+    position.shape.visitSubtree((shape, parent) => {
       this.shapes.set(shape.id, { shape, parent });
-    }, receipt.parent);
+    }, position.parent);
   }
 
   /** Groups existing subtrees at their nearest shared parent, in original document order. */
@@ -268,7 +310,7 @@ export class SvgDocument {
       }
     }
 
-    const members: DeletionReceipt[] = [];
+    const members: ShapePosition[] = [];
     for (const root of this.roots) {
       root.visitSubtree((shape, parent) => {
         if (selected.has(shape)) {
@@ -289,14 +331,18 @@ export class SvgDocument {
       }
       branch = ancestor;
     }
-    const receipt = {
+    const data: GroupData = {
       group: new GroupShape(id),
       parent,
       index: this.childIndex(branch, parent),
       members
     };
-    this.redoGroup(receipt);
-    return receipt;
+    this.redoGroupData(data);
+    return this.issueReceipt(
+      "group",
+      { label: data.group.label, childCount: data.members.length },
+      data
+    ) as GroupReceipt;
   }
 
   private ensureAvailableId(id: string): void {
@@ -309,23 +355,28 @@ export class SvgDocument {
   }
 
   undoGroup(receipt: GroupReceipt): void {
-    if (this.shapes.get(receipt.group.id)?.shape !== receipt.group) {
+    const data = this.receiptData(receipt, "group") as GroupData;
+    if (this.shapes.get(data.group.id)?.shape !== data.group) {
       throw new Error("group receipt no longer matches the document");
     }
-    this.delete(receipt.group.id);
-    for (const member of receipt.members) {
-      receipt.group.removeChild(member.shape);
-      this.restoreDeletion(member);
+    this.removeShape(data.group.id);
+    for (const member of data.members) {
+      data.group.removeChild(member.shape);
+      this.restoreDeletedShape(member);
     }
   }
 
   redoGroup(receipt: GroupReceipt): void {
-    for (const member of [...receipt.members].reverse()) {
-      this.delete(member.shape.id);
+    this.redoGroupData(this.receiptData(receipt, "group") as GroupData);
+  }
+
+  private redoGroupData(data: GroupData): void {
+    for (const member of [...data.members].reverse()) {
+      this.removeShape(member.shape.id);
     }
-    this.restoreCreation({ shape: receipt.group, parent: receipt.parent, index: receipt.index });
-    receipt.members.forEach((member, index) => {
-      this.restoreDeletion({ shape: member.shape, parent: receipt.group, index });
+    this.restoreCreatedShape({ shape: data.group, parent: data.parent, index: data.index });
+    data.members.forEach((member, index) => {
+      this.restoreDeletedShape({ shape: member.shape, parent: data.group, index });
     });
   }
 
@@ -347,7 +398,7 @@ export class SvgDocument {
     return chain;
   }
 
-  private nearestSharedParent(members: readonly DeletionReceipt[]): GroupShape | null {
+  private nearestSharedParent(members: readonly ShapePosition[]): GroupShape | null {
     const chains = members.map((member) => this.parentChain(member.parent));
     let shared: GroupShape | null = null;
     const first = chains[0] ?? [];
@@ -373,41 +424,50 @@ export class SvgDocument {
       throw new EditorError(`cannot ungroup top-level container: ${id}`);
     }
 
-    const receipt = {
+    const data: UngroupData = {
       group: entry.shape,
       parent: entry.parent,
       index: entry.parent.childIndex(entry.shape),
       children: entry.shape.directChildren()
     };
-    this.redoUngroup(receipt);
-    return receipt;
+    this.redoUngroupData(data);
+    return this.issueReceipt(
+      "ungroup",
+      { label: data.group.label, childCount: data.children.length },
+      data
+    ) as UngroupReceipt;
   }
 
   undoUngroup(receipt: UngroupReceipt): void {
-    for (const child of [...receipt.children].reverse()) {
-      this.delete(child.id);
+    const data = this.receiptData(receipt, "ungroup") as UngroupData;
+    for (const child of [...data.children].reverse()) {
+      this.removeShape(child.id);
     }
-    this.restoreCreation({
-      shape: receipt.group,
-      parent: receipt.parent,
-      index: receipt.index
+    this.restoreCreatedShape({
+      shape: data.group,
+      parent: data.parent,
+      index: data.index
     });
-    receipt.children.forEach((child, index) => {
-      this.restoreDeletion({ shape: child, parent: receipt.group, index });
+    data.children.forEach((child, index) => {
+      this.restoreDeletedShape({ shape: child, parent: data.group, index });
     });
   }
 
   redoUngroup(receipt: UngroupReceipt): void {
-    if (this.shapes.get(receipt.group.id)?.shape !== receipt.group) {
+    this.redoUngroupData(this.receiptData(receipt, "ungroup") as UngroupData);
+  }
+
+  private redoUngroupData(data: UngroupData): void {
+    if (this.shapes.get(data.group.id)?.shape !== data.group) {
       throw new Error("ungroup receipt no longer matches the document");
     }
-    this.delete(receipt.group.id);
-    receipt.children.forEach((child, offset) => {
-      receipt.group.removeChild(child);
-      this.restoreDeletion({
+    this.removeShape(data.group.id);
+    data.children.forEach((child, offset) => {
+      data.group.removeChild(child);
+      this.restoreDeletedShape({
         shape: child,
-        parent: receipt.parent,
-        index: receipt.index + offset
+        parent: data.parent,
+        index: data.index + offset
       });
     });
   }
@@ -421,38 +481,49 @@ export class SvgDocument {
     if (!(destination instanceof GroupShape)) {
       throw new EditorError(`not a container: ${destinationId}`);
     }
-    const source = this.shapes.get(sourceId)?.shape;
-    if (source === undefined) {
+    const sourceShape = this.shapes.get(sourceId)?.shape;
+    if (sourceShape === undefined) {
       throw new EditorError(`no such shape: ${sourceId}`);
     }
     let ancestor: GroupShape | null = destination;
     while (ancestor !== null) {
-      if (ancestor === source) {
+      if (ancestor === sourceShape) {
         throw new EditorError(`cannot add a container into itself or its descendant: ${sourceId}`);
       }
       ancestor = this.shapes.get(ancestor.id)?.parent ?? null;
     }
 
-    const receipt = { source: this.delete(sourceId), destination };
-    this.restoreDeletion({
-      shape: receipt.source.shape,
+    const source = this.removeShape(sourceId);
+    const data: AddToData = { source, destination };
+    this.restoreDeletedShape({
+      shape: source.shape,
       parent: destination,
       index: destination.childCount
     });
-    return receipt;
+    const summary =
+      source.parent === null
+        ? { label: source.shape.label, destinationLabel: destination.label }
+        : {
+            label: source.shape.label,
+            destinationLabel: destination.label,
+            sourceParentLabel: source.parent.label
+          };
+    return this.issueReceipt("addto", summary, data) as AddToReceipt;
   }
 
   undoAddTo(receipt: AddToReceipt): void {
-    this.delete(receipt.source.shape.id);
-    this.restoreDeletion(receipt.source);
+    const data = this.receiptData(receipt, "addto") as AddToData;
+    this.removeShape(data.source.shape.id);
+    this.restoreDeletedShape(data.source);
   }
 
   redoAddTo(receipt: AddToReceipt): void {
-    this.delete(receipt.source.shape.id);
-    this.restoreDeletion({
-      shape: receipt.source.shape,
-      parent: receipt.destination,
-      index: receipt.destination.childCount
+    const data = this.receiptData(receipt, "addto") as AddToData;
+    this.removeShape(data.source.shape.id);
+    this.restoreDeletedShape({
+      shape: data.source.shape,
+      parent: data.destination,
+      index: data.destination.childCount
     });
   }
 
@@ -464,30 +535,31 @@ export class SvgDocument {
     }
     const originalIndex = this.childIndex(entry.shape, entry.parent);
     const siblingCount = entry.parent === null ? this.roots.length : entry.parent.childCount;
-    const receipt = {
+    const data: ReorderData = {
       shape: entry.shape,
       parent: entry.parent,
       originalIndex,
-      targetIndex: edge === "front" ? siblingCount - 1 : 0,
-      edge
+      targetIndex: edge === "front" ? siblingCount - 1 : 0
     };
-    this.moveSibling(receipt.shape, receipt.parent, receipt.targetIndex);
-    return receipt;
+    this.moveSibling(data.shape, data.parent, data.targetIndex);
+    return this.issueReceipt("reorder", { label: data.shape.label, edge }, data) as ReorderReceipt;
   }
 
   undoReorder(receipt: ReorderReceipt): void {
-    this.ensureReorderTarget(receipt);
-    this.moveSibling(receipt.shape, receipt.parent, receipt.originalIndex);
+    const data = this.receiptData(receipt, "reorder") as ReorderData;
+    this.ensureReorderTarget(data);
+    this.moveSibling(data.shape, data.parent, data.originalIndex);
   }
 
   redoReorder(receipt: ReorderReceipt): void {
-    this.ensureReorderTarget(receipt);
-    this.moveSibling(receipt.shape, receipt.parent, receipt.targetIndex);
+    const data = this.receiptData(receipt, "reorder") as ReorderData;
+    this.ensureReorderTarget(data);
+    this.moveSibling(data.shape, data.parent, data.targetIndex);
   }
 
-  private ensureReorderTarget(receipt: ReorderReceipt): void {
-    const entry = this.shapes.get(receipt.shape.id);
-    if (entry?.shape !== receipt.shape || entry.parent !== receipt.parent) {
+  private ensureReorderTarget(data: ReorderData): void {
+    const entry = this.shapes.get(data.shape.id);
+    if (entry?.shape !== data.shape || entry.parent !== data.parent) {
       throw new Error("reorder receipt no longer matches the document");
     }
   }
@@ -514,21 +586,27 @@ export class SvgDocument {
 
     const plan = shape.prepareMove(dx, dy);
     const location = plan.apply();
-    return { shape, plan, location };
+    return this.issueReceipt(
+      "move",
+      { label: shape.label, location: Object.freeze(location) },
+      { shape, plan }
+    ) as MoveReceipt;
   }
 
   undoMove(receipt: MoveReceipt): MoveLocation {
-    this.ensureMoveTarget(receipt);
-    return receipt.plan.undo();
+    const data = this.receiptData(receipt, "move") as MoveData;
+    this.ensureMoveTarget(data);
+    return data.plan.undo();
   }
 
   redoMove(receipt: MoveReceipt): MoveLocation {
-    this.ensureMoveTarget(receipt);
-    return receipt.plan.apply();
+    const data = this.receiptData(receipt, "move") as MoveData;
+    this.ensureMoveTarget(data);
+    return data.plan.apply();
   }
 
-  private ensureMoveTarget(receipt: MoveReceipt): void {
-    if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
+  private ensureMoveTarget(data: MoveData): void {
+    if (this.shapes.get(data.shape.id)?.shape !== data.shape) {
       throw new Error("move receipt no longer matches the document");
     }
   }
@@ -544,21 +622,23 @@ export class SvgDocument {
 
     const plan = shape.prepareScale(factor);
     plan.apply();
-    return { shape, plan };
+    return this.issueReceipt("scale", { label: shape.label }, { shape, plan }) as ScaleReceipt;
   }
 
   undoScale(receipt: ScaleReceipt): void {
-    this.ensureScaleTarget(receipt);
-    receipt.plan.undo();
+    const data = this.receiptData(receipt, "scale") as ScaleData;
+    this.ensureScaleTarget(data);
+    data.plan.undo();
   }
 
   redoScale(receipt: ScaleReceipt): void {
-    this.ensureScaleTarget(receipt);
-    receipt.plan.apply();
+    const data = this.receiptData(receipt, "scale") as ScaleData;
+    this.ensureScaleTarget(data);
+    data.plan.apply();
   }
 
-  private ensureScaleTarget(receipt: ScaleReceipt): void {
-    if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
+  private ensureScaleTarget(data: ScaleData): void {
+    if (this.shapes.get(data.shape.id)?.shape !== data.shape) {
       throw new Error("scale receipt no longer matches the document");
     }
   }
@@ -570,17 +650,23 @@ export class SvgDocument {
     }
     const plan = shape.prepareSet(attribute, value);
     plan.apply();
-    return { shape, attribute, plan };
+    return this.issueReceipt(
+      "set",
+      { label: shape.label, attribute, value: plan.value, previousValue: plan.previousValue },
+      { shape, plan }
+    ) as SetReceipt;
   }
 
   undoSet(receipt: SetReceipt): void {
-    this.ensureSetTarget(receipt);
-    receipt.plan.undo();
+    const data = this.receiptData(receipt, "set") as SetData;
+    this.ensureSetTarget(data);
+    data.plan.undo();
   }
 
   redoSet(receipt: SetReceipt): void {
-    this.ensureSetTarget(receipt);
-    receipt.plan.apply();
+    const data = this.receiptData(receipt, "set") as SetData;
+    this.ensureSetTarget(data);
+    data.plan.apply();
   }
 
   explicitStyle(id: string): ExplicitStyle {
@@ -591,8 +677,8 @@ export class SvgDocument {
     return shape.explicitStyle();
   }
 
-  private ensureSetTarget(receipt: SetReceipt): void {
-    if (this.shapes.get(receipt.shape.id)?.shape !== receipt.shape) {
+  private ensureSetTarget(data: SetData): void {
+    if (this.shapes.get(data.shape.id)?.shape !== data.shape) {
       throw new Error("set receipt no longer matches the document");
     }
   }

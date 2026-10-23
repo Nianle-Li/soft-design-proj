@@ -108,11 +108,9 @@ export class EllipseShape extends Shape {
   }
 
   override toView(): ShapeView {
-    const fill = this.style.explicitFill;
-    const style = fill === undefined ? "" : ` fill=${fill}`;
     return {
       label: this.label,
-      details: `cx=${String(this.cx)} cy=${String(this.cy)} rx=${String(this.rx)} ry=${String(this.ry)}${style}`,
+      details: this.attributeDetails(true),
       children: []
     };
   }

@@ -9,14 +9,46 @@ describe("set command history", () => {
 
     session.set("r1", "fill", "blue");
     session.set("r1", "x", "9");
-    expect(session.tree("r1").roots[0]?.details).toBe("x=9 y=2 w=3 h=4 fill=blue");
+    expect(session.show("r1")).toMatchObject({
+      geometry: [
+        ["x", "9"],
+        ["y", "2"],
+        ["width", "3"],
+        ["height", "4"]
+      ],
+      style: { fill: "blue" }
+    });
     session.undo();
-    expect(session.tree("r1").roots[0]?.details).toBe("x=1 y=2 w=3 h=4 fill=blue");
+    expect(session.show("r1")).toMatchObject({
+      geometry: [
+        ["x", "1"],
+        ["y", "2"],
+        ["width", "3"],
+        ["height", "4"]
+      ],
+      style: { fill: "blue" }
+    });
     session.undo();
-    expect(session.tree("r1").roots[0]?.details).toBe("x=1 y=2 w=3 h=4 fill=red");
+    expect(session.show("r1")).toMatchObject({
+      geometry: [
+        ["x", "1"],
+        ["y", "2"],
+        ["width", "3"],
+        ["height", "4"]
+      ],
+      style: { fill: "red" }
+    });
     session.redo();
     session.redo();
-    expect(session.tree("r1").roots[0]?.details).toBe("x=9 y=2 w=3 h=4 fill=blue");
+    expect(session.show("r1")).toMatchObject({
+      geometry: [
+        ["x", "9"],
+        ["y", "2"],
+        ["width", "3"],
+        ["height", "4"]
+      ],
+      style: { fill: "blue" }
+    });
   });
 
   it("preserves redo after a failed set and clears it after a successful new set", () => {
@@ -28,7 +60,7 @@ describe("set command history", () => {
 
     expect(() => session.set("r1", "unknown", "x")).toThrow("unknown attribute: unknown");
     session.redo();
-    expect(session.tree("r1").roots[0]?.details).toContain("fill=blue");
+    expect(session.show("r1").style).toEqual({ fill: "blue" });
     session.undo();
     session.set("r1", "fill", "green");
     expect(() => session.redo()).toThrow("nothing to redo");

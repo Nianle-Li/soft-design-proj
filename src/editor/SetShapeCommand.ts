@@ -15,19 +15,19 @@ export class SetShapeCommand implements EditCommand<SetChange> {
 
   execute(): SetChange {
     this.receipt = this.document.set(this.id, this.attribute, this.value);
-    return this.change("set", this.receipt.plan.value);
+    return this.change("set", this.receipt.value);
   }
 
   undo(): SetChange {
     const receipt = this.executedReceipt();
     this.document.undoSet(receipt);
-    return this.change("restored", receipt.plan.previousValue);
+    return this.change("restored", receipt.previousValue);
   }
 
   redo(): SetChange {
     const receipt = this.executedReceipt();
     this.document.redoSet(receipt);
-    return this.change("set", receipt.plan.value);
+    return this.change("set", receipt.value);
   }
 
   private executedReceipt(): SetReceipt {
@@ -39,6 +39,6 @@ export class SetShapeCommand implements EditCommand<SetChange> {
 
   private change(action: SetChange["action"], value: string | undefined): SetChange {
     const receipt = this.executedReceipt();
-    return { kind: "set", label: receipt.shape.label, attribute: receipt.attribute, action, value };
+    return { kind: "set", label: receipt.label, attribute: receipt.attribute, action, value };
   }
 }

@@ -37,7 +37,7 @@ export class ScaleShapeCommand implements EditCommand<ScaleChange> {
   private change(action: ScaleChange["action"]): ScaleChange {
     return {
       kind: "scale",
-      label: this.executedReceipt().shape.label,
+      label: this.executedReceipt().label,
       action,
       factor: this.factor
     };

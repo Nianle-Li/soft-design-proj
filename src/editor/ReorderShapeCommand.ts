@@ -36,6 +36,6 @@ export class ReorderShapeCommand implements EditCommand<ReorderChange> {
 
   private change(action: "moved" | "restored"): ReorderChange {
     const receipt = this.executedReceipt();
-    return { kind: "reorder", label: receipt.shape.label, action, edge: receipt.edge };
+    return { kind: "reorder", label: receipt.label, action, edge: receipt.edge };
   }
 }

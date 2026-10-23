@@ -12,6 +12,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
+import { createFromCommand } from "../support/createFromCommand";
 import { SvgFileStore } from "../../src/svg/SvgFileStore";
 
 describe("SVG file adapter", () => {
@@ -20,9 +21,9 @@ describe("SVG file adapter", () => {
     const path = join(directory, "drawing.svg");
     try {
       const document = new SvgDocument(200, 100);
-      document.create("g", "layer", []);
-      document.create("line", "edge", ["1", "2", "3", "4", "red"], "layer");
-      document.create("text", "name", ["5", "6", "A&B"], "layer");
+      createFromCommand(document, "g", "layer", []);
+      createFromCommand(document, "line", "edge", ["1", "2", "3", "4", "red"], "layer");
+      createFromCommand(document, "text", "name", ["5", "6", "A&B"], "layer");
       const store = new SvgFileStore();
       expect(store.write(path, document)).toBe(3);
       const saved = readFileSync(path, "utf8");
@@ -32,7 +33,7 @@ describe("SVG file adapter", () => {
       expect(loaded.count).toBe(3);
       expect(loaded.document.tree()).toEqual(document.tree());
       expect(loaded.document.explicitStyle("edge")).toEqual({ stroke: "red" });
-      document.create("circle", "later", ["10", "10", "2"]);
+      createFromCommand(document, "circle", "later", ["10", "10", "2"]);
       expect(store.write(path, document)).toBe(4);
       expect(store.read(path).document.tree().roots.at(-1)?.label).toBe("circle#later");
     } finally {
@@ -47,7 +48,7 @@ describe("SVG file adapter", () => {
     try {
       writeFileSync(path, "original", "utf8");
       const document = new SvgDocument(20, 10);
-      document.create("text", "bad", ["0", "0", "bad\u0000text"]);
+      createFromCommand(document, "text", "bad", ["0", "0", "bad\u0000text"]);
       expect(() => new SvgFileStore().write(path, document)).toThrow(`cannot write file: ${path}`);
       expect(readFileSync(path, "utf8")).toBe("original");
       expect(readdirSync(directory)).toEqual(["drawing.svg"]);

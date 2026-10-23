@@ -85,14 +85,45 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
         expect(xml).toContain(`<${tag} `);
       }
       const restored = new SvgFileStore().read(path);
-      expect(restored.document.tree().roots.map((shape) => [shape.label, shape.details])).toEqual([
-        ["rect#r", "x=1 y=2 w=3 h=4"],
-        ["circle#c", "cx=5 cy=6 r=7"],
-        ["ellipse#e", "cx=8 cy=9 rx=10 ry=11"],
-        ["line#l", "(1,2) -> (3,4)"],
-        ["text#t", '(10,20) "Hello"'],
-        ["g#group", ""]
+      expect(restored.document.tree().roots.map((shape) => shape.label)).toEqual([
+        "rect#r",
+        "circle#c",
+        "ellipse#e",
+        "line#l",
+        "text#t",
+        "g#group"
       ]);
+      expect(restored.document.show("r").geometry).toEqual([
+        ["x", "1"],
+        ["y", "2"],
+        ["width", "3"],
+        ["height", "4"]
+      ]);
+      expect(restored.document.show("c").geometry).toEqual([
+        ["cx", "5"],
+        ["cy", "6"],
+        ["r", "7"]
+      ]);
+      expect(restored.document.show("e").geometry).toEqual([
+        ["cx", "8"],
+        ["cy", "9"],
+        ["rx", "10"],
+        ["ry", "11"]
+      ]);
+      expect(restored.document.show("l").geometry).toEqual([
+        ["x1", "1"],
+        ["y1", "2"],
+        ["x2", "3"],
+        ["y2", "4"]
+      ]);
+      expect(restored.document.show("t")).toMatchObject({
+        geometry: [
+          ["x", "10"],
+          ["y", "20"]
+        ],
+        text: "Hello"
+      });
+      expect(restored.document.tree("group").roots[0]?.children).toEqual([]);
     } finally {
       if (existsSync(path)) unlinkSync(path);
       rmdirSync(directory);
@@ -254,7 +285,11 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
         "rect#base",
         "circle#later"
       ]);
-      expect(reloaded.document.tree("later").roots[0]?.details).toBe("cx=5 cy=6 r=2");
+      expect(reloaded.document.show("later").geometry).toEqual([
+        ["cx", "5"],
+        ["cy", "6"],
+        ["r", "2"]
+      ]);
     } finally {
       if (existsSync(source)) unlinkSync(source);
       if (existsSync(unsupported)) unlinkSync(unsupported);

@@ -1,16 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
+import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument addTo", () => {
   it("moves a subtree across parents to the destination tail and restores its old position", () => {
     const document = new SvgDocument(800, 600);
-    document.create("g", "source", []);
-    document.create("rect", "before", ["0", "0", "1", "1"], "source");
-    document.create("g", "branch", [], "source");
-    document.create("circle", "child", ["2", "2", "1"], "branch");
-    document.create("rect", "after", ["3", "0", "1", "1"], "source");
-    document.create("g", "target", []);
-    document.create("rect", "existing", ["4", "0", "1", "1"], "target");
+    createFromCommand(document, "g", "source", []);
+    createFromCommand(document, "rect", "before", ["0", "0", "1", "1"], "source");
+    createFromCommand(document, "g", "branch", [], "source");
+    createFromCommand(document, "circle", "child", ["2", "2", "1"], "branch");
+    createFromCommand(document, "rect", "after", ["3", "0", "1", "1"], "source");
+    createFromCommand(document, "g", "target", []);
+    createFromCommand(document, "rect", "existing", ["4", "0", "1", "1"], "target");
     const before = document.tree();
 
     const receipt = document.addTo("target", "branch");
@@ -32,9 +33,9 @@ describe("SvgDocument addTo", () => {
 
   it("moves a same-parent child to the tail without duplicating it", () => {
     const document = new SvgDocument(800, 600);
-    document.create("g", "target", []);
+    createFromCommand(document, "g", "target", []);
     for (const id of ["a", "b", "c"]) {
-      document.create("rect", id, ["0", "0", "1", "1"], "target");
+      createFromCommand(document, "rect", id, ["0", "0", "1", "1"], "target");
     }
     const before = document.tree();
 
@@ -50,9 +51,9 @@ describe("SvgDocument addTo", () => {
 
   it("rejects self-placement, descendant placement and invalid targets atomically", () => {
     const document = new SvgDocument(800, 600);
-    document.create("g", "outer", []);
-    document.create("g", "inner", [], "outer");
-    document.create("rect", "leaf", ["0", "0", "1", "1"], "inner");
+    createFromCommand(document, "g", "outer", []);
+    createFromCommand(document, "g", "inner", [], "outer");
+    createFromCommand(document, "rect", "leaf", ["0", "0", "1", "1"], "inner");
     const before = document.tree();
 
     expect(() => document.addTo("outer", "outer")).toThrow(

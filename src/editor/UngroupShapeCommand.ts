@@ -37,9 +37,9 @@ export class UngroupShapeCommand implements EditCommand<UngroupChange> {
     const receipt = this.executedReceipt();
     return {
       kind: "ungroup",
-      label: receipt.group.label,
+      label: receipt.label,
       action,
-      childCount: receipt.children.length
+      childCount: receipt.childCount
     };
   }
 }

@@ -12,7 +12,7 @@ class FakeStore implements DocumentStore {
   read(path: string) {
     if (this.failRead) throw new EditorError(`cannot read file: ${path}`);
     const document = new SvgDocument(400, 300);
-    document.create("rect", "loaded", ["0", "0", "1", "1"]);
+    document.create({ kind: "rect", id: "loaded", x: 0, y: 0, width: 1, height: 1 });
     return { document, count: 1, assignedIds: [{ id: "rect1", tag: "rect" }] };
   }
 

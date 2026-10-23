@@ -1,5 +1,7 @@
 import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../model/SvgDocument";
+import { ShapeFactory } from "../model/ShapeFactory";
+import type { ShapeSpec } from "../model/ShapeSpec";
 import type { StackingEdge } from "../model/SvgDocument";
 import type { ShapeDetailsView, TreeView } from "../model/TreeView";
 import { AddToShapeCommand } from "./AddToShapeCommand";
@@ -30,6 +32,7 @@ export class EditorSession {
   private document?: SvgDocument;
   private readPath: string | undefined;
   private readonly executor = new CommandExecutor();
+  private readonly shapeFactory = new ShapeFactory();
 
   constructor(private readonly store?: DocumentStore) {}
 
@@ -74,7 +77,14 @@ export class EditorSession {
   }
 
   create(type: string, id: string, parameters: readonly string[], parentId?: string): ShapeChange {
-    const command = new CreateShapeCommand(this.currentDocument(), type, id, parameters, parentId);
+    const document = this.currentDocument();
+    const spec = this.shapeFactory.parseCommand(type, id, parameters);
+    const command = new CreateShapeCommand(document, spec, parentId);
+    return this.executor.execute(command);
+  }
+
+  createShape(spec: ShapeSpec, parentId?: string): ShapeChange {
+    const command = new CreateShapeCommand(this.currentDocument(), spec, parentId);
     return this.executor.execute(command);
   }
 

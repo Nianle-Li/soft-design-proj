@@ -6,12 +6,14 @@ import type {
 } from "@xmldom/xmldom";
 import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../model/SvgDocument";
+import { ShapeFactory } from "../model/ShapeFactory";
 import type { SvgNodeView } from "../model/SvgNodeView";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 /** Translates the deliberately supported SVG subset without leaking DOM nodes into the model. */
 export class SvgCodec {
+  private readonly shapeFactory = new ShapeFactory();
   decode(xml: string): Readonly<{
     document: SvgDocument;
     count: number;
@@ -123,7 +125,7 @@ export class SvgCodec {
         throw new EditorError("unsupported child element in <text>");
       }
       const content = type === "text" ? text : text.trim() === "" ? undefined : text;
-      document.importSvgShape(type, id, attributes, content, parentId);
+      document.importShape(this.shapeFactory.parseSvg(type, id, attributes, content), parentId);
       count += 1;
       for (const child of children) add(child, id);
     };

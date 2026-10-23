@@ -38,9 +38,9 @@ export class GroupShapeCommand implements EditCommand<GroupChange> {
     const receipt = this.executedReceipt();
     return {
       kind: "group",
-      label: receipt.group.label,
+      label: receipt.label,
       action,
-      childCount: receipt.members.length
+      childCount: receipt.childCount
     };
   }
 }

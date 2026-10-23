@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
+import { createFromCommand } from "../support/createFromCommand";
 import { SvgCodec } from "../../src/svg/SvgCodec";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -31,11 +32,11 @@ describe("strict SVG codec", () => {
 
   it("round-trips hierarchy, z-order, explicit styles and escaped Unicode text", () => {
     const document = new SvgDocument(80, 60);
-    document.create("g", "group", []);
-    document.create("text", "label", ["10", "20", `处理 <&> "引号"`], "group");
+    createFromCommand(document, "g", "group", []);
+    createFromCommand(document, "text", "label", ["10", "20", `处理 <&> "引号"`], "group");
     document.set("label", "stroke", "red");
     document.set("group", "fill", "#fff");
-    document.create("rect", "plain", ["0", "0", "1", "1"]);
+    createFromCommand(document, "rect", "plain", ["0", "0", "1", "1"]);
     document.reorder("group", "front");
 
     const saved = codec.encode(document);
@@ -53,12 +54,12 @@ describe("strict SVG codec", () => {
 
   it("round-trips every Phase 1 shape without filling in omitted paint defaults", () => {
     const document = new SvgDocument(300, 200);
-    document.create("g", "group", []);
-    document.create("rect", "r", ["1", "2", "3", "4"], "group");
-    document.create("circle", "c", ["5", "6", "7"], "group");
-    document.create("ellipse", "e", ["8", "9", "10", "11"], "group");
-    document.create("line", "l", ["1", "2", "3", "4"], "group");
-    document.create("text", "t", ["12", "13", "hello"], "group");
+    createFromCommand(document, "g", "group", []);
+    createFromCommand(document, "rect", "r", ["1", "2", "3", "4"], "group");
+    createFromCommand(document, "circle", "c", ["5", "6", "7"], "group");
+    createFromCommand(document, "ellipse", "e", ["8", "9", "10", "11"], "group");
+    createFromCommand(document, "line", "l", ["1", "2", "3", "4"], "group");
+    createFromCommand(document, "text", "t", ["12", "13", "hello"], "group");
     document.set("r", "stroke-width", "1.5");
 
     const saved = codec.encode(document);

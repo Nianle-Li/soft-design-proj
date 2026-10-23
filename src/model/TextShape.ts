@@ -95,7 +95,13 @@ export class TextShape extends Shape {
   override toView(): ShapeView {
     return {
       label: this.label,
-      details: `(${String(this.x)},${String(this.y)}) "${this.content}"`,
+      details: [
+        {
+          kind: "positionedText",
+          position: { x: String(this.x), y: String(this.y) },
+          text: this.content
+        }
+      ],
       children: []
     };
   }

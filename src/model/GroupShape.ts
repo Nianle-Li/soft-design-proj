@@ -93,7 +93,7 @@ export class GroupShape extends Shape {
   override toView(): ShapeView {
     return {
       label: this.label,
-      details: "",
+      details: [],
       children: this.children.map((child) => child.toView())
     };
   }

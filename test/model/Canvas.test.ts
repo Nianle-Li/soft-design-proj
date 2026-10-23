@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
+import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument canvas dimensions", () => {
   it("changes only the dimensions and preserves the shape tree", () => {
     const document = new SvgDocument(800, 600);
-    document.create("rect", "r1", ["1", "2", "3", "4"]);
+    createFromCommand(document, "rect", "r1", ["1", "2", "3", "4"]);
     const before = document.tree().roots;
 
     expect(document.resizeCanvas(400.5, 300)).toEqual({ width: 400.5, height: 300 });

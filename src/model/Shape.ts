@@ -1,5 +1,5 @@
 import { EditorError } from "./EditorError";
-import type { ShapeDetailsView, ShapeView } from "./TreeView";
+import type { ShapeDetailsView, ShapeView, TreeDetailPart } from "./TreeView";
 import type { GroupShape } from "./GroupShape";
 import { PaintStyle } from "./PaintStyle";
 import type { ExplicitStyle } from "./PaintStyle";
@@ -57,6 +57,19 @@ export abstract class Shape {
 
   /** Shape-specific attributes have one source for inspection and SVG output. */
   protected abstract geometryAttributes(): readonly (readonly [string, string])[];
+
+  protected attributeDetails(includeFill = false): readonly TreeDetailPart[] {
+    const details: TreeDetailPart[] = this.geometryAttributes().map(([name, value]) => ({
+      kind: "attribute",
+      name,
+      value
+    }));
+    const fill = this.style.explicitFill;
+    if (includeFill && fill !== undefined) {
+      details.push({ kind: "attribute", name: "fill", value: fill });
+    }
+    return details;
+  }
 
   protected svgChildren(): readonly SvgNodeView[] {
     return [];

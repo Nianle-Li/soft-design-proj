@@ -48,6 +48,6 @@ describe("group command history", () => {
     expect(session.tree()).toEqual(before);
     session.redo();
     session.redo();
-    expect(session.tree("r1").roots[0]?.details).toContain("x=4");
+    expect(session.show("r1").geometry).toContainEqual(["x", "4"]);
   });
 });

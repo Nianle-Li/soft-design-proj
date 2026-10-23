@@ -10,11 +10,19 @@ describe("move command history", () => {
     const before = session.tree();
 
     session.move("group", 2, -3);
-    expect(session.tree("child").roots[0]?.details).toBe("cx=12 cy=17 r=5");
+    expect(session.show("child").geometry).toEqual([
+      ["cx", "12"],
+      ["cy", "17"],
+      ["r", "5"]
+    ]);
     session.undo();
     expect(session.tree()).toEqual(before);
     session.redo();
-    expect(session.tree("child").roots[0]?.details).toBe("cx=12 cy=17 r=5");
+    expect(session.show("child").geometry).toEqual([
+      ["cx", "12"],
+      ["cy", "17"],
+      ["r", "5"]
+    ]);
   });
 
   it("keeps both history and geometry unchanged after a failed move", () => {

@@ -37,9 +37,11 @@ export class DeleteShapeCommand implements EditCommand<ShapeChange> {
     const receipt = this.deletedReceipt();
     const change: ShapeChange = {
       kind: "shape",
-      label: receipt.shape.label,
+      label: receipt.label,
       action
     };
-    return receipt.parent === null ? change : { ...change, parentLabel: receipt.parent.label };
+    return receipt.parentLabel === undefined
+      ? change
+      : { ...change, parentLabel: receipt.parentLabel };
   }
 }

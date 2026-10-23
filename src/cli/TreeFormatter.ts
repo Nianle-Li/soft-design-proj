@@ -1,4 +1,4 @@
-import type { ShapeView, TreeView } from "../editor/TreeView";
+import type { ShapeView, TreeDetailPart, TreeView } from "../editor/TreeView";
 
 /** CLI-only tree glyphs and column alignment. */
 export class TreeFormatter {
@@ -35,7 +35,7 @@ export class TreeFormatter {
         0,
         ...shapes.map((shape) =>
           Math.max(
-            shape.details === "" ? 0 : depth * 4 + 4 + shape.label.length + 1,
+            shape.details.length === 0 ? 0 : depth * 4 + 4 + shape.label.length + 1,
             deepestLabelEnd(shape.children, depth + 1)
           )
         )
@@ -46,9 +46,26 @@ export class TreeFormatter {
   }
 
   private line(node: ShapeView, column: number): string {
-    if (node.details === "") {
+    if (node.details.length === 0) {
       return node.label;
     }
-    return `${node.label}${" ".repeat(Math.max(1, column - node.label.length))}${node.details}`;
+    return `${node.label}${" ".repeat(Math.max(1, column - node.label.length))}${this.details(node.details)}`;
+  }
+
+  private details(parts: readonly TreeDetailPart[]): string {
+    return parts
+      .map((part) => {
+        switch (part.kind) {
+          case "attribute": {
+            const name = part.name === "width" ? "w" : part.name === "height" ? "h" : part.name;
+            return `${name}=${part.value}`;
+          }
+          case "segment":
+            return `(${part.from.x},${part.from.y}) -> (${part.to.x},${part.to.y})`;
+          case "positionedText":
+            return `(${part.position.x},${part.position.y}) "${part.text}"`;
+        }
+      })
+      .join(" ");
   }
 }
