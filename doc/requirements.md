@@ -217,7 +217,7 @@ Phase 1 内置类型严格限定为 `rect`、`circle`、`ellipse`、`line`、`te
 | AC-024 | save→read→save 的结构、顺序、规定属性与文本 round-trip        | REQ-040~045                | 集成/回归       | 已测 |
 | AC-025 | 负宽高/半径在 create/set/read 均失败且状态不变；零值合法      | REQ-040、AMB-003           | 边界/回归       | 已测 |
 
-证据索引：`AC-002`～`AC-006`、`AC-017`、`AC-019`、`AC-023` 主要见 `test/cli/AcceptanceGaps.test.ts`；`AC-025` 见图形创建、CLI 属性设置与 SVG 读入测试；其余场景见相应领域、编辑会话、CLI、SVG 测试及 `test/cli/Transcript.test.ts`。`已测` 表示表中场景有自动化断言，不表示穷尽输入空间或解决下表歧义。
+证据索引：`AC-002`～`AC-006`、`AC-017`、`AC-019`、`AC-023` 主要见 `test/cli/AcceptanceGaps.test.ts`；`AC-021`、`AC-022` 见 `test/cli/Transcript.test.ts` 与 `test/cli/ReplProcess.test.ts`；`AC-025` 见图形创建、CLI 属性设置与 SVG 读入测试；其余场景见相应领域、编辑会话、CLI 与 SVG 测试。`已测` 表示表中场景有自动化断言，不表示穷尽输入空间或解决下表歧义。
 
 ## 8. 歧义与待确认事项
 
