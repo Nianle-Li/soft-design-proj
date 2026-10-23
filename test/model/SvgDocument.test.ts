@@ -87,4 +87,49 @@ describe("SvgDocument creation", () => {
     }).toThrow("cannot undo creation of a non-empty group");
     expect(document.tree()).toEqual(before);
   });
+
+  it("rejects restoring a child after its parent was detached without corrupting the id index", () => {
+    const document = new SvgDocument(800, 600);
+    document.create({ kind: "g", id: "parent" });
+    const child = document.create(
+      { kind: "rect", id: "child", x: 0, y: 0, width: 1, height: 1 },
+      "parent"
+    );
+    document.undoCreation(child);
+    const detachedParent = document.delete("parent");
+    const beforeTree = document.tree();
+    const beforeSvg = document.toSvgView();
+
+    expect(() => {
+      document.restoreCreation(child);
+    }).toThrow("cannot restore into a detached parent");
+    expect(document.tree()).toEqual(beforeTree);
+    expect(document.toSvgView()).toEqual(beforeSvg);
+    expect(() => document.show("child")).toThrow("no such shape: child");
+
+    document.restoreDeletion(detachedParent);
+    document.restoreCreation(child);
+    expect(document.tree("parent").roots[0]?.children.map((shape) => shape.label)).toEqual([
+      "rect#child"
+    ]);
+  });
+
+  it("does not mistake a replacement parent with the same id for the original parent", () => {
+    const document = new SvgDocument(800, 600);
+    document.create({ kind: "g", id: "parent" });
+    const child = document.create(
+      { kind: "rect", id: "child", x: 0, y: 0, width: 1, height: 1 },
+      "parent"
+    );
+    document.undoCreation(child);
+    document.delete("parent");
+    document.create({ kind: "g", id: "parent" });
+    const before = document.tree();
+
+    expect(() => {
+      document.restoreCreation(child);
+    }).toThrow("cannot restore into a detached parent");
+    expect(document.tree()).toEqual(before);
+    expect(() => document.show("child")).toThrow("no such shape: child");
+  });
 });

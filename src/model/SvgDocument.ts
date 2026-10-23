@@ -217,6 +217,7 @@ export class SvgDocument {
   }
 
   private restoreCreatedShape(position: ShapePosition): void {
+    this.ensureAttachedParent(position.parent);
     if (this.shapes.has(position.shape.id)) {
       throw new Error("cannot restore a shape with an existing id");
     }
@@ -260,12 +261,7 @@ export class SvgDocument {
   }
 
   private restoreDeletedShape(position: ShapePosition): void {
-    if (
-      position.parent !== null &&
-      this.shapes.get(position.parent.id)?.shape !== position.parent
-    ) {
-      throw new Error("cannot restore into a detached parent");
-    }
+    this.ensureAttachedParent(position.parent);
     position.shape.visitSubtree((node) => {
       if (this.shapes.has(node.id)) {
         throw new Error(`cannot restore a shape with an existing id: ${node.id}`);
@@ -280,6 +276,13 @@ export class SvgDocument {
     position.shape.visitSubtree((shape, parent) => {
       this.shapes.set(shape.id, { shape, parent });
     }, position.parent);
+  }
+
+  /** Restoration must target the original live parent, not just an equal id. */
+  private ensureAttachedParent(parent: GroupShape | null): void {
+    if (parent !== null && this.shapes.get(parent.id)?.shape !== parent) {
+      throw new Error("cannot restore into a detached parent");
+    }
   }
 
   /** Groups existing subtrees at their nearest shared parent, in original document order. */
