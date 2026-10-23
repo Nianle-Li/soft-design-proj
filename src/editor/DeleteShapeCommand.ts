@@ -2,7 +2,7 @@ import type { DeletionReceipt } from "../model/SvgDocument";
 import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, ShapeChange } from "./EditCommand";
 
-/** Stores only the detached subtree and its original location for precise undo. */
+/** Retains the receipt for receiver-owned subtree and location data. */
 export class DeleteShapeCommand implements EditCommand<ShapeChange> {
   private receipt?: DeletionReceipt;
 

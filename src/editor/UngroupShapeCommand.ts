@@ -2,7 +2,7 @@ import type { UngroupReceipt } from "../model/SvgDocument";
 import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, UngroupChange } from "./EditCommand";
 
-/** Binds an ungroup request to its Receiver and retains the removed group and child order. */
+/** Binds one ungroup request and retains its receiver-owned inverse receipt. */
 export class UngroupShapeCommand implements EditCommand<UngroupChange> {
   private receipt?: UngroupReceipt;
 

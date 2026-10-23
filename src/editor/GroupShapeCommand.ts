@@ -2,7 +2,7 @@ import type { GroupReceipt } from "../model/SvgDocument";
 import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, GroupChange } from "./EditCommand";
 
-/** Binds one group request to its Receiver and retains only former member locations. */
+/** Binds one group request and retains its receiver-owned inverse receipt. */
 export class GroupShapeCommand implements EditCommand<GroupChange> {
   private receipt?: GroupReceipt;
 

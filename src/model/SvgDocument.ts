@@ -13,7 +13,7 @@ type Receipt<TKind extends string, TSummary extends object> = Readonly<
   TSummary & { readonly [receiptBrand]: TKind }
 >;
 
-/** Public receipts reveal feedback only; the document privately owns exact inverse data. */
+/** Commands retain opaque receipts; this document privately owns their exact inverse data. */
 export type CreationReceipt = Receipt<"create", { label: string; parentLabel?: string }>;
 export type DeletionReceipt = Receipt<"delete", { label: string; parentLabel?: string }>;
 export type MoveReceipt = Receipt<"move", { label: string; location: MoveLocation }>;

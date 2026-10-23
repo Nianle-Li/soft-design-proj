@@ -2,7 +2,7 @@ import type { ScaleReceipt } from "../model/SvgDocument";
 import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, ScaleChange } from "./EditCommand";
 
-/** The Receiver owns geometry; this command retains only the affected scale plan. */
+/** The Receiver owns geometry and inverse values; this command retains its receipt. */
 export class ScaleShapeCommand implements EditCommand<ScaleChange> {
   private receipt?: ScaleReceipt;
 

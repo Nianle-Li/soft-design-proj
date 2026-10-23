@@ -2,7 +2,7 @@ import type { AddToReceipt } from "../model/SvgDocument";
 import { SvgDocument } from "../model/SvgDocument";
 import type { AddToChange, EditCommand } from "./EditCommand";
 
-/** Binds one ownership change to its Receiver and retains the source's former location. */
+/** Binds one ownership change and retains its receiver-owned inverse receipt. */
 export class AddToShapeCommand implements EditCommand<AddToChange> {
   private receipt?: AddToReceipt;
 

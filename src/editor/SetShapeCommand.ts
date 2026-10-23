@@ -2,7 +2,7 @@ import type { SetReceipt } from "../model/SvgDocument";
 import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, SetChange } from "./EditCommand";
 
-/** Retains only the target attribute's previous and next explicit values. */
+/** Retains a receipt for the Receiver's previous and next explicit values. */
 export class SetShapeCommand implements EditCommand<SetChange> {
   private receipt?: SetReceipt;
 

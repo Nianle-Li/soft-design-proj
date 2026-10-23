@@ -2,7 +2,7 @@ import type { ReorderReceipt, StackingEdge } from "../model/SvgDocument";
 import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, ReorderChange } from "./EditCommand";
 
-/** Binds a z-order request and stores only the sibling positions affected by it. */
+/** Binds one z-order request and retains its receiver-owned inverse receipt. */
 export class ReorderShapeCommand implements EditCommand<ReorderChange> {
   private receipt?: ReorderReceipt;
 
