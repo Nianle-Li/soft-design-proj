@@ -1,0 +1,16 @@
+@startuml
+scale 440 width
+skinparam componentStyle rectangle
+component "src/cli\n命令行协议" as cli
+component "src/editor\n会话与历史" as editor
+component "src/model\n领域图形树" as model
+component "src/svg\n文件与 XML" as svg
+component "src/main.ts\n装配与 REPL（非业务模块）" as main
+cli --> editor : 会话 API
+editor --> model : 领域操作
+svg ..> editor : DocumentStore（类型）
+svg --> model : 文档与图形映射
+main --> cli : 装配 / 逐行调用
+main --> editor : 装配
+main --> svg : 装配
+@enduml
