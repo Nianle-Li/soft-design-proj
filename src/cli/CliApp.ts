@@ -1,5 +1,5 @@
 import { EditorSession } from "../editor/EditorSession";
-import type { EditChange } from "../editor/EditCommand";
+import type { EditChange, ShapeChange } from "../editor/EditCommand";
 import { EditorError } from "../editor/EditorError";
 import { CommandLineParser } from "./CommandLineParser";
 import { TreeFormatter } from "./TreeFormatter";
@@ -294,6 +294,10 @@ export class CliApp {
         ? `${change.label} moved to ${change.edge}`
         : `${change.label} order restored`;
     }
+    return this.describeShapeChange(change);
+  }
+
+  private describeShapeChange(change: ShapeChange): string {
     if (change.action === "removed") {
       return `${change.label} creation undone`;
     }
@@ -304,7 +308,9 @@ export class CliApp {
       const parent = change.parentLabel === undefined ? "" : ` into ${change.parentLabel}`;
       return `${change.label} restored${parent}`;
     }
+    // New shape actions must receive an explicit CLI response before this assignment can compile.
+    const createdAction: "created" = change.action;
     const parent = change.parentLabel === undefined ? "" : ` in ${change.parentLabel}`;
-    return `${change.label} created${parent}`;
+    return `${change.label} ${createdAction}${parent}`;
   }
 }

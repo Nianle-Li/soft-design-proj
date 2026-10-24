@@ -44,9 +44,11 @@ describe("move command history", () => {
     const before = session.tree();
 
     session.move("r1", 0.2, 0.3);
+    const moved = session.tree();
+    expect(moved).not.toEqual(before);
     session.undo();
     expect(session.tree()).toEqual(before);
     session.redo();
-    expect(session.tree("r1").roots[0]?.details).not.toBe(before.roots[0]?.details);
+    expect(session.tree()).toEqual(moved);
   });
 });

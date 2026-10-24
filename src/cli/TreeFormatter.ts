@@ -64,6 +64,10 @@ export class TreeFormatter {
             return `(${part.from.x},${part.from.y}) -> (${part.to.x},${part.to.y})`;
           case "positionedText":
             return `(${part.position.x},${part.position.y}) "${part.text}"`;
+          default: {
+            const unhandledPart: never = part;
+            throw new Error(`unhandled tree detail: ${String(unhandledPart)}`);
+          }
         }
       })
       .join(" ");
