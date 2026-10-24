@@ -1,0 +1,33 @@
+@startuml
+scale 620 width
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+hide footbox
+participant "EditorSession\nClient" as Session
+participant "CommandExecutor\nInvoker" as Executor
+participant "MoveShapeCommand\nConcreteCommand" as Command
+participant "SvgDocument\nReceiver" as Document
+
+== 成功执行 move ==
+Session -> Command : new MoveShapeCommand(document, id, dx, dy)
+Session -> Executor : execute(command)
+Executor -> Command : execute()
+Command -> Document : move(id, dx, dy)
+note right of Document
+  准备并应用移动；局部反向数据
+  保存在文档内部，返回回执
+end note
+Document --> Command : MoveReceipt
+Command --> Executor : MoveChange
+Executor -> Executor : undo 栈入栈；清空 redo 栈
+Executor --> Session : MoveChange
+
+== 成功执行 undo ==
+Session -> Executor : undo()
+Executor -> Command : undo()
+Command -> Document : undoMove(receipt)
+Document --> Command : MoveLocation
+Command --> Executor : MoveChange
+Executor -> Executor : undo 栈出栈；redo 栈入栈
+Executor --> Session : MoveChange
+@enduml
