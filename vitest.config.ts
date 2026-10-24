@@ -13,7 +13,15 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html"],
       include: ["src/**/*.ts"],
-      exclude: ["src/main.ts", "src/**/TreeView.ts", "src/editor/EditCommand.ts"]
+      exclude: [
+        "src/main.ts",
+        // Type-only contracts emit no executable statements.
+        "src/**/TreeView.ts",
+        "src/editor/EditCommand.ts",
+        "src/editor/DocumentStore.ts",
+        "src/model/ShapeSpec.ts",
+        "src/model/SvgNodeView.ts"
+      ]
     }
   }
 });

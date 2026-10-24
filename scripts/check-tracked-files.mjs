@@ -11,7 +11,14 @@ const tracked = git.stdout.split("\0").filter(Boolean);
 const forbidden = tracked.filter((path) => {
   const normalized = path.replaceAll("\\", "/");
   const basename = normalized.split("/").at(-1) ?? "";
-  if (/^(node_modules|coverage|dist|tmp|\.npm-cache|\.cache|\.idea|\.vscode)\//u.test(normalized)) {
+  if (normalized === "AGENTS.md") {
+    return true;
+  }
+  if (
+    /^(node_modules|coverage|dist|tmp|\.agents|\.npm-cache|\.cache|\.idea|\.vscode)\//u.test(
+      normalized
+    )
+  ) {
     return true;
   }
   if (basename === ".env" || (basename.startsWith(".env.") && basename !== ".env.example")) {
@@ -20,7 +27,11 @@ const forbidden = tracked.filter((path) => {
   if (/\.(log|tsbuildinfo)$/iu.test(basename)) {
     return true;
   }
-  return normalized.endsWith(".svg") && !normalized.startsWith("test/fixtures/svg/");
+  return (
+    normalized.endsWith(".svg") &&
+    normalized !== "doc/assets/architecture.svg" &&
+    !normalized.startsWith("test/fixtures/svg/")
+  );
 });
 
 if (forbidden.length > 0) {

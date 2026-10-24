@@ -1,4 +1,6 @@
 node_modules/
+.agents/
+/AGENTS.md
 .npm-cache/
 coverage/
 dist/
@@ -7,6 +9,7 @@ tmp/
 *.tsbuildinfo
 *.log
 *.svg
+!doc/assets/architecture.svg
 !fixtures/**/*.svg
 !test/fixtures/**/*.svg
 .env
