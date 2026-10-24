@@ -72,6 +72,28 @@ describe("strict SVG codec", () => {
     expect(restored.explicitStyle("c")).toEqual({});
   });
 
+  it("preserves whitespace-only text while accepting indentation around group children", () => {
+    const xml = wrap(
+      '<g id="group">\n  <text id="label" x="1" y="2">  \n </text>\n  <rect id="r" x="0" y="0" width="1" height="1"/>\n</g>'
+    );
+    const document = codec.decode(xml).document;
+    expect(document.show("label").text).toBe("  \n ");
+    expect(document.tree("group").roots[0]?.children.map((node) => node.label)).toEqual([
+      "text#label",
+      "rect#r"
+    ]);
+    expect(codec.decode(codec.encode(document).xml).document.show("label").text).toBe("  \n ");
+  });
+
+  it("rejects element children inside text and character data inside a group", () => {
+    expect(() =>
+      codec.decode(wrap('<text id="label" x="1" y="2">a<tspan>b</tspan></text>'))
+    ).toThrow("unsupported child element in <text>");
+    expect(() => codec.decode(wrap('<g id="group">unexpected</g>'))).toThrow(
+      "unsupported text content in <g>"
+    );
+  });
+
   it.each([
     ["unknown shape", wrap('<path id="x" d="M0 0"/>')],
     ["unknown attribute", wrap('<rect id="x" x="0" y="0" width="1" height="1" opacity="0.5"/>')],

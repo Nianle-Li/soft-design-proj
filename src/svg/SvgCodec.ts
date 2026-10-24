@@ -121,11 +121,10 @@ export class SvgCodec {
           throw new EditorError(`unsupported content in <${type}>`);
         }
       }
-      if (type === "text" && children.length > 0) {
-        throw new EditorError("unsupported child element in <text>");
-      }
-      const content = type === "text" ? text : text.trim() === "" ? undefined : text;
-      document.importShape(this.shapeFactory.parseSvg(type, id, attributes, content), parentId);
+      document.importShape(
+        this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0),
+        parentId
+      );
       count += 1;
       for (const child of children) add(child, id);
     };

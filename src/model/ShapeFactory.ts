@@ -85,11 +85,15 @@ export class ShapeFactory {
     type: string,
     id: string,
     attributes: ReadonlyMap<string, string>,
-    text: string | undefined
+    text: string,
+    hasElementChildren: boolean
   ): ShapeSpec {
     const geometry = this.svgGeometry.get(type);
     if (geometry === undefined) {
       throw new EditorError(`unsupported SVG element: <${type}>`);
+    }
+    if (type === "text" && hasElementChildren) {
+      throw new EditorError("unsupported child element in <text>");
     }
     const styles = ["fill", "stroke", "stroke-width"] as const;
     const allowed = new Set(["id", ...geometry, ...styles]);
@@ -98,7 +102,7 @@ export class ShapeFactory {
         throw new EditorError(`unsupported SVG attribute: ${attribute} on <${type}>`);
       }
     }
-    if (type !== "text" && text !== undefined) {
+    if (type !== "text" && text.trim() !== "") {
       throw new EditorError(`unsupported text content in <${type}>`);
     }
     const parameters = geometry.map((name) => {
@@ -108,7 +112,7 @@ export class ShapeFactory {
       }
       return value;
     });
-    if (type === "text") parameters.push(text ?? "");
+    if (type === "text") parameters.push(text);
     const spec = this.parseCommand(type, id, parameters);
     return {
       ...spec,
