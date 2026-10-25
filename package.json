@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Software Design Lab: SVG CLI editor",
+  "engines": {
+    "node": "^22.20.0 || >=24.12.0"
+  },
   "scripts": {
     "cli": "tsx src/main.ts",
     "lint": "eslint .",
