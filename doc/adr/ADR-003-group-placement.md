@@ -1,7 +1,7 @@
 # ADR-003：分组位置与顺序
 
 - 状态：已接受（普通 `g` 的 Phase 1 `group`）
-- 依据：`../../phase_cli_1.md` §3、§4.2、§4.3、§6；`../requirements.md` 的 `REQ-024`、`INV-002`、`INV-006~009`、`AMB-006`。
+- 依据：题目 `phase_cli_1.md` §3、§4.2、§4.3、§6；[需求与验收清单](../requirements.md)中的 `REQ-024`、`INV-002`、`INV-006~009`、`AMB-006`。
 
 ## 问题与候选
 
