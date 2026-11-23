@@ -38,14 +38,7 @@ export class EditorSession {
   constructor(
     private readonly store?: DocumentStore,
     private readonly shapeProviders?: ShapeProviderRegistry
-  ) {
-    // Until the built-ins move into the registry, keep their names reserved here.
-    for (const type of shapeProviders?.types() ?? []) {
-      if (this.shapeFactory.hasUnmigratedType(type)) {
-        throw new EditorError(`duplicate registration: shapes/${type}`);
-      }
-    }
-  }
+  ) {}
 
   init(width = 800, height = 600): Readonly<{ width: number; height: number }> {
     const document = new SvgDocument(width, height, this.shapeProviders);

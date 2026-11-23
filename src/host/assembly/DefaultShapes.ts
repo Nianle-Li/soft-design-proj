@@ -3,6 +3,7 @@ import { EllipseShapeProvider } from "../../builtin/shapes/EllipseShapeProvider"
 import { GroupShapeProvider } from "../../builtin/shapes/GroupShapeProvider";
 import { LineShapeProvider } from "../../builtin/shapes/LineShapeProvider";
 import { RectShapeProvider } from "../../builtin/shapes/RectShapeProvider";
+import { TextShapeProvider } from "../../builtin/shapes/TextShapeProvider";
 import type { ShapeProvider } from "../../core/model/ShapeProvider";
 import { ShapeProviderRegistry } from "../../core/model/ShapeProviderRegistry";
 
@@ -16,6 +17,7 @@ export function createDefaultShapeProviders(
     new CircleShapeProvider(),
     new EllipseShapeProvider(),
     new LineShapeProvider(),
+    new TextShapeProvider(),
     ...optional
   ]);
 }

@@ -19,17 +19,6 @@ export class ShapeFactory {
     ["text", ["x", "y"]]
   ]);
 
-  hasUnmigratedType(type: string): boolean {
-    return (
-      type !== "g" &&
-      type !== "rect" &&
-      type !== "circle" &&
-      type !== "ellipse" &&
-      type !== "line" &&
-      this.svgGeometry.has(type)
-    );
-  }
-
   parseCommand(type: string, id: string, parameters: readonly string[]): ShapeSpec {
     switch (type) {
       case "g":

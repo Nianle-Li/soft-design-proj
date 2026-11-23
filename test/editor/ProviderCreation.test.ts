@@ -80,14 +80,4 @@ describe("provider-backed creation in an editor session", () => {
       "unknown shape type: card (is the plugin loaded?)"
     );
   });
-
-  it("rejects a provider that collides with an unmigrated Phase 1 type", () => {
-    const registry = new ShapeProviderRegistry([
-      { type: "text", create: (id) => new RectShape(id, 0, 0, 1, 1) }
-    ]);
-
-    expect(() => new EditorSession(undefined, registry)).toThrow(
-      "duplicate registration: shapes/text"
-    );
-  });
 });
