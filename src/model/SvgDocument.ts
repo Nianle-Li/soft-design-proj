@@ -2,6 +2,7 @@ import { EditorError } from "../core/model/EditorError";
 import { ContainerShape } from "../core/model/ContainerShape";
 import { GroupShape } from "../builtin/shapes/GroupShape";
 import { Shape } from "../core/model/Shape";
+import type { ShapeProviderRegistry } from "../core/model/ShapeProviderRegistry";
 import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "../core/model/Shape";
 import type { ExplicitStyle } from "../core/model/PaintStyle";
 import { ShapeFactory } from "./ShapeFactory";
@@ -41,7 +42,7 @@ interface ShapePosition {
 }
 
 interface GroupData {
-  readonly group: GroupShape;
+  readonly group: ContainerShape;
   readonly parent: ContainerShape | null;
   readonly index: number;
   readonly members: readonly ShapePosition[];
@@ -100,7 +101,11 @@ export class SvgDocument {
   private canvasWidth: number;
   private canvasHeight: number;
 
-  constructor(width: number, height: number) {
+  constructor(
+    width: number,
+    height: number,
+    private readonly shapeProviders?: ShapeProviderRegistry
+  ) {
     SvgDocument.validateCanvasSize(width, height);
     this.canvasWidth = width;
     this.canvasHeight = height;
@@ -440,8 +445,20 @@ export class SvgDocument {
       }
       branch = ancestor;
     }
+    const group = this.shapeProviders?.has("g")
+      ? this.shapeProviders.create("g", id, [])
+      : new GroupShape(id);
+    if (!(group instanceof ContainerShape)) {
+      throw new EditorError("registered g provider must return a container");
+    }
+    if (group.kind !== "g") {
+      throw new EditorError("registered g provider must return an SVG group");
+    }
+    if (group.childCount !== 0) {
+      throw new EditorError("registered g provider must return an empty container");
+    }
     const data: GroupData = {
-      group: new GroupShape(id),
+      group,
       parent,
       index: this.childIndex(branch, parent),
       members

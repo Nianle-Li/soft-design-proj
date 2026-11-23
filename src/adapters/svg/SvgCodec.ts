@@ -7,6 +7,7 @@ import type {
 import { EditorError } from "../../core/model/EditorError";
 import { SvgDocument } from "../../model/SvgDocument";
 import { ShapeFactory } from "../../model/ShapeFactory";
+import type { ShapeProviderRegistry } from "../../core/model/ShapeProviderRegistry";
 import type { SvgNodeView } from "../../core/model/SvgNodeView";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
@@ -14,6 +15,8 @@ const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 /** Translates the deliberately supported SVG subset without leaking DOM nodes into the model. */
 export class SvgCodec {
   private readonly shapeFactory = new ShapeFactory();
+  constructor(private readonly shapeProviders?: ShapeProviderRegistry) {}
+
   decode(xml: string): Readonly<{
     document: SvgDocument;
     count: number;
@@ -86,7 +89,7 @@ export class SvgCodec {
       if (child.nodeType === 1) collectIds(child as XmlElement);
     }
 
-    const document = new SvgDocument(width, height);
+    const document = new SvgDocument(width, height, this.shapeProviders);
     const assignedIds: { id: string; tag: string }[] = [];
     const nextByTag = new Map<string, number>();
     const reservedIds = new Set(explicitIds);

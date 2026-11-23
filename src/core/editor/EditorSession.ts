@@ -41,14 +41,14 @@ export class EditorSession {
   ) {
     // Until the built-ins move into the registry, keep their names reserved here.
     for (const type of shapeProviders?.types() ?? []) {
-      if (this.shapeFactory.hasType(type)) {
+      if (this.shapeFactory.hasUnmigratedType(type)) {
         throw new EditorError(`duplicate registration: shapes/${type}`);
       }
     }
   }
 
   init(width = 800, height = 600): Readonly<{ width: number; height: number }> {
-    const document = new SvgDocument(width, height);
+    const document = new SvgDocument(width, height, this.shapeProviders);
     this.document = document;
     this.readPath = undefined;
     this.executor.ioBarrier();

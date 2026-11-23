@@ -19,8 +19,8 @@ export class ShapeFactory {
     ["text", ["x", "y"]]
   ]);
 
-  hasType(type: string): boolean {
-    return this.svgGeometry.has(type);
+  hasUnmigratedType(type: string): boolean {
+    return type !== "g" && this.svgGeometry.has(type);
   }
 
   parseCommand(type: string, id: string, parameters: readonly string[]): ShapeSpec {
