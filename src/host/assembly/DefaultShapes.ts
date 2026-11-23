@@ -1,3 +1,4 @@
+import { CircleShapeProvider } from "../../builtin/shapes/CircleShapeProvider";
 import { GroupShapeProvider } from "../../builtin/shapes/GroupShapeProvider";
 import { RectShapeProvider } from "../../builtin/shapes/RectShapeProvider";
 import type { ShapeProvider } from "../../core/model/ShapeProvider";
@@ -10,6 +11,7 @@ export function createDefaultShapeProviders(
   return new ShapeProviderRegistry([
     new GroupShapeProvider(),
     new RectShapeProvider(),
+    new CircleShapeProvider(),
     ...optional
   ]);
 }

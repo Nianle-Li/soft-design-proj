@@ -83,11 +83,11 @@ describe("provider-backed creation in an editor session", () => {
 
   it("rejects a provider that collides with an unmigrated Phase 1 type", () => {
     const registry = new ShapeProviderRegistry([
-      { type: "circle", create: (id) => new RectShape(id, 0, 0, 1, 1) }
+      { type: "ellipse", create: (id) => new RectShape(id, 0, 0, 1, 1) }
     ]);
 
     expect(() => new EditorSession(undefined, registry)).toThrow(
-      "duplicate registration: shapes/circle"
+      "duplicate registration: shapes/ellipse"
     );
   });
 });
