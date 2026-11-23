@@ -5,6 +5,8 @@ import type {
   Node as XmlNode
 } from "@xmldom/xmldom";
 import { EditorError } from "../../core/model/EditorError";
+import { ContainerShape } from "../../core/model/ContainerShape";
+import { Shape } from "../../core/model/Shape";
 import { SvgDocument } from "../../model/SvgDocument";
 import { ShapeFactory } from "../../model/ShapeFactory";
 import type { ShapeProviderRegistry } from "../../core/model/ShapeProviderRegistry";
@@ -94,7 +96,7 @@ export class SvgCodec {
     const nextByTag = new Map<string, number>();
     const reservedIds = new Set(explicitIds);
     let count = 0;
-    const add = (element: XmlElement, parentId?: string): void => {
+    const describe = (element: XmlElement) => {
       if (element.namespaceURI !== SVG_NAMESPACE || element.tagName.includes(":")) {
         throw new EditorError(`unsupported SVG element: <${element.tagName}>`);
       }
@@ -124,12 +126,59 @@ export class SvgCodec {
           throw new EditorError(`unsupported content in <${type}>`);
         }
       }
-      document.importShape(
-        this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0),
-        parentId
-      );
+      return { type, id, attributes, children, text };
+    };
+    const readCandidate = (element: XmlElement): Shape => {
+      const { type, id, attributes, children, text } = describe(element);
+      let shape: Shape;
+      if (this.shapeProviders?.hasSvgReader(type)) {
+        const members = children.map(readCandidate);
+        shape = this.shapeProviders.readSvg(type, {
+          tag: type,
+          id,
+          attributes,
+          text,
+          children: members
+        });
+      } else {
+        shape = this.shapeFactory.create(
+          this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0)
+        );
+        if (children.length > 0) {
+          if (!(shape instanceof ContainerShape)) {
+            throw new EditorError(`no such container: ${id}`);
+          }
+          for (const child of children) {
+            shape.insertChild(shape.childCount, readCandidate(child));
+          }
+        }
+      }
       count += 1;
-      for (const child of children) add(child, id);
+      return shape;
+    };
+    const add = (element: XmlElement, parentId?: string): void => {
+      const { type, id, attributes, children, text } = describe(element);
+      const useProvider = this.shapeProviders?.hasSvgReader(type) ?? false;
+      if (useProvider && this.shapeProviders !== undefined) {
+        const members = children.map(readCandidate);
+        const candidate = this.shapeProviders.readSvg(type, {
+          tag: type,
+          id,
+          attributes,
+          text,
+          children: members
+        });
+        document.createCandidate(candidate, parentId);
+      } else {
+        document.importShape(
+          this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0),
+          parentId
+        );
+      }
+      count += 1;
+      if (!useProvider) {
+        for (const child of children) add(child, id);
+      }
     };
     for (const child of this.nodes(root)) {
       if (child.nodeType === 1) add(child as XmlElement);
