@@ -1,7 +1,7 @@
 import { CircleShape } from "./CircleShape";
 import { EditorError } from "../core/model/EditorError";
 import { EllipseShape } from "./EllipseShape";
-import { GroupShape } from "./GroupShape";
+import { GroupShape } from "../builtin/shapes/GroupShape";
 import { LineShape } from "./LineShape";
 import { RectShape } from "./RectShape";
 import { Shape } from "../core/model/Shape";

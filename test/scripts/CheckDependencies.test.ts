@@ -142,6 +142,27 @@ describe("dependency boundary checker", () => {
     expect(result.stderr).toContain("core/model -> model");
   });
 
+  it("allows only the two legacy g construction sites to import the built-in group", () => {
+    const allowed = checkFiles({
+      "builtin/shapes/GroupShape.ts": 'import { ContainerShape } from "../../core/plugin-api";',
+      "model/ShapeFactory.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";',
+      "model/SvgDocument.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
+    });
+    expect(allowed.status, allowed.stderr).toBe(0);
+
+    const forbidden = checkFiles({
+      "model/Other.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
+    });
+    expect(forbidden.status).toBe(1);
+    expect(forbidden.stderr).toContain("model -> builtin/shapes");
+
+    const wrongTarget = checkFiles({
+      "model/ShapeFactory.ts": 'import { RectShape } from "../builtin/shapes/RectShape";'
+    });
+    expect(wrongTarget.status).toBe(1);
+    expect(wrongTarget.stderr).toContain("model -> builtin/shapes");
+  });
+
   it.each([
     ["core/model/Bad.ts", 'import "../../host/cli/CliApp";', "core/model -> host/cli"],
     [

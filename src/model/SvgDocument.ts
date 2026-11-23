@@ -1,6 +1,6 @@
 import { EditorError } from "../core/model/EditorError";
 import { ContainerShape } from "../core/model/ContainerShape";
-import { GroupShape } from "./GroupShape";
+import { GroupShape } from "../builtin/shapes/GroupShape";
 import { Shape } from "../core/model/Shape";
 import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "../core/model/Shape";
 import type { ExplicitStyle } from "../core/model/PaintStyle";

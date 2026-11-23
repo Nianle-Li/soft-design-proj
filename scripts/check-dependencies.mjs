@@ -118,9 +118,17 @@ function isPlugin(module) {
   return module?.startsWith("plugins/") ?? false;
 }
 
-function allowsDependency(from, to) {
+function allowsDependency(from, to, file, target) {
   if (isPlugin(from)) return to === from || to === "core/plugin-api";
   if (from === "host/assembly" && isPlugin(to)) return true;
+  if (from === "model" && to === "builtin/shapes") {
+    const legacySource = relative(sourceRoot, file).split(sep).join("/");
+    const builtinTarget = relative(sourceRoot, target).split(sep).join("/");
+    return (
+      ["model/ShapeFactory.ts", "model/SvgDocument.ts"].includes(legacySource) &&
+      builtinTarget === "builtin/shapes/GroupShape"
+    );
+  }
   return allowed.get(from)?.has(to) ?? false;
 }
 
@@ -172,7 +180,7 @@ for (const file of [...sourceFiles, ...pluginFiles]) {
       const to = moduleOf(target);
       if (isPluginLoader(file) && isPlugin(to)) {
         violations.push(`${location}: loader cannot import a concrete plugin (${specifier})`);
-      } else if (!allowsDependency(from, to)) {
+      } else if (!allowsDependency(from, to, file, target)) {
         violations.push(`${location}: ${from} -> ${to ?? "outside"} (${specifier})`);
       } else if (from === "adapters/svg" && to === "core/editor") {
         const portPath = relative(sourceRoot, target)
