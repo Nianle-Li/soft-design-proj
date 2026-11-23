@@ -1,6 +1,6 @@
 import { CircleShape } from "../builtin/shapes/CircleShape";
 import { EditorError } from "../core/model/EditorError";
-import { EllipseShape } from "./EllipseShape";
+import { EllipseShape } from "../builtin/shapes/EllipseShape";
 import { GroupShape } from "../builtin/shapes/GroupShape";
 import { LineShape } from "./LineShape";
 import { RectShape } from "../builtin/shapes/RectShape";

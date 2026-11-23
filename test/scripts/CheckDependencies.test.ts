@@ -142,7 +142,7 @@ describe("dependency boundary checker", () => {
     expect(result.stderr).toContain("core/model -> model");
   });
 
-  it("limits legacy imports of migrated g, rect and circle classes to their construction sites", () => {
+  it("limits legacy imports of migrated built-in classes to their construction sites", () => {
     const allowed = checkFiles({
       "builtin/shapes/GroupShape.ts": 'import { ContainerShape } from "../../core/plugin-api";',
       "model/ShapeFactory.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";',
@@ -159,6 +159,11 @@ describe("dependency boundary checker", () => {
       "model/ShapeFactory.ts": 'import { CircleShape } from "../builtin/shapes/CircleShape";'
     });
     expect(circleFactory.status, circleFactory.stderr).toBe(0);
+
+    const ellipseFactory = checkFiles({
+      "model/ShapeFactory.ts": 'import { EllipseShape } from "../builtin/shapes/EllipseShape";'
+    });
+    expect(ellipseFactory.status, ellipseFactory.stderr).toBe(0);
 
     const forbidden = checkFiles({
       "model/Other.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
@@ -178,8 +183,14 @@ describe("dependency boundary checker", () => {
     expect(forbiddenCircle.status).toBe(1);
     expect(forbiddenCircle.stderr).toContain("model -> builtin/shapes");
 
+    const forbiddenEllipse = checkFiles({
+      "model/Other.ts": 'import { EllipseShape } from "../builtin/shapes/EllipseShape";'
+    });
+    expect(forbiddenEllipse.status).toBe(1);
+    expect(forbiddenEllipse.stderr).toContain("model -> builtin/shapes");
+
     const wrongTarget = checkFiles({
-      "model/ShapeFactory.ts": 'import { EllipseShape } from "../builtin/shapes/EllipseShape";'
+      "model/ShapeFactory.ts": 'import { LineShape } from "../builtin/shapes/LineShape";'
     });
     expect(wrongTarget.status).toBe(1);
     expect(wrongTarget.stderr).toContain("model -> builtin/shapes");
