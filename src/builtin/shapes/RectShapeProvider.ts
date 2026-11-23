@@ -1,6 +1,8 @@
-import type { ShapeProvider } from "../../core/plugin-api";
+import { EditorError } from "../../core/plugin-api";
+import type { ShapeProvider, SvgReadInput } from "../../core/plugin-api";
 import { RectShape } from "./RectShape";
 import { parseShapeNumber, requireShapeArgumentCount } from "./ShapeArguments";
+import { applyBuiltinSvgStyle, readBuiltinSvgParameters } from "./SvgShapeArguments";
 
 /** Owns the Phase 1 CLI argument rules for rectangles. */
 export class RectShapeProvider implements ShapeProvider {
@@ -17,6 +19,19 @@ export class RectShapeProvider implements ShapeProvider {
     );
     const fill = parameters[4];
     if (fill !== undefined) shape.prepareSet("fill", fill).apply();
+    return shape;
+  }
+
+  readSvg(element: SvgReadInput): RectShape {
+    if (element.tag !== "rect") {
+      throw new EditorError(`unsupported SVG element: <${element.tag}>`);
+    }
+    const parameters = readBuiltinSvgParameters(element, ["x", "y", "width", "height"]);
+    const shape = this.create(element.id, parameters);
+    applyBuiltinSvgStyle(shape, element.attributes);
+    if (element.children.length > 0) {
+      throw new EditorError(`no such container: ${element.id}`);
+    }
     return shape;
   }
 }
