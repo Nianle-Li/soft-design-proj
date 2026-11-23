@@ -126,6 +126,10 @@ export class SvgCodec {
           throw new EditorError(`unsupported content in <${type}>`);
         }
       }
+      // Preserve Phase 1's text-child error before recursive provider dispatch.
+      if (type === "text" && children.length > 0) {
+        throw new EditorError("unsupported child element in <text>");
+      }
       return { type, id, attributes, children, text };
     };
     const readCandidate = (element: XmlElement): Shape => {
