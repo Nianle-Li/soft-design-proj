@@ -31,6 +31,7 @@ describe("default circle assembly", () => {
     expect(() => registry.create("circle", "bad", ["1", "2", "Infinity"])).toThrow(
       "invalid number: Infinity"
     );
+    expect(() => registry.create("circle", "bad", ["1", " ", "3"])).toThrow("invalid number:  ");
     expect(() => registry.create("circle", "bad", ["1", "2", "-3"])).toThrow("invalid r: -3");
     expect(() => registry.create("circle", "bad", ["1", "2", "3", ""])).toThrow(
       "invalid fill: value must not be empty"

@@ -32,6 +32,9 @@ describe("default rect assembly", () => {
     expect(() => registry.create("rect", "bad", ["1", "2", "NaN", "4"])).toThrow(
       "invalid number: NaN"
     );
+    expect(() => registry.create("rect", "bad", ["1", "  ", "3", "4"])).toThrow(
+      "invalid number:   "
+    );
     expect(() => registry.create("rect", "bad", ["1", "2", "-3", "4"])).toThrow(
       "invalid width: -3"
     );
