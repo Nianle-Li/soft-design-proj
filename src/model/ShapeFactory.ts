@@ -25,6 +25,7 @@ export class ShapeFactory {
       type !== "rect" &&
       type !== "circle" &&
       type !== "ellipse" &&
+      type !== "line" &&
       this.svgGeometry.has(type)
     );
   }

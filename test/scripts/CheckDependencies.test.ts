@@ -143,62 +143,25 @@ describe("dependency boundary checker", () => {
   });
 
   it("limits legacy imports of migrated built-in classes to their construction sites", () => {
+    const migrated = ["GroupShape", "RectShape", "CircleShape", "EllipseShape", "LineShape"];
     const allowed = checkFiles({
       "builtin/shapes/GroupShape.ts": 'import { ContainerShape } from "../../core/plugin-api";',
-      "model/ShapeFactory.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";',
+      "model/ShapeFactory.ts": migrated
+        .map((name) => `import { ${name} } from "../builtin/shapes/${name}";`)
+        .join("\n"),
       "model/SvgDocument.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
     });
     expect(allowed.status, allowed.stderr).toBe(0);
 
-    const rectFactory = checkFiles({
-      "model/ShapeFactory.ts": 'import { RectShape } from "../builtin/shapes/RectShape";'
-    });
-    expect(rectFactory.status, rectFactory.stderr).toBe(0);
-
-    const circleFactory = checkFiles({
-      "model/ShapeFactory.ts": 'import { CircleShape } from "../builtin/shapes/CircleShape";'
-    });
-    expect(circleFactory.status, circleFactory.stderr).toBe(0);
-
-    const ellipseFactory = checkFiles({
-      "model/ShapeFactory.ts": 'import { EllipseShape } from "../builtin/shapes/EllipseShape";'
-    });
-    expect(ellipseFactory.status, ellipseFactory.stderr).toBe(0);
-
-    const lineFactory = checkFiles({
-      "model/ShapeFactory.ts": 'import { LineShape } from "../builtin/shapes/LineShape";'
-    });
-    expect(lineFactory.status, lineFactory.stderr).toBe(0);
-
     const forbidden = checkFiles({
-      "model/Other.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
+      "model/Other.ts": migrated
+        .map((name) => `import { ${name} } from "../builtin/shapes/${name}";`)
+        .join("\n")
     });
     expect(forbidden.status).toBe(1);
-    expect(forbidden.stderr).toContain("model -> builtin/shapes");
-
-    const forbiddenRect = checkFiles({
-      "model/Other.ts": 'import { RectShape } from "../builtin/shapes/RectShape";'
-    });
-    expect(forbiddenRect.status).toBe(1);
-    expect(forbiddenRect.stderr).toContain("model -> builtin/shapes");
-
-    const forbiddenCircle = checkFiles({
-      "model/Other.ts": 'import { CircleShape } from "../builtin/shapes/CircleShape";'
-    });
-    expect(forbiddenCircle.status).toBe(1);
-    expect(forbiddenCircle.stderr).toContain("model -> builtin/shapes");
-
-    const forbiddenEllipse = checkFiles({
-      "model/Other.ts": 'import { EllipseShape } from "../builtin/shapes/EllipseShape";'
-    });
-    expect(forbiddenEllipse.status).toBe(1);
-    expect(forbiddenEllipse.stderr).toContain("model -> builtin/shapes");
-
-    const forbiddenLine = checkFiles({
-      "model/Other.ts": 'import { LineShape } from "../builtin/shapes/LineShape";'
-    });
-    expect(forbiddenLine.status).toBe(1);
-    expect(forbiddenLine.stderr).toContain("model -> builtin/shapes");
+    for (const name of migrated) {
+      expect(forbidden.stderr).toContain(`../builtin/shapes/${name}`);
+    }
 
     const wrongTarget = checkFiles({
       "model/ShapeFactory.ts": 'import { TextShape } from "../builtin/shapes/TextShape";'
