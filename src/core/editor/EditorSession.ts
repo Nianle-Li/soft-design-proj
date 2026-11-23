@@ -1,6 +1,7 @@
 import { EditorError } from "../../model/EditorError";
 import { SvgDocument } from "../../model/SvgDocument";
 import { ShapeFactory } from "../../model/ShapeFactory";
+import type { ShapeProviderRegistry } from "../../model/ShapeProviderRegistry";
 import type { ShapeSpec } from "../../model/ShapeSpec";
 import type { StackingEdge } from "../../model/SvgDocument";
 import type { ShapeDetailsView, TreeView } from "../../model/TreeView";
@@ -34,7 +35,17 @@ export class EditorSession {
   private readonly executor = new CommandExecutor();
   private readonly shapeFactory = new ShapeFactory();
 
-  constructor(private readonly store?: DocumentStore) {}
+  constructor(
+    private readonly store?: DocumentStore,
+    private readonly shapeProviders?: ShapeProviderRegistry
+  ) {
+    // Until the built-ins move into the registry, keep their names reserved here.
+    for (const type of shapeProviders?.types() ?? []) {
+      if (this.shapeFactory.hasType(type)) {
+        throw new EditorError(`duplicate registration: shapes/${type}`);
+      }
+    }
+  }
 
   init(width = 800, height = 600): Readonly<{ width: number; height: number }> {
     const document = new SvgDocument(width, height);
@@ -78,6 +89,10 @@ export class EditorSession {
 
   create(type: string, id: string, parameters: readonly string[], parentId?: string): ShapeChange {
     const document = this.currentDocument();
+    if (this.shapeProviders?.has(type)) {
+      const candidate = this.shapeProviders.create(type, id, parameters);
+      return this.executor.execute(new CreateShapeCommand(document, candidate, parentId));
+    }
     const spec = this.shapeFactory.parseCommand(type, id, parameters);
     const command = new CreateShapeCommand(document, spec, parentId);
     return this.executor.execute(command);

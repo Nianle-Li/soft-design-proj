@@ -1,5 +1,6 @@
 import type { CreationReceipt } from "../../model/SvgDocument";
 import { SvgDocument } from "../../model/SvgDocument";
+import { Shape } from "../../model/Shape";
 import type { ShapeSpec } from "../../model/ShapeSpec";
 import type { EditCommand, ShapeChange } from "./EditCommand";
 
@@ -9,12 +10,15 @@ export class CreateShapeCommand implements EditCommand<ShapeChange> {
 
   constructor(
     private readonly document: SvgDocument,
-    private readonly spec: ShapeSpec,
+    private readonly creation: ShapeSpec | Shape,
     private readonly parentId?: string
   ) {}
 
   execute(): ShapeChange {
-    this.receipt = this.document.create(this.spec, this.parentId);
+    this.receipt =
+      this.creation instanceof Shape
+        ? this.document.createCandidate(this.creation, this.parentId)
+        : this.document.create(this.creation, this.parentId);
     return this.change("created");
   }
 
