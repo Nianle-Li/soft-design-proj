@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { EditorSession } from "../../src/core/editor/EditorSession";
 import { GroupShape } from "../../src/model/GroupShape";
 import { RectShape } from "../../src/model/RectShape";
-import { ShapeProviderRegistry } from "../../src/model/ShapeProviderRegistry";
+import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 
 describe("provider-backed creation in an editor session", () => {
   it("creates a composite as one undo unit and restores all descendants on redo", () => {

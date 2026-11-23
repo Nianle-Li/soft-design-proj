@@ -1,4 +1,4 @@
-import type { MoveLocation } from "../../model/Shape";
+import type { MoveLocation } from "../model/Shape";
 import type { StackingEdge } from "../../model/SvgDocument";
 
 export interface ShapeChange {

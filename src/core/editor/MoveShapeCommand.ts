@@ -1,4 +1,4 @@
-import type { MoveLocation } from "../../model/Shape";
+import type { MoveLocation } from "../model/Shape";
 import type { MoveReceipt } from "../../model/SvgDocument";
 import { SvgDocument } from "../../model/SvgDocument";
 import type { EditCommand, MoveChange } from "./EditCommand";

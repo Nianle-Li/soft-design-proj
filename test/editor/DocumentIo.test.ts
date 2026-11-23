@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DocumentStore } from "../../src/core/editor/DocumentStore";
 import { EditorSession } from "../../src/core/editor/EditorSession";
-import { EditorError } from "../../src/model/EditorError";
+import { EditorError } from "../../src/core/model/EditorError";
 import { SvgDocument } from "../../src/model/SvgDocument";
 
 class FakeStore implements DocumentStore {

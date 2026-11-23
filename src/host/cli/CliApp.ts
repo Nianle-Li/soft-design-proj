@@ -1,6 +1,6 @@
 import { EditorSession } from "../../core/editor/EditorSession";
 import type { EditChange, ShapeChange } from "../../core/editor/EditCommand";
-import { EditorError } from "../../core/editor/EditorError";
+import { EditorError } from "../../core/model/EditorError";
 import { CommandLineParser } from "./CommandLineParser";
 import { TreeFormatter } from "./TreeFormatter";
 

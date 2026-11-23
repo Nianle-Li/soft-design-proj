@@ -1,4 +1,4 @@
-import type { ShapeView, TreeDetailPart, TreeView } from "../../core/editor/TreeView";
+import type { ShapeView, TreeDetailPart, TreeView } from "../../core/model/TreeView";
 
 /** CLI-only tree glyphs and column alignment. */
 export class TreeFormatter {

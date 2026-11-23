@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { closeSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import type { DocumentStore } from "../../core/editor/DocumentStore";
-import { EditorError } from "../../model/EditorError";
+import { EditorError } from "../../core/model/EditorError";
 import type { SvgDocument } from "../../model/SvgDocument";
 import { SvgCodec } from "./SvgCodec";
 

@@ -7,7 +7,7 @@ import ts from "typescript";
 const sourceRoot = resolve(process.argv[2] ?? "src");
 const pluginsRoot = resolve(sourceRoot, "../plugins");
 const allowed = new Map([
-  ["model", new Set(["model"])],
+  ["model", new Set(["model", "core/model"])],
   ["core/model", new Set(["core/model"])],
   ["core/editor", new Set(["core/editor", "core/model", "model"])],
   ["core/command", new Set(["core/command", "core/editor", "core/model"])],

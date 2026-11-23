@@ -1,13 +1,13 @@
-import { EditorError } from "./EditorError";
-import { ContainerShape } from "./ContainerShape";
+import { EditorError } from "../core/model/EditorError";
+import { ContainerShape } from "../core/model/ContainerShape";
 import { GroupShape } from "./GroupShape";
-import { Shape } from "./Shape";
-import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "./Shape";
-import type { ExplicitStyle } from "./PaintStyle";
+import { Shape } from "../core/model/Shape";
+import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "../core/model/Shape";
+import type { ExplicitStyle } from "../core/model/PaintStyle";
 import { ShapeFactory } from "./ShapeFactory";
 import type { ShapeSpec } from "./ShapeSpec";
-import type { SvgDocumentView } from "./SvgNodeView";
-import type { ShapeDetailsView, TreeView } from "./TreeView";
+import type { SvgDocumentView } from "../core/model/SvgNodeView";
+import type { ShapeDetailsView, TreeView } from "../core/model/TreeView";
 
 declare const receiptBrand: unique symbol;
 type Receipt<TKind extends string, TSummary extends object> = Readonly<

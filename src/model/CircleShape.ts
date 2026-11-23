@@ -1,8 +1,8 @@
-import { Shape } from "./Shape";
-import type { PreparedMove, PreparedScale } from "./Shape";
-import type { PreparedSet } from "./Shape";
-import { PaintStyle } from "./PaintStyle";
-import type { ShapeView } from "./TreeView";
+import { Shape } from "../core/model/Shape";
+import type { PreparedMove, PreparedScale } from "../core/model/Shape";
+import type { PreparedSet } from "../core/model/Shape";
+import { PaintStyle } from "../core/model/PaintStyle";
+import type { ShapeView } from "../core/model/TreeView";
 
 export class CircleShape extends Shape {
   constructor(

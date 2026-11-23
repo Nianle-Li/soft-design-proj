@@ -1,4 +1,4 @@
-import { ContainerShape } from "./ContainerShape";
+import { ContainerShape } from "../core/model/ContainerShape";
 
 /** Ordinary SVG group; its child order is SVG painting order. */
 export class GroupShape extends ContainerShape {

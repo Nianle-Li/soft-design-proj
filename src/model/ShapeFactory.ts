@@ -1,10 +1,10 @@
 import { CircleShape } from "./CircleShape";
-import { EditorError } from "./EditorError";
+import { EditorError } from "../core/model/EditorError";
 import { EllipseShape } from "./EllipseShape";
 import { GroupShape } from "./GroupShape";
 import { LineShape } from "./LineShape";
 import { RectShape } from "./RectShape";
-import { Shape } from "./Shape";
+import { Shape } from "../core/model/Shape";
 import type { ShapeSpec } from "./ShapeSpec";
 import { TextShape } from "./TextShape";
 

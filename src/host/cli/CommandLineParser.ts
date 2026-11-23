@@ -1,4 +1,4 @@
-import { EditorError } from "../../core/editor/EditorError";
+import { EditorError } from "../../core/model/EditorError";
 
 /** Tokenizes one REPL line while preserving quoted text and color values such as #fff. */
 export class CommandLineParser {

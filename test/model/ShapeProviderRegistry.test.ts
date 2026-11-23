@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { GroupShape } from "../../src/model/GroupShape";
 import { RectShape } from "../../src/model/RectShape";
-import type { Shape } from "../../src/model/Shape";
-import { ShapeProviderRegistry } from "../../src/model/ShapeProviderRegistry";
-import type { ShapeProvider } from "../../src/model/ShapeProvider";
+import type { Shape } from "../../src/core/model/Shape";
+import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
+import type { ShapeProvider } from "../../src/core/model/ShapeProvider";
 import { SvgDocument } from "../../src/model/SvgDocument";
 
 const rectProvider: ShapeProvider = {

@@ -1,10 +1,10 @@
-import { EditorError } from "../../model/EditorError";
+import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../../model/SvgDocument";
 import { ShapeFactory } from "../../model/ShapeFactory";
-import type { ShapeProviderRegistry } from "../../model/ShapeProviderRegistry";
+import type { ShapeProviderRegistry } from "../model/ShapeProviderRegistry";
 import type { ShapeSpec } from "../../model/ShapeSpec";
 import type { StackingEdge } from "../../model/SvgDocument";
-import type { ShapeDetailsView, TreeView } from "../../model/TreeView";
+import type { ShapeDetailsView, TreeView } from "../model/TreeView";
 import { AddToShapeCommand } from "./AddToShapeCommand";
 import { CommandExecutor } from "./CommandExecutor";
 import { CreateShapeCommand } from "./CreateShapeCommand";

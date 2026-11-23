@@ -31,11 +31,11 @@ function checkFiles(files: Readonly<Record<string, string>>) {
 describe("dependency boundary checker", () => {
   it("accepts the client-owned type port and approved external APIs", () => {
     const result = checkFiles({
-      "model/Shape.ts": "export class Shape {}",
+      "core/model/Shape.ts": "export class Shape {}",
       "core/editor/DocumentStore.ts": "export interface DocumentStore {}",
       "adapters/svg/SvgFileStore.ts": [
         'import type { DocumentStore } from "../../core/editor/DocumentStore";',
-        'import { Shape } from "../../model/Shape";',
+        'import { Shape } from "../../core/model/Shape";',
         'import { DOMParser } from "@xmldom/xmldom";',
         'import { readFileSync } from "node:fs";'
       ].join("\n"),
@@ -124,6 +124,22 @@ describe("dependency boundary checker", () => {
       "plugins/dir/adapters/NodeDirectoryReader.ts": 'import { readdirSync } from "node:fs";'
     });
     expect(result.status, result.stderr).toBe(0);
+  });
+
+  it("allows legacy model implementations to depend on migrated core abstractions", () => {
+    const result = checkFiles({
+      "core/model/Shape.ts": "export abstract class Shape {}",
+      "model/RectShape.ts": 'import { Shape } from "../core/model/Shape";'
+    });
+    expect(result.status, result.stderr).toBe(0);
+  });
+
+  it("keeps migrated core abstractions independent of the legacy model", () => {
+    const result = checkFiles({
+      "core/model/Shape.ts": 'import { RectShape } from "../../model/RectShape";'
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("core/model -> model");
   });
 
   it.each([

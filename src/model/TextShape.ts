@@ -1,7 +1,7 @@
-import { Shape } from "./Shape";
-import type { PreparedMove, PreparedScale } from "./Shape";
-import type { PreparedSet } from "./Shape";
-import type { ShapeView } from "./TreeView";
+import { Shape } from "../core/model/Shape";
+import type { PreparedMove, PreparedScale } from "../core/model/Shape";
+import type { PreparedSet } from "../core/model/Shape";
+import type { ShapeView } from "../core/model/TreeView";
 
 export class TextShape extends Shape {
   constructor(
