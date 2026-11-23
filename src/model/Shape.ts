@@ -1,6 +1,6 @@
 import { EditorError } from "./EditorError";
 import type { ShapeDetailsView, ShapeView, TreeDetailPart } from "./TreeView";
-import type { GroupShape } from "./GroupShape";
+import type { ContainerShape } from "./ContainerShape";
 import { PaintStyle } from "./PaintStyle";
 import type { ExplicitStyle } from "./PaintStyle";
 import type { SvgNodeView } from "./SvgNodeView";
@@ -169,8 +169,8 @@ export abstract class Shape {
 
   /** Visits the live subtree so the document can maintain its id and parent index. */
   visitSubtree(
-    visitor: (shape: Shape, parent: GroupShape | null) => void,
-    parent: GroupShape | null
+    visitor: (shape: Shape, parent: ContainerShape | null) => void,
+    parent: ContainerShape | null
   ): void {
     visitor(this, parent);
   }

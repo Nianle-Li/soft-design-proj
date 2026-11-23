@@ -1,4 +1,5 @@
 import { EditorError } from "./EditorError";
+import { ContainerShape } from "./ContainerShape";
 import { GroupShape } from "./GroupShape";
 import { Shape } from "./Shape";
 import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "./Shape";
@@ -35,32 +36,32 @@ export type ReorderReceipt = Receipt<"reorder", { label: string; edge: StackingE
 
 interface ShapePosition {
   readonly shape: Shape;
-  readonly parent: GroupShape | null;
+  readonly parent: ContainerShape | null;
   readonly index: number;
 }
 
 interface GroupData {
   readonly group: GroupShape;
-  readonly parent: GroupShape | null;
+  readonly parent: ContainerShape | null;
   readonly index: number;
   readonly members: readonly ShapePosition[];
 }
 
 interface UngroupData {
-  readonly group: GroupShape;
-  readonly parent: GroupShape;
+  readonly group: ContainerShape;
+  readonly parent: ContainerShape;
   readonly index: number;
   readonly children: readonly Shape[];
 }
 
 interface AddToData {
   readonly source: ShapePosition;
-  readonly destination: GroupShape;
+  readonly destination: ContainerShape;
 }
 
 interface ReorderData {
   readonly shape: Shape;
-  readonly parent: GroupShape | null;
+  readonly parent: ContainerShape | null;
   readonly originalIndex: number;
   readonly targetIndex: number;
 }
@@ -82,7 +83,7 @@ interface SetData {
 
 interface ShapeEntry {
   readonly shape: Shape;
-  readonly parent: GroupShape | null;
+  readonly parent: ContainerShape | null;
 }
 
 interface CreationData {
@@ -142,10 +143,10 @@ export class SvgDocument {
 
   importShape(spec: ShapeSpec, parentId?: string): void {
     this.ensureAvailableId(spec.id);
-    let parent: GroupShape | null = null;
+    let parent: ContainerShape | null = null;
     if (parentId !== undefined) {
       const candidate = this.shapes.get(parentId)?.shape;
-      if (!(candidate instanceof GroupShape)) {
+      if (!(candidate instanceof ContainerShape)) {
         throw new EditorError(`no such container: ${parentId}`);
       }
       parent = candidate;
@@ -186,13 +187,13 @@ export class SvgDocument {
     return this.attachCandidate(shape, this.creationParent(parentId));
   }
 
-  private creationParent(parentId?: string): GroupShape | null {
+  private creationParent(parentId?: string): ContainerShape | null {
     if (parentId !== undefined) {
       const candidate = this.shapes.get(parentId)?.shape;
       if (candidate === undefined) {
         throw new EditorError(`no such container: ${parentId}`);
       }
-      if (!(candidate instanceof GroupShape)) {
+      if (!(candidate instanceof ContainerShape)) {
         throw new EditorError(`not a container: ${parentId}`);
       }
       return candidate;
@@ -200,7 +201,7 @@ export class SvgDocument {
     return null;
   }
 
-  private attachCandidate(shape: Shape, parent: GroupShape | null): CreationReceipt {
+  private attachCandidate(shape: Shape, parent: ContainerShape | null): CreationReceipt {
     const members = this.candidateMembers(shape, parent);
     const position = {
       shape,
@@ -218,7 +219,7 @@ export class SvgDocument {
     const { position, members } = data;
     const current = this.subtreeMembers(position.shape, position.parent);
     if (!this.sameMembers(current, members)) {
-      if (position.shape instanceof GroupShape && current.length > members.length) {
+      if (position.shape instanceof ContainerShape && current.length > members.length) {
         throw new Error("cannot undo creation of a non-empty group");
       }
       throw new Error("creation receipt no longer matches the document");
@@ -265,7 +266,7 @@ export class SvgDocument {
     }
   }
 
-  private candidateMembers(shape: Shape, parent: GroupShape | null): ShapeEntry[] {
+  private candidateMembers(shape: Shape, parent: ContainerShape | null): ShapeEntry[] {
     const members = this.subtreeMembers(shape, parent);
     const ids = new Set<string>();
     for (const member of members) {
@@ -278,7 +279,7 @@ export class SvgDocument {
     return members;
   }
 
-  private subtreeMembers(shape: Shape, parent: GroupShape | null): ShapeEntry[] {
+  private subtreeMembers(shape: Shape, parent: ContainerShape | null): ShapeEntry[] {
     const members: ShapeEntry[] = [];
     const seen = new Set<Shape>();
     const pending: ShapeEntry[] = [{ shape, parent }];
@@ -290,7 +291,7 @@ export class SvgDocument {
       }
       seen.add(member.shape);
       members.push(member);
-      if (member.shape instanceof GroupShape) {
+      if (member.shape instanceof ContainerShape) {
         for (const child of [...member.shape.directChildren()].reverse()) {
           pending.push({ shape: child, parent: member.shape });
         }
@@ -327,6 +328,11 @@ export class SvgDocument {
   }
 
   delete(id: string): DeletionReceipt {
+    const entry = this.shapes.get(id);
+    if (entry === undefined) {
+      throw new EditorError(`no such shape: ${id}`);
+    }
+    entry.parent?.assertCanDetach(entry.shape);
     const position = this.removeShape(id);
     const summary =
       position.parent === null
@@ -376,7 +382,7 @@ export class SvgDocument {
   }
 
   /** Restoration must target the original live parent, not just an equal id. */
-  private ensureAttachedParent(parent: GroupShape | null): void {
+  private ensureAttachedParent(parent: ContainerShape | null): void {
     if (parent !== null && this.shapes.get(parent.id)?.shape !== parent) {
       throw new Error("cannot restore into a detached parent");
     }
@@ -408,6 +414,9 @@ export class SvgDocument {
         }
         ancestor = this.shapes.get(ancestor.id)?.parent ?? null;
       }
+    }
+    for (const shape of selected) {
+      this.shapes.get(shape.id)?.parent?.assertCanDetach(shape);
     }
 
     const members: ShapePosition[] = [];
@@ -480,7 +489,7 @@ export class SvgDocument {
     });
   }
 
-  private childIndex(shape: Shape, parent: GroupShape | null): number {
+  private childIndex(shape: Shape, parent: ContainerShape | null): number {
     const index = parent === null ? this.roots.indexOf(shape) : parent.childIndex(shape);
     if (index < 0) {
       throw new Error("shape is missing from root");
@@ -488,8 +497,8 @@ export class SvgDocument {
     return index;
   }
 
-  private parentChain(parent: GroupShape | null): GroupShape[] {
-    const chain: GroupShape[] = [];
+  private parentChain(parent: ContainerShape | null): ContainerShape[] {
+    const chain: ContainerShape[] = [];
     let current = parent;
     while (current !== null) {
       chain.unshift(current);
@@ -498,9 +507,9 @@ export class SvgDocument {
     return chain;
   }
 
-  private nearestSharedParent(members: readonly ShapePosition[]): GroupShape | null {
+  private nearestSharedParent(members: readonly ShapePosition[]): ContainerShape | null {
     const chains = members.map((member) => this.parentChain(member.parent));
-    let shared: GroupShape | null = null;
+    let shared: ContainerShape | null = null;
     const first = chains[0] ?? [];
     for (const [depth, group] of first.entries()) {
       if (!chains.every((chain) => chain[depth] === group)) {
@@ -517,12 +526,14 @@ export class SvgDocument {
     if (entry === undefined) {
       throw new EditorError(`no such shape: ${id}`);
     }
-    if (!(entry.shape instanceof GroupShape)) {
+    if (!(entry.shape instanceof ContainerShape)) {
       throw new EditorError(`not a container: ${id}`);
     }
+    entry.shape.assertCanUngroup();
     if (entry.parent === null) {
       throw new EditorError(`cannot ungroup top-level container: ${id}`);
     }
+    entry.parent.assertCanDetach(entry.shape);
 
     const data: UngroupData = {
       group: entry.shape,
@@ -578,14 +589,15 @@ export class SvgDocument {
     if (destination === undefined) {
       throw new EditorError(`no such container: ${destinationId}`);
     }
-    if (!(destination instanceof GroupShape)) {
+    if (!(destination instanceof ContainerShape)) {
       throw new EditorError(`not a container: ${destinationId}`);
     }
-    const sourceShape = this.shapes.get(sourceId)?.shape;
-    if (sourceShape === undefined) {
+    const sourceEntry = this.shapes.get(sourceId);
+    if (sourceEntry === undefined) {
       throw new EditorError(`no such shape: ${sourceId}`);
     }
-    let ancestor: GroupShape | null = destination;
+    const sourceShape = sourceEntry.shape;
+    let ancestor: ContainerShape | null = destination;
     while (ancestor !== null) {
       if (ancestor === sourceShape) {
         throw new EditorError(`cannot add a container into itself or its descendant: ${sourceId}`);
@@ -593,6 +605,7 @@ export class SvgDocument {
       ancestor = this.shapes.get(ancestor.id)?.parent ?? null;
     }
 
+    sourceEntry.parent?.assertCanDetach(sourceShape);
     const source = this.removeShape(sourceId);
     const data: AddToData = { source, destination };
     this.restoreDeletedShape({
@@ -664,7 +677,7 @@ export class SvgDocument {
     }
   }
 
-  private moveSibling(shape: Shape, parent: GroupShape | null, index: number): void {
+  private moveSibling(shape: Shape, parent: ContainerShape | null, index: number): void {
     if (parent === null) {
       const previousIndex = this.childIndex(shape, null);
       this.roots.splice(previousIndex, 1);
