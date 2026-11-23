@@ -6,7 +6,7 @@ import { LineShape } from "../builtin/shapes/LineShape";
 import { RectShape } from "../builtin/shapes/RectShape";
 import { Shape } from "../core/model/Shape";
 import type { ShapeSpec } from "./ShapeSpec";
-import { TextShape } from "./TextShape";
+import { TextShape } from "../builtin/shapes/TextShape";
 
 /** The sole shape-name boundary; both CLI arguments and SVG attributes become typed specs here. */
 export class ShapeFactory {

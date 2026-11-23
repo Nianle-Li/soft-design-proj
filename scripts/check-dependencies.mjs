@@ -131,7 +131,8 @@ function allowsDependency(from, to, file, target) {
           "builtin/shapes/RectShape",
           "builtin/shapes/CircleShape",
           "builtin/shapes/EllipseShape",
-          "builtin/shapes/LineShape"
+          "builtin/shapes/LineShape",
+          "builtin/shapes/TextShape"
         ].includes(builtinTarget)) ||
       (legacySource === "model/SvgDocument.ts" && builtinTarget === "builtin/shapes/GroupShape")
     );

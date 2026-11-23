@@ -143,7 +143,14 @@ describe("dependency boundary checker", () => {
   });
 
   it("limits legacy imports of migrated built-in classes to their construction sites", () => {
-    const migrated = ["GroupShape", "RectShape", "CircleShape", "EllipseShape", "LineShape"];
+    const migrated = [
+      "GroupShape",
+      "RectShape",
+      "CircleShape",
+      "EllipseShape",
+      "LineShape",
+      "TextShape"
+    ];
     const allowed = checkFiles({
       "builtin/shapes/GroupShape.ts": 'import { ContainerShape } from "../../core/plugin-api";',
       "model/ShapeFactory.ts": migrated
@@ -164,7 +171,8 @@ describe("dependency boundary checker", () => {
     }
 
     const wrongTarget = checkFiles({
-      "model/ShapeFactory.ts": 'import { TextShape } from "../builtin/shapes/TextShape";'
+      "model/ShapeFactory.ts":
+        'import { GroupShapeProvider } from "../builtin/shapes/GroupShapeProvider";'
     });
     expect(wrongTarget.status).toBe(1);
     expect(wrongTarget.stderr).toContain("model -> builtin/shapes");
