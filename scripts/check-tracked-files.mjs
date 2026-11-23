@@ -15,7 +15,7 @@ const forbidden = tracked.filter((path) => {
     return true;
   }
   if (
-    /^(node_modules|coverage|dist|tmp|\.agents|\.npm-cache|\.cache|\.idea|\.vscode)\//u.test(
+    /(^|\/)(node_modules|coverage|dist|tmp|\.agents|\.npm-cache|\.cache|\.idea|\.vscode)\//u.test(
       normalized
     )
   ) {
@@ -30,6 +30,7 @@ const forbidden = tracked.filter((path) => {
   return (
     normalized.endsWith(".svg") &&
     normalized !== "doc/assets/architecture.svg" &&
+    normalized !== "vscode-extension/sample/example.svg" &&
     !normalized.startsWith("test/fixtures/svg/")
   );
 });

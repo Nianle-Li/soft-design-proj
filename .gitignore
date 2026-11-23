@@ -10,6 +10,7 @@ tmp/
 *.log
 *.svg
 !doc/assets/architecture.svg
+!vscode-extension/sample/example.svg
 !fixtures/**/*.svg
 !test/fixtures/**/*.svg
 .env

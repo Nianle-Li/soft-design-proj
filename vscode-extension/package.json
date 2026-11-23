@@ -1,0 +1,28 @@
+{
+  "name": "svg-lab-outline",
+  "displayName": "SVG Lab Outline",
+  "description": "SVG file marker and native Outline symbols for Software Design Lab Phase 2",
+  "version": "0.1.0",
+  "private": true,
+  "publisher": "sw-design-lab",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "saxes": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}
