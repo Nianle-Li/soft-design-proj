@@ -13,6 +13,8 @@ tmp/
 !vscode-extension/sample/example.svg
 !fixtures/**/*.svg
 !test/fixtures/**/*.svg
+!test/fixtures/final-baseline/demo.svg
+!test/fixtures/final-baseline/flowchart.svg
 .env
 .env.*
 !.env.example

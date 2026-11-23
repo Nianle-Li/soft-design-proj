@@ -31,6 +31,8 @@ const forbidden = tracked.filter((path) => {
     normalized.endsWith(".svg") &&
     normalized !== "doc/assets/architecture.svg" &&
     normalized !== "vscode-extension/sample/example.svg" &&
+    normalized !== "test/fixtures/final-baseline/demo.svg" &&
+    normalized !== "test/fixtures/final-baseline/flowchart.svg" &&
     !normalized.startsWith("test/fixtures/svg/")
   );
 });

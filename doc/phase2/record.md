@@ -6,3 +6,9 @@
 - 隔离的 VSCode 1.147.0 宿主禁用其他扩展后，以文本编辑器打开 SVG，原生 Outline 显示“无符号”，见[基线截图](images/vscode-baseline-outline.png)。加载本扩展后，[标记截图](images/vscode-svg-badge.png)显示 `example.svg` 的 `[]` 与 `SVG file` 提示，目录及 `README.md` 无标记；[大纲截图](images/vscode-svg-outline.png)显示 `svg → g#flow → rect#start/text`，选中矩形后状态栏为第 3 行、第 5 列。截图均为实际窗口画面，未编辑。
 - 启动步骤曾忽略 VSCode 1.147.0 默认将 SVG 打开为图像预览这一点；实际核验后补充了 **View: Reopen Editor with Text Editor**。普通 Git 装饰会与 `[]` 同时显示，标记截图仅关闭了 Git 装饰；这不改变扩展行为。
 - 扩展 8 项单测及隔离宿主断言通过；Phase 1 的 178 项回归通过。宿主的 `WorkspaceEdit` 验证编辑后文档符号更新及不完整 XML 返回空数组。另修改磁盘文件并重新聚焦编辑器时，Outline 实际显示 `rect#changed`，不完整 XML 时显示“无符号”，恢复后回到 `rect#start`，示例文件 SHA-256 恢复一致。编辑器内直接输入后的可见刷新尚未可靠观察，报告中须与程序化测试区分。
+
+## Phase 1 逐字节兼容基线（2026-11-23）
+
+- 以 `final`（`049b3a7`）的归档源码在隔离临时目录运行 §6 基础会话与 §6.1 版本 A 流程图会话；输入从该标签的题目会话夹具提取，只含命令。捕获原始标准输出与保存的 SVG，存于 `test/fixtures/final-baseline/`。§6 还使用 `final` 的 `other.svg` 输入。两次运行退出码均为 0，标准错误为空；标准输出分别为 1258、943 字节，SVG 分别为 390、524 字节。
+- 选择保存完整原始字节并用 `Buffer` 比较，而非只保存哈希或从题目示例重建期望输出：前者便于审阅空格、换行与 SVG 序列化差异，也能独立约束后续重构。现有会话语义测试继续保留；版本 B 的 `box` 会话待插件实现后另行验证。
+- 两份标准输出均以没有换行的 `svg> ` 提示符结尾。该空格是 `final` 行为，须原样保留；`.gitattributes` 只对这两份输出关闭行尾空格提示。
