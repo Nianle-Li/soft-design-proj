@@ -20,7 +20,13 @@ export class ShapeFactory {
   ]);
 
   hasUnmigratedType(type: string): boolean {
-    return type !== "g" && type !== "rect" && type !== "circle" && this.svgGeometry.has(type);
+    return (
+      type !== "g" &&
+      type !== "rect" &&
+      type !== "circle" &&
+      type !== "ellipse" &&
+      this.svgGeometry.has(type)
+    );
   }
 
   parseCommand(type: string, id: string, parameters: readonly string[]): ShapeSpec {

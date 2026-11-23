@@ -1,4 +1,5 @@
 import { CircleShapeProvider } from "../../builtin/shapes/CircleShapeProvider";
+import { EllipseShapeProvider } from "../../builtin/shapes/EllipseShapeProvider";
 import { GroupShapeProvider } from "../../builtin/shapes/GroupShapeProvider";
 import { RectShapeProvider } from "../../builtin/shapes/RectShapeProvider";
 import type { ShapeProvider } from "../../core/model/ShapeProvider";
@@ -12,6 +13,7 @@ export function createDefaultShapeProviders(
     new GroupShapeProvider(),
     new RectShapeProvider(),
     new CircleShapeProvider(),
+    new EllipseShapeProvider(),
     ...optional
   ]);
 }
