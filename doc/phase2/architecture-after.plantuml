@@ -1,0 +1,52 @@
+@startuml
+scale 560 width
+skinparam componentStyle rectangle
+
+package "src/core（内核）" {
+  component "model\n文档、图形与属性契约" as model
+  component "editor\n会话、编辑命令与历史" as editor
+  component "command\n命令扩展契约与注册" as command
+  component "tree\n树装饰契约" as tree
+  interface "plugin-api\n受控公开面" as api
+}
+
+package "src/host（宿主）" {
+  component "cli\n解析、渲染与旧命令文字" as cli
+  component "assembly\n装配、加载与校验" as assembly
+}
+
+component "src/adapters/svg\nXML 与磁盘" as svg
+component "src/builtin/shapes\n六种内置图形" as builtin
+component "plugins/*\n可选扩展" as plugins
+component "src/main.ts\n进程入口" as main
+
+editor --> model
+command --> editor : 公开会话能力
+command --> model : 只读视图
+tree --> model : 只读视图
+api ..> model : 导出公开契约
+api ..> editor : 导出受控能力
+api ..> command : 导出命令契约
+api ..> tree : 导出装饰契约
+cli --> command : 注册与执行
+cli --> editor : 会话结果
+cli --> tree : 树行包装接口
+svg --> model : 元素与文档映射
+svg ..> editor : DocumentStore（类型端口）
+builtin --> api
+plugins --> api
+assembly --> model
+assembly --> editor
+assembly --> command
+assembly --> tree
+assembly --> svg
+assembly --> builtin
+assembly --> plugins
+main --> cli
+main --> assembly
+
+note bottom of model
+  不导入宿主、适配器或插件实现；
+  完整子树校验与局部撤销信息归文档。
+end note
+@enduml
