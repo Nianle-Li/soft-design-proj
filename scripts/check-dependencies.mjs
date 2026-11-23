@@ -9,7 +9,6 @@ const pluginsRoot = resolve(sourceRoot, "../plugins");
 const allowed = new Map([
   ["model", new Set(["model"])],
   ["editor", new Set(["editor", "model"])],
-  ["svg", new Set(["svg", "editor", "model"])],
   ["core/model", new Set(["core/model"])],
   ["core/editor", new Set(["core/editor", "core/model", "model"])],
   ["core/command", new Set(["core/command", "core/editor", "core/model"])],
@@ -34,19 +33,18 @@ const allowed = new Map([
       "adapters/svg",
       "builtin/shapes",
       "model",
-      "editor",
-      "svg"
+      "editor"
     ])
   ],
   ["adapters/svg", new Set(["adapters/svg", "core/model", "core/editor", "model", "editor"])],
   ["builtin/shapes", new Set(["builtin/shapes", "core/plugin-api"])],
-  ["main", new Set(["main", "host/cli", "host/assembly", "model", "editor", "svg"])]
+  ["main", new Set(["main", "host/cli", "host/assembly", "adapters/svg", "model", "editor"])]
 ]);
-const approvedPackages = new Map([["@xmldom/xmldom", new Set(["svg", "adapters/svg"])]]);
+const approvedPackages = new Map([["@xmldom/xmldom", new Set(["adapters/svg"])]]);
 const approvedNodeApis = new Map([
-  ["node:crypto", new Set(["svg", "adapters/svg"])],
-  ["node:fs", new Set(["svg", "adapters/svg", "host/assembly"])],
-  ["node:path", new Set(["svg", "adapters/svg", "host/assembly"])],
+  ["node:crypto", new Set(["adapters/svg"])],
+  ["node:fs", new Set(["adapters/svg", "host/assembly"])],
+  ["node:path", new Set(["adapters/svg", "host/assembly"])],
   ["node:url", new Set(["host/assembly"])],
   ["node:module", new Set(["host/assembly"])],
   ["node:readline", new Set(["main", "host/cli"])]
@@ -80,7 +78,7 @@ function moduleOf(path) {
   if (sourceParts !== undefined) {
     const [first, second] = sourceParts;
     if (sourceParts.length === 1) return first === "main.ts" ? "main" : undefined;
-    if (["model", "editor", "svg"].includes(first)) return first;
+    if (["model", "editor"].includes(first)) return first;
     if (
       first === "core" &&
       ["plugin-api", "plugin-api.ts"].includes(second) &&
@@ -181,10 +179,7 @@ for (const file of [...sourceFiles, ...pluginFiles]) {
         violations.push(`${location}: loader cannot import a concrete plugin (${specifier})`);
       } else if (!allowsDependency(from, to)) {
         violations.push(`${location}: ${from} -> ${to ?? "outside"} (${specifier})`);
-      } else if (
-        (from === "svg" && to === "editor") ||
-        (from === "adapters/svg" && ["core/editor", "editor"].includes(to))
-      ) {
+      } else if (from === "adapters/svg" && ["core/editor", "editor"].includes(to)) {
         const portPath = relative(sourceRoot, target)
           .split(sep)
           .join("/")

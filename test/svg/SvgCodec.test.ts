@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
 import { createFromCommand } from "../support/createFromCommand";
-import { SvgCodec } from "../../src/svg/SvgCodec";
+import { SvgCodec } from "../../src/adapters/svg/SvgCodec";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const wrap = (content: string, rootAttributes = "") =>

@@ -4,10 +4,10 @@ import type {
   Element as XmlElement,
   Node as XmlNode
 } from "@xmldom/xmldom";
-import { EditorError } from "../model/EditorError";
-import { SvgDocument } from "../model/SvgDocument";
-import { ShapeFactory } from "../model/ShapeFactory";
-import type { SvgNodeView } from "../model/SvgNodeView";
+import { EditorError } from "../../model/EditorError";
+import { SvgDocument } from "../../model/SvgDocument";
+import { ShapeFactory } from "../../model/ShapeFactory";
+import type { SvgNodeView } from "../../model/SvgNodeView";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 

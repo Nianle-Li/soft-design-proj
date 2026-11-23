@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { closeSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
-import type { DocumentStore } from "../editor/DocumentStore";
-import { EditorError } from "../model/EditorError";
-import type { SvgDocument } from "../model/SvgDocument";
+import type { DocumentStore } from "../../editor/DocumentStore";
+import { EditorError } from "../../model/EditorError";
+import type { SvgDocument } from "../../model/SvgDocument";
 import { SvgCodec } from "./SvgCodec";
 
 /** File adapter: a complete read precedes session replacement; writes use a sibling temporary file. */

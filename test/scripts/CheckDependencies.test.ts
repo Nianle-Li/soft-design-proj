@@ -33,13 +33,14 @@ describe("dependency boundary checker", () => {
     const result = checkFiles({
       "model/Shape.ts": "export class Shape {}",
       "editor/DocumentStore.ts": "export interface DocumentStore {}",
-      "svg/SvgFileStore.ts": [
-        'import type { DocumentStore } from "../editor/DocumentStore";',
-        'import { Shape } from "../model/Shape";',
+      "adapters/svg/SvgFileStore.ts": [
+        'import type { DocumentStore } from "../../editor/DocumentStore";',
+        'import { Shape } from "../../model/Shape";',
         'import { DOMParser } from "@xmldom/xmldom";',
         'import { readFileSync } from "node:fs";'
       ].join("\n"),
-      "svg/AnotherAdapter.ts": 'import { type DocumentStore } from "../editor/DocumentStore";',
+      "adapters/svg/AnotherAdapter.ts":
+        'import { type DocumentStore } from "../../editor/DocumentStore";',
       "main.ts": 'import { createInterface } from "node:readline";'
     });
     expect(result.status).toBe(0);
@@ -47,11 +48,11 @@ describe("dependency boundary checker", () => {
   });
 
   it.each([
-    ['import { EditorSession } from "../editor/EditorSession";', "editor/EditorSession"],
-    ['import { DocumentStore } from "../editor/DocumentStore";', "type-only"],
-    ['export type { DocumentStore } from "../editor/DocumentStore";', "type-only"]
+    ['import { EditorSession } from "../../editor/EditorSession";', "editor/EditorSession"],
+    ['import { DocumentStore } from "../../editor/DocumentStore";', "type-only"],
+    ['export type { DocumentStore } from "../../editor/DocumentStore";', "type-only"]
   ])("rejects an SVG dependency outside the storage type port", (source, expected) => {
-    const result = checkFiles({ "svg/Adapter.ts": source });
+    const result = checkFiles({ "adapters/svg/Adapter.ts": source });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(expected);
   });
@@ -69,7 +70,7 @@ describe("dependency boundary checker", () => {
 
   it("rejects unapproved packages in the persistence module", () => {
     const result = checkFiles({
-      "svg/Bad.ts": 'import value from "unapproved-package";'
+      "adapters/svg/Bad.ts": 'import value from "unapproved-package";'
     });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("unapproved-package");
@@ -97,7 +98,10 @@ describe("dependency boundary checker", () => {
       "core/tree/TreeDecorator.ts": 'import type { Shape } from "../model/Shape";',
       "core/plugin-api.ts": 'export { Shape } from "./model/Shape";',
       "host/cli/CliApp.ts": 'import { Shape } from "../../core/model/Shape";',
-      "main.ts": 'import { CliApp } from "./host/cli/CliApp";',
+      "main.ts": [
+        'import { CliApp } from "./host/cli/CliApp";',
+        'import { SvgFileStore } from "./adapters/svg/SvgFileStore";'
+      ].join("\n"),
       "host/assembly/CodePlugins.ts": 'import { Box } from "../../../plugins/box/Box";',
       "host/assembly/PluginLoader.ts":
         "export async function load(path: string) { return import(path); }",
@@ -221,6 +225,12 @@ describe("dependency boundary checker", () => {
 
   it("rejects the retired Phase 1 CLI directory", () => {
     const result = checkFiles({ "cli/Bad.ts": "export const bad = true;" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("unknown source module");
+  });
+
+  it("rejects the retired Phase 1 SVG adapter directory", () => {
+    const result = checkFiles({ "svg/Bad.ts": "export const bad = true;" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("unknown source module");
   });

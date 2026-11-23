@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
 import { EditorSession } from "../../src/editor/EditorSession";
-import { SvgFileStore } from "../../src/svg/SvgFileStore";
+import { SvgFileStore } from "../../src/adapters/svg/SvgFileStore";
 
 describe("remaining explicit Phase 1 acceptance scenarios", () => {
   it("creates default and fractional canvases while keeping failed init atomic", () => {

@@ -1,7 +1,7 @@
 import { createInterface } from "node:readline";
 import { CliApp } from "./host/cli/CliApp";
 import { EditorSession } from "./editor/EditorSession";
-import { SvgFileStore } from "./svg/SvgFileStore";
+import { SvgFileStore } from "./adapters/svg/SvgFileStore";
 
 const app = new CliApp(new EditorSession(new SvgFileStore()));
 const repl = createInterface({ input: process.stdin, output: process.stdout });

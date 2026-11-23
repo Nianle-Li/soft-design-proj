@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
 import { createFromCommand } from "../support/createFromCommand";
-import { SvgFileStore } from "../../src/svg/SvgFileStore";
+import { SvgFileStore } from "../../src/adapters/svg/SvgFileStore";
 
 describe("SVG file adapter", () => {
   it("writes a browser-readable file and reads it back with nested order intact", () => {
