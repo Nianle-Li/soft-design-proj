@@ -2,7 +2,7 @@ import { CircleShape } from "../builtin/shapes/CircleShape";
 import { EditorError } from "../core/model/EditorError";
 import { EllipseShape } from "../builtin/shapes/EllipseShape";
 import { GroupShape } from "../builtin/shapes/GroupShape";
-import { LineShape } from "./LineShape";
+import { LineShape } from "../builtin/shapes/LineShape";
 import { RectShape } from "../builtin/shapes/RectShape";
 import { Shape } from "../core/model/Shape";
 import type { ShapeSpec } from "./ShapeSpec";

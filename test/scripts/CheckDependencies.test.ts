@@ -165,6 +165,11 @@ describe("dependency boundary checker", () => {
     });
     expect(ellipseFactory.status, ellipseFactory.stderr).toBe(0);
 
+    const lineFactory = checkFiles({
+      "model/ShapeFactory.ts": 'import { LineShape } from "../builtin/shapes/LineShape";'
+    });
+    expect(lineFactory.status, lineFactory.stderr).toBe(0);
+
     const forbidden = checkFiles({
       "model/Other.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
     });
@@ -189,8 +194,14 @@ describe("dependency boundary checker", () => {
     expect(forbiddenEllipse.status).toBe(1);
     expect(forbiddenEllipse.stderr).toContain("model -> builtin/shapes");
 
+    const forbiddenLine = checkFiles({
+      "model/Other.ts": 'import { LineShape } from "../builtin/shapes/LineShape";'
+    });
+    expect(forbiddenLine.status).toBe(1);
+    expect(forbiddenLine.stderr).toContain("model -> builtin/shapes");
+
     const wrongTarget = checkFiles({
-      "model/ShapeFactory.ts": 'import { LineShape } from "../builtin/shapes/LineShape";'
+      "model/ShapeFactory.ts": 'import { TextShape } from "../builtin/shapes/TextShape";'
     });
     expect(wrongTarget.status).toBe(1);
     expect(wrongTarget.stderr).toContain("model -> builtin/shapes");
