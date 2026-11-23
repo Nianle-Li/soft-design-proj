@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { EditorSession } from "../../src/core/editor/EditorSession";
 import { GroupShape } from "../../src/builtin/shapes/GroupShape";
-import { RectShape } from "../../src/model/RectShape";
+import { RectShape } from "../../src/builtin/shapes/RectShape";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 
 describe("provider-backed creation in an editor session", () => {
@@ -81,13 +81,13 @@ describe("provider-backed creation in an editor session", () => {
     );
   });
 
-  it("rejects a provider that collides with a Phase 1 built-in type", () => {
+  it("rejects a provider that collides with an unmigrated Phase 1 type", () => {
     const registry = new ShapeProviderRegistry([
-      { type: "rect", create: (id) => new RectShape(id, 0, 0, 1, 1) }
+      { type: "circle", create: (id) => new RectShape(id, 0, 0, 1, 1) }
     ]);
 
     expect(() => new EditorSession(undefined, registry)).toThrow(
-      "duplicate registration: shapes/rect"
+      "duplicate registration: shapes/circle"
     );
   });
 });

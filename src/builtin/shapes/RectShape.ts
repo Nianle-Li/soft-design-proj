@@ -1,8 +1,5 @@
-import { Shape } from "../core/model/Shape";
-import type { PreparedMove, PreparedScale } from "../core/model/Shape";
-import type { PreparedSet } from "../core/model/Shape";
-import { PaintStyle } from "../core/model/PaintStyle";
-import type { ShapeView } from "../core/model/TreeView";
+import { PaintStyle, Shape } from "../../core/plugin-api";
+import type { PreparedMove, PreparedScale, PreparedSet, ShapeView } from "../../core/plugin-api";
 
 export class RectShape extends Shape {
   constructor(

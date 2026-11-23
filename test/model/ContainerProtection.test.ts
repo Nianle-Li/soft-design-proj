@@ -3,7 +3,7 @@ import { EditorSession } from "../../src/core/editor/EditorSession";
 import { ContainerShape } from "../../src/core/model/ContainerShape";
 import { EditorError } from "../../src/core/model/EditorError";
 import { GroupShape } from "../../src/builtin/shapes/GroupShape";
-import { RectShape } from "../../src/model/RectShape";
+import { RectShape } from "../../src/builtin/shapes/RectShape";
 import type { Shape } from "../../src/core/model/Shape";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 import { SvgDocument } from "../../src/model/SvgDocument";

@@ -3,7 +3,7 @@ import { EditorError } from "../core/model/EditorError";
 import { EllipseShape } from "./EllipseShape";
 import { GroupShape } from "../builtin/shapes/GroupShape";
 import { LineShape } from "./LineShape";
-import { RectShape } from "./RectShape";
+import { RectShape } from "../builtin/shapes/RectShape";
 import { Shape } from "../core/model/Shape";
 import type { ShapeSpec } from "./ShapeSpec";
 import { TextShape } from "./TextShape";
@@ -20,7 +20,7 @@ export class ShapeFactory {
   ]);
 
   hasUnmigratedType(type: string): boolean {
-    return type !== "g" && this.svgGeometry.has(type);
+    return type !== "g" && type !== "rect" && this.svgGeometry.has(type);
   }
 
   parseCommand(type: string, id: string, parameters: readonly string[]): ShapeSpec {

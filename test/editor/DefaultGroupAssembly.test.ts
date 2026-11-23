@@ -3,7 +3,7 @@ import { GroupShape } from "../../src/builtin/shapes/GroupShape";
 import { EditorSession } from "../../src/core/editor/EditorSession";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 import type { ShapeProvider } from "../../src/core/model/ShapeProvider";
-import { RectShape } from "../../src/model/RectShape";
+import { RectShape } from "../../src/builtin/shapes/RectShape";
 import { SvgDocument } from "../../src/model/SvgDocument";
 import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
 

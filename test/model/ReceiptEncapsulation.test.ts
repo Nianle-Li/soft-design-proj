@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
 import { createFromCommand } from "../support/createFromCommand";
 import type { CreationReceipt, DeletionReceipt } from "../../src/model/SvgDocument";
-import { RectShape } from "../../src/model/RectShape";
+import { RectShape } from "../../src/builtin/shapes/RectShape";
 
 describe("document receipt encapsulation", () => {
   it("does not expose live shapes or tree positions through edit receipts", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GroupShape } from "../../src/builtin/shapes/GroupShape";
-import { RectShape } from "../../src/model/RectShape";
+import { RectShape } from "../../src/builtin/shapes/RectShape";
 import type { Shape } from "../../src/core/model/Shape";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 import type { ShapeProvider } from "../../src/core/model/ShapeProvider";

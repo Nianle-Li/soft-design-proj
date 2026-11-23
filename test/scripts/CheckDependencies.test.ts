@@ -142,7 +142,7 @@ describe("dependency boundary checker", () => {
     expect(result.stderr).toContain("core/model -> model");
   });
 
-  it("allows only the two legacy g construction sites to import the built-in group", () => {
+  it("limits legacy imports of migrated g and rect classes to their construction sites", () => {
     const allowed = checkFiles({
       "builtin/shapes/GroupShape.ts": 'import { ContainerShape } from "../../core/plugin-api";',
       "model/ShapeFactory.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";',
@@ -150,14 +150,25 @@ describe("dependency boundary checker", () => {
     });
     expect(allowed.status, allowed.stderr).toBe(0);
 
+    const rectFactory = checkFiles({
+      "model/ShapeFactory.ts": 'import { RectShape } from "../builtin/shapes/RectShape";'
+    });
+    expect(rectFactory.status, rectFactory.stderr).toBe(0);
+
     const forbidden = checkFiles({
       "model/Other.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
     });
     expect(forbidden.status).toBe(1);
     expect(forbidden.stderr).toContain("model -> builtin/shapes");
 
+    const forbiddenRect = checkFiles({
+      "model/Other.ts": 'import { RectShape } from "../builtin/shapes/RectShape";'
+    });
+    expect(forbiddenRect.status).toBe(1);
+    expect(forbiddenRect.stderr).toContain("model -> builtin/shapes");
+
     const wrongTarget = checkFiles({
-      "model/ShapeFactory.ts": 'import { RectShape } from "../builtin/shapes/RectShape";'
+      "model/ShapeFactory.ts": 'import { CircleShape } from "../builtin/shapes/CircleShape";'
     });
     expect(wrongTarget.status).toBe(1);
     expect(wrongTarget.stderr).toContain("model -> builtin/shapes");
