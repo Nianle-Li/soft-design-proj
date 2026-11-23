@@ -85,6 +85,11 @@ interface ShapeEntry {
   readonly parent: GroupShape | null;
 }
 
+interface CreationData {
+  readonly position: ShapePosition;
+  readonly members: readonly ShapeEntry[];
+}
+
 /** Receiver for document business operations and owner of the id index. */
 export class SvgDocument {
   private readonly roots: Shape[] = [];
@@ -169,8 +174,19 @@ export class SvgDocument {
 
   create(spec: ShapeSpec, parentId?: string): CreationReceipt {
     this.ensureAvailableId(spec.id);
+    const parent = this.creationParent(parentId);
+    // Validate and construct before touching the document.
+    const shape = this.shapeFactory.create(spec);
+    return this.attachCandidate(shape, parent);
+  }
 
-    let parent: GroupShape | null = null;
+  /** Attaches a complete detached tree only after validating every member. */
+  createCandidate(shape: Shape, parentId?: string): CreationReceipt {
+    this.ensureAvailableId(shape.id);
+    return this.attachCandidate(shape, this.creationParent(parentId));
+  }
+
+  private creationParent(parentId?: string): GroupShape | null {
     if (parentId !== undefined) {
       const candidate = this.shapes.get(parentId)?.shape;
       if (candidate === undefined) {
@@ -179,26 +195,39 @@ export class SvgDocument {
       if (!(candidate instanceof GroupShape)) {
         throw new EditorError(`not a container: ${parentId}`);
       }
-      parent = candidate;
+      return candidate;
     }
+    return null;
+  }
 
-    // Validate and construct before touching the document.
-    const shape = this.shapeFactory.create(spec);
-    const index = parent === null ? this.roots.length : parent.childCount;
-    const position = { shape, parent, index };
-    this.restoreCreatedShape(position);
+  private attachCandidate(shape: Shape, parent: GroupShape | null): CreationReceipt {
+    const members = this.candidateMembers(shape, parent);
+    const position = {
+      shape,
+      parent,
+      index: parent === null ? this.roots.length : parent.childCount
+    };
+    this.insertCandidate({ position, members });
     const summary =
       parent === null ? { label: shape.label } : { label: shape.label, parentLabel: parent.label };
-    return this.issueReceipt("create", summary, position) as CreationReceipt;
+    return this.issueReceipt("create", summary, { position, members }) as CreationReceipt;
   }
 
   undoCreation(receipt: CreationReceipt): void {
-    const position = this.receiptData(receipt, "create") as ShapePosition;
-    if (this.shapes.get(position.shape.id)?.shape !== position.shape) {
+    const data = this.receiptData(receipt, "create") as CreationData;
+    const { position, members } = data;
+    const current = this.subtreeMembers(position.shape, position.parent);
+    if (!this.sameMembers(current, members)) {
+      if (position.shape instanceof GroupShape && current.length > members.length) {
+        throw new Error("cannot undo creation of a non-empty group");
+      }
       throw new Error("creation receipt no longer matches the document");
     }
-    if (position.shape instanceof GroupShape && position.shape.childCount > 0) {
-      throw new Error("cannot undo creation of a non-empty group");
+    for (const member of members) {
+      const entry = this.shapes.get(member.shape.id);
+      if (entry?.shape !== member.shape || entry.parent !== member.parent) {
+        throw new Error("creation receipt no longer matches the document");
+      }
     }
     if (position.parent === null) {
       const index = this.roots.indexOf(position.shape);
@@ -209,11 +238,79 @@ export class SvgDocument {
     } else {
       position.parent.removeChild(position.shape);
     }
-    this.shapes.delete(position.shape.id);
+    for (const member of members) {
+      this.shapes.delete(member.shape.id);
+    }
   }
 
   restoreCreation(receipt: CreationReceipt): void {
-    this.restoreCreatedShape(this.receiptData(receipt, "create") as ShapePosition);
+    const data = this.receiptData(receipt, "create") as CreationData;
+    this.ensureAttachedParent(data.position.parent);
+    const members = this.candidateMembers(data.position.shape, data.position.parent);
+    if (!this.sameMembers(members, data.members)) {
+      throw new Error("creation receipt no longer matches the document");
+    }
+    this.insertCandidate(data);
+  }
+
+  private insertCandidate(data: CreationData): void {
+    const { position, members } = data;
+    if (position.parent === null) {
+      this.roots.splice(position.index, 0, position.shape);
+    } else {
+      position.parent.insertChild(position.index, position.shape);
+    }
+    for (const member of members) {
+      this.shapes.set(member.shape.id, member);
+    }
+  }
+
+  private candidateMembers(shape: Shape, parent: GroupShape | null): ShapeEntry[] {
+    const members = this.subtreeMembers(shape, parent);
+    const ids = new Set<string>();
+    for (const member of members) {
+      this.ensureAvailableId(member.shape.id);
+      if (ids.has(member.shape.id)) {
+        throw new EditorError(`id already exists: ${member.shape.id}`);
+      }
+      ids.add(member.shape.id);
+    }
+    return members;
+  }
+
+  private subtreeMembers(shape: Shape, parent: GroupShape | null): ShapeEntry[] {
+    const members: ShapeEntry[] = [];
+    const seen = new Set<Shape>();
+    const pending: ShapeEntry[] = [{ shape, parent }];
+    while (pending.length > 0) {
+      const member = pending.pop();
+      if (member === undefined) break;
+      if (seen.has(member.shape)) {
+        throw new EditorError("duplicate shape instance in candidate tree");
+      }
+      seen.add(member.shape);
+      members.push(member);
+      if (member.shape instanceof GroupShape) {
+        for (const child of [...member.shape.directChildren()].reverse()) {
+          pending.push({ shape: child, parent: member.shape });
+        }
+      }
+    }
+    return members;
+  }
+
+  private sameMembers(actual: readonly ShapeEntry[], expected: readonly ShapeEntry[]): boolean {
+    return (
+      actual.length === expected.length &&
+      actual.every((member, index) => {
+        const original = expected[index];
+        return (
+          original !== undefined &&
+          member.shape === original.shape &&
+          member.parent === original.parent
+        );
+      })
+    );
   }
 
   private restoreCreatedShape(position: ShapePosition): void {
