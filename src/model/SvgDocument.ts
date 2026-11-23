@@ -148,20 +148,33 @@ export class SvgDocument {
 
   importShape(spec: ShapeSpec, parentId?: string): void {
     this.ensureAvailableId(spec.id);
-    let parent: ContainerShape | null = null;
-    if (parentId !== undefined) {
-      const candidate = this.shapes.get(parentId)?.shape;
-      if (!(candidate instanceof ContainerShape)) {
-        throw new EditorError(`no such container: ${parentId}`);
-      }
-      parent = candidate;
-    }
+    const parent = this.importParent(parentId);
     const shape = this.shapeFactory.create(spec);
     this.restoreCreatedShape({
       shape,
       parent,
       index: parent === null ? this.roots.length : parent.childCount
     });
+  }
+
+  /** Imports a provider-built subtree without issuing an edit-history receipt. */
+  importCandidate(shape: Shape, parentId?: string): void {
+    this.ensureAvailableId(shape.id);
+    const parent = this.importParent(parentId);
+    const members = this.candidateMembers(shape, parent);
+    this.insertCandidate({
+      position: { shape, parent, index: parent === null ? this.roots.length : parent.childCount },
+      members
+    });
+  }
+
+  private importParent(parentId?: string): ContainerShape | null {
+    if (parentId === undefined) return null;
+    const candidate = this.shapes.get(parentId)?.shape;
+    if (!(candidate instanceof ContainerShape)) {
+      throw new EditorError(`no such container: ${parentId}`);
+    }
+    return candidate;
   }
 
   /** Resizing changes the canvas, not the geometry or membership of any shape. */

@@ -115,4 +115,22 @@ describe("SVG adapter provider readback", () => {
     expect(session.undo()).toMatchObject({ label: "rect#old", action: "removed" });
     expect(session.redo()).toMatchObject({ label: "rect#old", action: "created" });
   });
+
+  it("rejects duplicate ids introduced by a reader's detached subtree", () => {
+    const registry = new ShapeProviderRegistry([
+      {
+        type: "frame",
+        create: (id) => new GroupShape(id),
+        readSvg(element) {
+          const group = new GroupShape(element.id);
+          group.insertChild(0, new RectShape("duplicate", 0, 0, 1, 1));
+          group.insertChild(1, new RectShape("duplicate", 1, 1, 1, 1));
+          return group;
+        }
+      }
+    ]);
+    expect(() => new SvgCodec(registry).decode(wrap('<frame id="f1"/>'))).toThrow(
+      "id already exists: duplicate"
+    );
+  });
 });

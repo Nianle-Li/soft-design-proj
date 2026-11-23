@@ -49,6 +49,10 @@ describe("default rect SVG readback", () => {
     [
       '<rect id="r" x="0" y="0" width="1" height="1"><circle id="c" cx="0" cy="0" r="1"/></rect>',
       "no such container: r"
+    ],
+    [
+      '<circle id="c" cx="0" cy="0" r="1"><rect id="r" x="0" y="0" width="1" height="1"/></circle>',
+      "no such container: c"
     ]
   ])("preserves Phase 1 rect read errors", (content, error) => {
     const xml = wrap(content);

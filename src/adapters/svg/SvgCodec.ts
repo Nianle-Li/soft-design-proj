@@ -168,7 +168,7 @@ export class SvgCodec {
           text,
           children: members
         });
-        document.createCandidate(candidate, parentId);
+        document.importCandidate(candidate, parentId);
       } else {
         document.importShape(
           this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0),
