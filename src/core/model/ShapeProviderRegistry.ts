@@ -1,6 +1,6 @@
 import { EditorError } from "./EditorError";
 import { Shape } from "./Shape";
-import type { ShapeCreationContext, ShapeProvider } from "./ShapeProvider";
+import type { ShapeCreationContext, ShapeProvider, SvgReadInput } from "./ShapeProvider";
 
 /** Selection and composition are shared by built-in and optional shape providers. */
 export class ShapeProviderRegistry implements ShapeCreationContext {
@@ -19,6 +19,10 @@ export class ShapeProviderRegistry implements ShapeCreationContext {
     return this.providers.has(type);
   }
 
+  hasSvgReader(type: string): boolean {
+    return this.providers.get(type)?.readSvg !== undefined;
+  }
+
   types(): readonly string[] {
     return [...this.providers.keys()];
   }
@@ -28,7 +32,21 @@ export class ShapeProviderRegistry implements ShapeCreationContext {
     if (provider === undefined) {
       throw new EditorError(`unknown shape type: ${type} (is the plugin loaded?)`);
     }
-    const shape = provider.create(id, parameters, this);
+    return this.validateShape(type, id, provider.create(id, parameters, this));
+  }
+
+  readSvg(type: string, element: SvgReadInput): Shape {
+    const provider = this.providers.get(type);
+    if (provider === undefined) {
+      throw new EditorError(`unknown shape type: ${type} (is the plugin loaded?)`);
+    }
+    if (provider.readSvg === undefined) {
+      throw new EditorError(`shape provider ${type} does not support SVG read`);
+    }
+    return this.validateShape(type, element.id, provider.readSvg(element));
+  }
+
+  private validateShape(type: string, id: string, shape: Shape): Shape {
     if (!(shape instanceof Shape)) {
       throw new EditorError(`shape provider ${type} did not return a shape`);
     }
