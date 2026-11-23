@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 
 describe("addto CLI command", () => {
   it("moves an existing shape into a group and reports undo and redo", () => {

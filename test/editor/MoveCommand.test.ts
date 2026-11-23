@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 
 describe("move command history", () => {
   it("moves a nested group as one undo unit and redoes the same displacement", () => {

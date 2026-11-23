@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 
 describe("canvas CLI command", () => {
   it("queries and resizes the canvas without disturbing shapes", () => {

@@ -8,7 +8,6 @@ const sourceRoot = resolve(process.argv[2] ?? "src");
 const pluginsRoot = resolve(sourceRoot, "../plugins");
 const allowed = new Map([
   ["model", new Set(["model"])],
-  ["editor", new Set(["editor", "model"])],
   ["core/model", new Set(["core/model"])],
   ["core/editor", new Set(["core/editor", "core/model", "model"])],
   ["core/command", new Set(["core/command", "core/editor", "core/model"])],
@@ -17,10 +16,7 @@ const allowed = new Map([
     "core/plugin-api",
     new Set(["core/plugin-api", "core/model", "core/editor", "core/command", "core/tree"])
   ],
-  [
-    "host/cli",
-    new Set(["host/cli", "core/model", "core/editor", "core/command", "core/tree", "editor"])
-  ],
+  ["host/cli", new Set(["host/cli", "core/model", "core/editor", "core/command", "core/tree"])],
   [
     "host/assembly",
     new Set([
@@ -32,13 +28,12 @@ const allowed = new Map([
       "core/tree",
       "adapters/svg",
       "builtin/shapes",
-      "model",
-      "editor"
+      "model"
     ])
   ],
-  ["adapters/svg", new Set(["adapters/svg", "core/model", "core/editor", "model", "editor"])],
+  ["adapters/svg", new Set(["adapters/svg", "core/model", "core/editor", "model"])],
   ["builtin/shapes", new Set(["builtin/shapes", "core/plugin-api"])],
-  ["main", new Set(["main", "host/cli", "host/assembly", "adapters/svg", "model", "editor"])]
+  ["main", new Set(["main", "host/cli", "host/assembly", "adapters/svg", "core/editor", "model"])]
 ]);
 const approvedPackages = new Map([["@xmldom/xmldom", new Set(["adapters/svg"])]]);
 const approvedNodeApis = new Map([
@@ -78,7 +73,7 @@ function moduleOf(path) {
   if (sourceParts !== undefined) {
     const [first, second] = sourceParts;
     if (sourceParts.length === 1) return first === "main.ts" ? "main" : undefined;
-    if (["model", "editor"].includes(first)) return first;
+    if (first === "model") return first;
     if (
       first === "core" &&
       ["plugin-api", "plugin-api.ts"].includes(second) &&
@@ -179,15 +174,12 @@ for (const file of [...sourceFiles, ...pluginFiles]) {
         violations.push(`${location}: loader cannot import a concrete plugin (${specifier})`);
       } else if (!allowsDependency(from, to)) {
         violations.push(`${location}: ${from} -> ${to ?? "outside"} (${specifier})`);
-      } else if (from === "adapters/svg" && ["core/editor", "editor"].includes(to)) {
+      } else if (from === "adapters/svg" && to === "core/editor") {
         const portPath = relative(sourceRoot, target)
           .split(sep)
           .join("/")
           .replace(/\.(?:ts|js)$/u, "");
-        if (
-          !["editor/DocumentStore", "core/editor/DocumentStore"].includes(portPath) ||
-          !isStoragePortTypeImport(node)
-        ) {
+        if (portPath !== "core/editor/DocumentStore" || !isStoragePortTypeImport(node)) {
           violations.push(
             `${location}: ${from} -> ${portPath} must be a type-only DocumentStore import`
           );

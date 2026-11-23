@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 
 describe("front/back command history", () => {
   it("undoes and redoes successive z-order edits in exact sibling order", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 
 describe("typed editor creation", () => {
   it("uses the same command history as CLI creation without passing token arrays", () => {

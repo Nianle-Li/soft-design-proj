@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 
 describe("delete command history", () => {
   it("deletes a container as one unit and restores its descendants on undo", () => {

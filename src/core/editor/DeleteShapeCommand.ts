@@ -1,5 +1,5 @@
-import type { DeletionReceipt } from "../model/SvgDocument";
-import { SvgDocument } from "../model/SvgDocument";
+import type { DeletionReceipt } from "../../model/SvgDocument";
+import { SvgDocument } from "../../model/SvgDocument";
 import type { EditCommand, ShapeChange } from "./EditCommand";
 
 /** Retains the receipt for receiver-owned subtree and location data. */

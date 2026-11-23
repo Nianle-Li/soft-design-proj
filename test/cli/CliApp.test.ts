@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 
 describe("initial CLI slice", () => {
   it("replays init, nested creation and tree with the specified output", () => {

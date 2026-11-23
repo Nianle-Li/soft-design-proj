@@ -32,15 +32,15 @@ describe("dependency boundary checker", () => {
   it("accepts the client-owned type port and approved external APIs", () => {
     const result = checkFiles({
       "model/Shape.ts": "export class Shape {}",
-      "editor/DocumentStore.ts": "export interface DocumentStore {}",
+      "core/editor/DocumentStore.ts": "export interface DocumentStore {}",
       "adapters/svg/SvgFileStore.ts": [
-        'import type { DocumentStore } from "../../editor/DocumentStore";',
+        'import type { DocumentStore } from "../../core/editor/DocumentStore";',
         'import { Shape } from "../../model/Shape";',
         'import { DOMParser } from "@xmldom/xmldom";',
         'import { readFileSync } from "node:fs";'
       ].join("\n"),
       "adapters/svg/AnotherAdapter.ts":
-        'import { type DocumentStore } from "../../editor/DocumentStore";',
+        'import { type DocumentStore } from "../../core/editor/DocumentStore";',
       "main.ts": 'import { createInterface } from "node:readline";'
     });
     expect(result.status).toBe(0);
@@ -48,16 +48,19 @@ describe("dependency boundary checker", () => {
   });
 
   it.each([
-    ['import { EditorSession } from "../../editor/EditorSession";', "editor/EditorSession"],
-    ['import { DocumentStore } from "../../editor/DocumentStore";', "type-only"],
-    ['export type { DocumentStore } from "../../editor/DocumentStore";', "type-only"]
+    [
+      'import { EditorSession } from "../../core/editor/EditorSession";',
+      "core/editor/EditorSession"
+    ],
+    ['import { DocumentStore } from "../../core/editor/DocumentStore";', "type-only"],
+    ['export type { DocumentStore } from "../../core/editor/DocumentStore";', "type-only"]
   ])("rejects an SVG dependency outside the storage type port", (source, expected) => {
     const result = checkFiles({ "adapters/svg/Adapter.ts": source });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain(expected);
   });
 
-  it.each(["model", "editor", "host/cli"])(
+  it.each(["model", "core/editor", "host/cli"])(
     "rejects third-party runtime packages in %s",
     (module) => {
       const result = checkFiles({
@@ -231,6 +234,12 @@ describe("dependency boundary checker", () => {
 
   it("rejects the retired Phase 1 SVG adapter directory", () => {
     const result = checkFiles({ "svg/Bad.ts": "export const bad = true;" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("unknown source module");
+  });
+
+  it("rejects the retired Phase 1 editor directory", () => {
+    const result = checkFiles({ "editor/Bad.ts": "export const bad = true;" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("unknown source module");
   });

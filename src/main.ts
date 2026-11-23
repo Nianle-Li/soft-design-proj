@@ -1,6 +1,6 @@
 import { createInterface } from "node:readline";
 import { CliApp } from "./host/cli/CliApp";
-import { EditorSession } from "./editor/EditorSession";
+import { EditorSession } from "./core/editor/EditorSession";
 import { SvgFileStore } from "./adapters/svg/SvgFileStore";
 
 const app = new CliApp(new EditorSession(new SvgFileStore()));

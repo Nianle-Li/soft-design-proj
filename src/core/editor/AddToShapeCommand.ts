@@ -1,5 +1,5 @@
-import type { AddToReceipt } from "../model/SvgDocument";
-import { SvgDocument } from "../model/SvgDocument";
+import type { AddToReceipt } from "../../model/SvgDocument";
+import { SvgDocument } from "../../model/SvgDocument";
 import type { AddToChange, EditCommand } from "./EditCommand";
 
 /** Binds one ownership change and retains its receiver-owned inverse receipt. */

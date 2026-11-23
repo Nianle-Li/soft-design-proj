@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import type { DocumentStore } from "../../src/editor/DocumentStore";
-import { EditorSession } from "../../src/editor/EditorSession";
+import type { DocumentStore } from "../../src/core/editor/DocumentStore";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 import type { SvgDocument } from "../../src/model/SvgDocument";
 import { SvgFileStore } from "../../src/adapters/svg/SvgFileStore";
 

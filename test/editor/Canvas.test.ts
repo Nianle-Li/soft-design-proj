@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 
 describe("canvas session history", () => {
   it("leaves history untouched on queries and failures, then blocks history after resizing", () => {

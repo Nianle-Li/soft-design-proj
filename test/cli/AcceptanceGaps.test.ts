@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/editor/EditorSession";
+import { EditorSession } from "../../src/core/editor/EditorSession";
 import { SvgFileStore } from "../../src/adapters/svg/SvgFileStore";
 
 describe("remaining explicit Phase 1 acceptance scenarios", () => {

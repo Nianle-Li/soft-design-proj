@@ -1,4 +1,4 @@
-import { EditorError } from "../model/EditorError";
+import { EditorError } from "../../model/EditorError";
 import type { EditChange, EditCommand } from "./EditCommand";
 
 /** Invoker: the only owner of edit history and I/O barriers. */

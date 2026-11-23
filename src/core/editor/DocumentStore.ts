@@ -1,4 +1,4 @@
-import type { SvgDocument } from "../model/SvgDocument";
+import type { SvgDocument } from "../../model/SvgDocument";
 
 /** Client-owned storage contract; XML and file APIs stay outside the editor. */
 export interface DocumentStore {

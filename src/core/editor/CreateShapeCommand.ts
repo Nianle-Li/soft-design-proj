@@ -1,6 +1,6 @@
-import type { CreationReceipt } from "../model/SvgDocument";
-import { SvgDocument } from "../model/SvgDocument";
-import type { ShapeSpec } from "../model/ShapeSpec";
+import type { CreationReceipt } from "../../model/SvgDocument";
+import { SvgDocument } from "../../model/SvgDocument";
+import type { ShapeSpec } from "../../model/ShapeSpec";
 import type { EditCommand, ShapeChange } from "./EditCommand";
 
 /** Binds a typed create request to its Receiver and retains an opaque undo receipt. */
