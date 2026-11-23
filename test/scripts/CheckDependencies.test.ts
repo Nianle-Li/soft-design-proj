@@ -56,13 +56,16 @@ describe("dependency boundary checker", () => {
     expect(result.stderr).toContain(expected);
   });
 
-  it.each(["model", "editor", "cli"])("rejects third-party runtime packages in %s", (module) => {
-    const result = checkFiles({
-      [`${module}/Bad.ts`]: 'import { DOMParser } from "@xmldom/xmldom";'
-    });
-    expect(result.status).toBe(1);
-    expect(result.stderr).toContain("@xmldom/xmldom");
-  });
+  it.each(["model", "editor", "host/cli"])(
+    "rejects third-party runtime packages in %s",
+    (module) => {
+      const result = checkFiles({
+        [`${module}/Bad.ts`]: 'import { DOMParser } from "@xmldom/xmldom";'
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("@xmldom/xmldom");
+    }
+  );
 
   it("rejects unapproved packages in the persistence module", () => {
     const result = checkFiles({
@@ -94,6 +97,7 @@ describe("dependency boundary checker", () => {
       "core/tree/TreeDecorator.ts": 'import type { Shape } from "../model/Shape";',
       "core/plugin-api.ts": 'export { Shape } from "./model/Shape";',
       "host/cli/CliApp.ts": 'import { Shape } from "../../core/model/Shape";',
+      "main.ts": 'import { CliApp } from "./host/cli/CliApp";',
       "host/assembly/CodePlugins.ts": 'import { Box } from "../../../plugins/box/Box";',
       "host/assembly/PluginLoader.ts":
         "export async function load(path: string) { return import(path); }",
@@ -211,6 +215,12 @@ describe("dependency boundary checker", () => {
 
   it("rejects source files in an unrecognized B+ module", () => {
     const result = checkFiles({ "framework/Bad.ts": "export const bad = true;" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("unknown source module");
+  });
+
+  it("rejects the retired Phase 1 CLI directory", () => {
+    const result = checkFiles({ "cli/Bad.ts": "export const bad = true;" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("unknown source module");
   });

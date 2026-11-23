@@ -10,7 +10,6 @@ const allowed = new Map([
   ["model", new Set(["model"])],
   ["editor", new Set(["editor", "model"])],
   ["svg", new Set(["svg", "editor", "model"])],
-  ["cli", new Set(["cli", "editor"])],
   ["core/model", new Set(["core/model"])],
   ["core/editor", new Set(["core/editor", "core/model", "model"])],
   ["core/command", new Set(["core/command", "core/editor", "core/model"])],
@@ -36,13 +35,12 @@ const allowed = new Map([
       "builtin/shapes",
       "model",
       "editor",
-      "svg",
-      "cli"
+      "svg"
     ])
   ],
   ["adapters/svg", new Set(["adapters/svg", "core/model", "core/editor", "model", "editor"])],
   ["builtin/shapes", new Set(["builtin/shapes", "core/plugin-api"])],
-  ["main", new Set(["main", "host/cli", "host/assembly", "model", "editor", "svg", "cli"])]
+  ["main", new Set(["main", "host/cli", "host/assembly", "model", "editor", "svg"])]
 ]);
 const approvedPackages = new Map([["@xmldom/xmldom", new Set(["svg", "adapters/svg"])]]);
 const approvedNodeApis = new Map([
@@ -82,7 +80,7 @@ function moduleOf(path) {
   if (sourceParts !== undefined) {
     const [first, second] = sourceParts;
     if (sourceParts.length === 1) return first === "main.ts" ? "main" : undefined;
-    if (["model", "editor", "svg", "cli"].includes(first)) return first;
+    if (["model", "editor", "svg"].includes(first)) return first;
     if (
       first === "core" &&
       ["plugin-api", "plugin-api.ts"].includes(second) &&

@@ -1,5 +1,5 @@
 import { createInterface } from "node:readline";
-import { CliApp } from "./cli/CliApp";
+import { CliApp } from "./host/cli/CliApp";
 import { EditorSession } from "./editor/EditorSession";
 import { SvgFileStore } from "./svg/SvgFileStore";
 

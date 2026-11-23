@@ -1,6 +1,6 @@
-import { EditorSession } from "../editor/EditorSession";
-import type { EditChange, ShapeChange } from "../editor/EditCommand";
-import { EditorError } from "../editor/EditorError";
+import { EditorSession } from "../../editor/EditorSession";
+import type { EditChange, ShapeChange } from "../../editor/EditCommand";
+import { EditorError } from "../../editor/EditorError";
 import { CommandLineParser } from "./CommandLineParser";
 import { TreeFormatter } from "./TreeFormatter";
 

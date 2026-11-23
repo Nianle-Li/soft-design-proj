@@ -2,7 +2,7 @@
 
 已完成的 Phase 1 使用 TypeScript 实现 SVG 命令行编辑器，支持六种内置图形、嵌套容器、编辑命令的撤销重做，以及 SVG 文件读写。其架构设计、开发过程和验证证据见 [Phase 1 实验报告](doc/README.md)。
 
-Phase 2 的 VSCode 扩展实践已实现并取得隔离宿主截图；CLI 插件式重构尚未开始。[新增需求与验收矩阵](doc/phase2/requirements.md)记录已验证范围与未决事项，[开发流程与门禁](doc/phase2/workflow.md)约束后续工作。下列 CLI 运行方式仍对应 Phase 1 代码；扩展启动步骤见 [VSCode 扩展说明](vscode-extension/README.md)。
+Phase 2 的 VSCode 扩展实践已实现并取得隔离宿主截图；CLI 插件式重构进行中，目前保持 Phase 1 命令行为。[新增需求与验收矩阵](doc/phase2/requirements.md)记录已验证范围与未决事项，[开发流程与门禁](doc/phase2/workflow.md)约束后续工作。扩展启动步骤见 [VSCode 扩展说明](vscode-extension/README.md)。
 
 ## 运行
 
@@ -22,7 +22,7 @@ npm run cli
 | `src/model/`        | 图形对象、文档树与领域规则         |
 | `src/editor/`       | 编辑会话、命令与撤销重做历史       |
 | `src/svg/`          | SVG 编解码与文件适配               |
-| `src/cli/`          | 命令解析、结果反馈与树形排版       |
+| `src/host/cli/`     | 命令解析、结果反馈与树形排版       |
 | `src/main.ts`       | 命令行入口与对象装配               |
 | `test/`             | 分层测试与验收会话素材             |
 | `doc/`              | 实验报告、架构决策与图示           |

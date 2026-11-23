@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CliApp } from "../../src/cli/CliApp";
+import { CliApp } from "../../src/host/cli/CliApp";
 import { EditorSession } from "../../src/editor/EditorSession";
 
 describe("canvas CLI command", () => {

@@ -9,7 +9,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { CliApp } from "../../src/cli/CliApp";
+import { CliApp } from "../../src/host/cli/CliApp";
 import { EditorSession } from "../../src/editor/EditorSession";
 import { SvgFileStore } from "../../src/svg/SvgFileStore";
 
