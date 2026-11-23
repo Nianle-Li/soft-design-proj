@@ -126,7 +126,11 @@ function allowsDependency(from, to, file, target) {
     const builtinTarget = relative(sourceRoot, target).split(sep).join("/");
     return (
       (legacySource === "model/ShapeFactory.ts" &&
-        ["builtin/shapes/GroupShape", "builtin/shapes/RectShape"].includes(builtinTarget)) ||
+        [
+          "builtin/shapes/GroupShape",
+          "builtin/shapes/RectShape",
+          "builtin/shapes/CircleShape"
+        ].includes(builtinTarget)) ||
       (legacySource === "model/SvgDocument.ts" && builtinTarget === "builtin/shapes/GroupShape")
     );
   }
