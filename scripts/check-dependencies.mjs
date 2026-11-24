@@ -12,9 +12,17 @@ const allowed = new Map([
   ["core/editor", new Set(["core/editor", "core/model", "model"])],
   ["core/command", new Set(["core/command", "core/editor", "core/model"])],
   ["core/tree", new Set(["core/tree", "core/model"])],
+  ["core/plugin", new Set(["core/plugin", "core/model", "core/command", "core/tree"])],
   [
     "core/plugin-api",
-    new Set(["core/plugin-api", "core/model", "core/editor", "core/command", "core/tree"])
+    new Set([
+      "core/plugin-api",
+      "core/model",
+      "core/editor",
+      "core/command",
+      "core/tree",
+      "core/plugin"
+    ])
   ],
   ["host/cli", new Set(["host/cli", "core/model", "core/editor", "core/command", "core/tree"])],
   [
@@ -26,6 +34,7 @@ const allowed = new Map([
       "core/editor",
       "core/command",
       "core/tree",
+      "core/plugin",
       "adapters/svg",
       "builtin/shapes",
       "model"
@@ -81,7 +90,7 @@ function moduleOf(path) {
     ) {
       return "core/plugin-api";
     }
-    if (first === "core" && ["model", "editor", "command", "tree"].includes(second)) {
+    if (first === "core" && ["model", "editor", "command", "tree", "plugin"].includes(second)) {
       return `core/${second}`;
     }
     if (first === "host" && ["cli", "assembly"].includes(second)) return `host/${second}`;

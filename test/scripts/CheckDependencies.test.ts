@@ -99,6 +99,10 @@ describe("dependency boundary checker", () => {
       "core/editor/DocumentStore.ts": "export interface DocumentStore {}",
       "core/command/Command.ts": 'import type { Shape } from "../model/Shape";',
       "core/tree/TreeDecorator.ts": 'import type { Shape } from "../model/Shape";',
+      "core/plugin/Plugin.ts": [
+        'import type { Shape } from "../model/Shape";',
+        'import type { Command } from "../command/Command";'
+      ].join("\n"),
       "core/plugin-api.ts": 'export { Shape } from "./model/Shape";',
       "host/cli/CliApp.ts": 'import { Shape } from "../../core/model/Shape";',
       "main.ts": [
@@ -185,6 +189,11 @@ describe("dependency boundary checker", () => {
       "core/command -> builtin/shapes"
     ],
     ["core/tree/Bad.ts", 'import "../../../plugins/box/Box";', "core/tree -> plugins/box"],
+    [
+      "core/plugin/Bad.ts",
+      'import "../../host/assembly/CodePlugins";',
+      "core/plugin -> host/assembly"
+    ],
     ["host/cli/Bad.ts", 'import "../../../plugins/box/Box";', "host/cli -> plugins/box"],
     ["adapters/svg/Bad.ts", 'import "../../host/cli/CliApp";', "adapters/svg -> host/cli"],
     ["builtin/shapes/Bad.ts", 'import "../../core/model/Shape";', "builtin/shapes -> core/model"]
