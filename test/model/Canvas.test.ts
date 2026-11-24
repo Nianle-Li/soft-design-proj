@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument canvas dimensions", () => {
   it("changes only the dimensions and preserves the shape tree", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "rect", "r1", ["1", "2", "3", "4"]);
     const before = document.tree().roots;
 
@@ -13,7 +13,7 @@ describe("SvgDocument canvas dimensions", () => {
   });
 
   it("rejects invalid dimensions before changing either dimension", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     for (const [width, height] of [
       [0, 300],
       [400, -1],

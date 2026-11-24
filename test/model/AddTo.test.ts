@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument addTo", () => {
   it("moves a subtree across parents to the destination tail and restores its old position", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "source", []);
     createFromCommand(document, "rect", "before", ["0", "0", "1", "1"], "source");
     createFromCommand(document, "g", "branch", [], "source");
@@ -32,7 +32,7 @@ describe("SvgDocument addTo", () => {
   });
 
   it("moves a same-parent child to the tail without duplicating it", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "target", []);
     for (const id of ["a", "b", "c"]) {
       createFromCommand(document, "rect", id, ["0", "0", "1", "1"], "target");
@@ -50,7 +50,7 @@ describe("SvgDocument addTo", () => {
   });
 
   it("rejects self-placement, descendant placement and invalid targets atomically", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "g", "inner", [], "outer");
     createFromCommand(document, "rect", "leaf", ["0", "0", "1", "1"], "inner");

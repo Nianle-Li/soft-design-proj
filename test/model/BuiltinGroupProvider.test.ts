@@ -4,13 +4,13 @@ import { GroupShapeProvider } from "../../src/builtin/shapes/GroupShapeProvider"
 import { RectShape } from "../../src/builtin/shapes/RectShape";
 import { ContainerShape } from "../../src/core/model/ContainerShape";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 
 describe("built-in g provider", () => {
   it("creates an ordinary container through the shared registry", () => {
     const registry = new ShapeProviderRegistry([new GroupShapeProvider()]);
     const shape = registry.create("g", "outer", []);
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     const receipt = document.createCandidate(shape);
 
     expect(shape).toBeInstanceOf(ContainerShape);

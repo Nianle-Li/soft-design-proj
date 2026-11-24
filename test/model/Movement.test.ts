@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument move", () => {
   it("translates all built-in leaves in a nested group without changing size or order", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "g", "inner", [], "outer");
     createFromCommand(document, "rect", "rect", ["1", "2", "3", "4"], "inner");
@@ -62,7 +62,7 @@ describe("SvgDocument move", () => {
   });
 
   it("rejects a non-finite result before changing any child", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "group", []);
     createFromCommand(document, "rect", "first", ["1", "2", "3", "4"], "group");
     createFromCommand(document, "rect", "last", ["1e308", "2", "3", "4"], "group");
@@ -75,7 +75,7 @@ describe("SvgDocument move", () => {
   });
 
   it("rejects missing targets and invalid deltas without changing the tree", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "circle", "c1", ["10", "10", "5"]);
     const before = document.tree();
 

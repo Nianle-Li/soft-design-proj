@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 import type { CreationReceipt, DeletionReceipt } from "../../src/model/SvgDocument";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
 
 describe("document receipt encapsulation", () => {
   it("does not expose live shapes or tree positions through edit receipts", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     const created = createFromCommand(document, "g", "group", []);
     createFromCommand(document, "rect", "child", ["1", "2", "3", "4"], "group");
     const deleted = document.delete("child");
@@ -20,7 +20,7 @@ describe("document receipt encapsulation", () => {
   });
 
   it("rejects fabricated receipts without changing the document", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     createFromCommand(document, "g", "group", []);
     const before = document.tree();
 
@@ -39,8 +39,8 @@ describe("document receipt encapsulation", () => {
   });
 
   it("keeps receipts bound to their originating document", () => {
-    const first = new SvgDocument(100, 100);
-    const second = new SvgDocument(100, 100);
+    const first = createDefaultDocument(100, 100);
+    const second = createDefaultDocument(100, 100);
     const created = createFromCommand(first, "rect", "same", ["0", "0", "1", "1"]);
     createFromCommand(second, "rect", "same", ["0", "0", "1", "1"]);
     const before = second.tree();
@@ -52,7 +52,7 @@ describe("document receipt encapsulation", () => {
   });
 
   it("exposes only feedback for every edit operation", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "g", "inner", [], "outer");
     createFromCommand(document, "rect", "a", ["1", "2", "3", "4"], "outer");

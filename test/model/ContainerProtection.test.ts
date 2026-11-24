@@ -6,7 +6,7 @@ import { GroupShape } from "../../src/builtin/shapes/GroupShape";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
 import type { Shape } from "../../src/core/model/Shape";
 import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 
 class GuardedContainer extends ContainerShape {
   override get kind(): string {
@@ -38,7 +38,7 @@ function guarded(id = "box"): GuardedContainer {
 
 describe("container structural prechecks", () => {
   it("accepts and indexes a nested candidate inside a non-group container", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(guarded("outer"));
     const nested = document.createCandidate(guarded("inner"), "outer");
 
@@ -51,7 +51,7 @@ describe("container structural prechecks", () => {
   });
 
   it("rejects deleting a required child while allowing the whole container to be deleted", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(guarded());
     const before = document.tree();
 
@@ -64,7 +64,7 @@ describe("container structural prechecks", () => {
   });
 
   it("rejects moving a required child but accepts ordinary children", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(guarded());
     document.createCandidate(new GroupShape("dest"));
     const before = document.tree();
@@ -76,7 +76,7 @@ describe("container structural prechecks", () => {
   });
 
   it("prechecks every group target before moving any subtree", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(guarded());
     document.createCandidate(new RectShape("outside", 0, 0, 1, 1));
     const before = document.tree();
@@ -90,7 +90,7 @@ describe("container structural prechecks", () => {
   });
 
   it("allows grouping a whole guarded container and gives its ungroup error priority", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(guarded());
     const grouped = document.group("bundle", ["box"]);
     expect(document.show("box-fixed").parentLabel).toBe("g#box");
@@ -104,7 +104,7 @@ describe("container structural prechecks", () => {
   });
 
   it("does not ungroup a nested container required by its parent", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     const parent = new GuardedContainer("box");
     parent.insertChild(0, new GroupShape("box-fixed"));
     document.createCandidate(parent);
@@ -131,7 +131,7 @@ describe("container structural prechecks", () => {
   });
 
   it("still allows ordinary groups to ungroup", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(new GroupShape("outer"));
     document.createCandidate(new GroupShape("inner"), "outer");
     expect(document.ungroup("inner").label).toBe("g#inner");

@@ -11,7 +11,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 import { createSvgFileStore } from "../support/createSvgFileStore";
 
@@ -20,7 +20,7 @@ describe("SVG file adapter", () => {
     const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-svg-"));
     const path = join(directory, "drawing.svg");
     try {
-      const document = new SvgDocument(200, 100);
+      const document = createDefaultDocument(200, 100);
       createFromCommand(document, "g", "layer", []);
       createFromCommand(document, "line", "edge", ["1", "2", "3", "4", "red"], "layer");
       createFromCommand(document, "text", "name", ["5", "6", "A&B"], "layer");
@@ -47,7 +47,7 @@ describe("SVG file adapter", () => {
     const path = join(directory, "drawing.svg");
     try {
       writeFileSync(path, "original", "utf8");
-      const document = new SvgDocument(20, 10);
+      const document = createDefaultDocument(20, 10);
       createFromCommand(document, "text", "bad", ["0", "0", "bad\u0000text"]);
       expect(() => createSvgFileStore().write(path, document)).toThrow(
         `cannot write file: ${path}`
@@ -65,7 +65,7 @@ describe("SVG file adapter", () => {
     const destination = join(directory, "directory.svg");
     mkdirSync(destination);
     try {
-      const document = new SvgDocument(20, 10);
+      const document = createDefaultDocument(20, 10);
       expect(() => createSvgFileStore().write(destination, document)).toThrow(
         `cannot write file: ${destination}`
       );

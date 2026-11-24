@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { DocumentStore } from "../../src/core/editor/DocumentStore";
 import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 import { EditorError } from "../../src/core/model/EditorError";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
 
 class FakeStore implements DocumentStore {
@@ -12,7 +12,7 @@ class FakeStore implements DocumentStore {
 
   read(path: string) {
     if (this.failRead) throw new EditorError(`cannot read file: ${path}`);
-    const document = new SvgDocument(400, 300);
+    const document = createDefaultDocument(400, 300);
     document.createCandidate(new RectShape("loaded", 0, 0, 1, 1));
     return { document, count: 1, assignedIds: [{ id: "rect1", tag: "rect" }] };
   }

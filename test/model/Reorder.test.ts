@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument z-order", () => {
   it("moves a root shape to the visual front, then restores its original index", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     for (const id of ["a", "b", "c"]) {
       createFromCommand(document, "rect", id, ["0", "0", "1", "1"]);
     }
@@ -23,7 +23,7 @@ describe("SvgDocument z-order", () => {
   });
 
   it("moves only among siblings and keeps a selected container's subtree intact", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "rect", "a", ["0", "0", "1", "1"], "outer");
     createFromCommand(document, "g", "branch", [], "outer");
@@ -45,7 +45,7 @@ describe("SvgDocument z-order", () => {
   });
 
   it("handles already extreme siblings and an unknown id without changing tree membership", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "rect", "a", ["0", "0", "1", "1"]);
     createFromCommand(document, "rect", "b", ["1", "0", "1", "1"]);
     const before = document.tree();

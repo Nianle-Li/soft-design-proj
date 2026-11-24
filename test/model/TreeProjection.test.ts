@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("tree projection", () => {
   it("returns geometry facts rather than CLI-formatted detail text", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     createFromCommand(document, "rect", "r", ["1", "2", "3", "4", "red"]);
     createFromCommand(document, "line", "l", ["1", "2", "3", "4"]);
     createFromCommand(document, "text", "t", ["5", "6", "hello"]);

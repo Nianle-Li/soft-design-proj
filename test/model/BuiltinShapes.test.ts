@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("all Phase 1 built-in shapes", () => {
   it("creates circle, ellipse, line and text with their own geometry", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "circle", "c1", ["100", "120", "20", "red"]);
     createFromCommand(document, "ellipse", "e1", ["1.5", "2", "3", "4"]);
     createFromCommand(document, "line", "l1", ["0", "10", "30", "40", "black"]);
@@ -49,7 +49,7 @@ describe("all Phase 1 built-in shapes", () => {
   });
 
   it("rejects missing, extra and non-finite arguments before changing the document", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "parent", []);
     const before = document.tree();
 
@@ -72,7 +72,7 @@ describe("all Phase 1 built-in shapes", () => {
   });
 
   it("preserves optional fill only when supplied", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "circle", "plain", ["1", "2", "3"]);
     createFromCommand(document, "ellipse", "colored", ["4", "5", "6", "7", "#abc"]);
 
@@ -87,7 +87,7 @@ describe("all Phase 1 built-in shapes", () => {
     ["ellipse", ["0", "0", "-1", "2"], "rx"],
     ["ellipse", ["0", "0", "2", "-1"], "ry"]
   ])("rejects a negative %s %s without inserting a shape", (type, parameters, attribute) => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "rect", "existing", ["1", "2", "3", "4"]);
     const before = document.tree();
 
@@ -99,7 +99,7 @@ describe("all Phase 1 built-in shapes", () => {
   });
 
   it("allows zero dimensions and negative coordinates", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "rect", "r", ["-2", "-3", "0", "0"]);
     createFromCommand(document, "circle", "c", ["-4", "-5", "0"]);
     createFromCommand(document, "ellipse", "e", ["-6", "-7", "0", "0"]);

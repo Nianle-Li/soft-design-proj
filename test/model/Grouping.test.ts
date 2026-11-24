@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument grouping", () => {
   it("groups same-parent targets at the first selected sibling in document order", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     for (const id of ["a", "gap", "b", "tail"]) {
       createFromCommand(document, "rect", id, ["0", "0", "1", "1"], "outer");
@@ -31,7 +31,7 @@ describe("SvgDocument grouping", () => {
   });
 
   it("uses the nearest shared parent and earliest branch for cross-parent targets", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "g", "left", [], "outer");
     createFromCommand(document, "rect", "first", ["0", "0", "1", "1"], "left");
@@ -65,7 +65,7 @@ describe("SvgDocument grouping", () => {
   });
 
   it("uses the SVG root when selected shapes belong to separate top-level branches", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "rect", "before", ["0", "0", "1", "1"]);
     createFromCommand(document, "g", "left", []);
     createFromCommand(document, "rect", "first", ["1", "0", "1", "1"], "left");
@@ -85,7 +85,7 @@ describe("SvgDocument grouping", () => {
   });
 
   it("keeps selected subtrees addressable and rejects ancestors mixed with descendants", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "g", "nested", [], "outer");
     createFromCommand(document, "rect", "child", ["0", "0", "1", "1"], "nested");
@@ -103,7 +103,7 @@ describe("SvgDocument grouping", () => {
   });
 
   it("rejects all invalid inputs before mutating the document", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "rect", "r1", ["0", "0", "1", "1"]);
     const before = document.tree();
 

@@ -1,6 +1,5 @@
 import { EditorError } from "../core/model/EditorError";
 import { ContainerShape } from "../core/model/ContainerShape";
-import { GroupShape } from "../builtin/shapes/GroupShape";
 import { Shape } from "../core/model/Shape";
 import type { ShapeProviderRegistry } from "../core/model/ShapeProviderRegistry";
 import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "../core/model/Shape";
@@ -101,7 +100,7 @@ export class SvgDocument {
   constructor(
     width: number,
     height: number,
-    private readonly shapeProviders?: ShapeProviderRegistry
+    private readonly shapeProviders: ShapeProviderRegistry
   ) {
     SvgDocument.validateCanvasSize(width, height);
     this.canvasWidth = width;
@@ -436,10 +435,7 @@ export class SvgDocument {
       }
       branch = ancestor;
     }
-    const group =
-      this.shapeProviders !== undefined
-        ? this.shapeProviders.create("g", id, [])
-        : new GroupShape(id);
+    const group = this.shapeProviders.create("g", id, []);
     if (!(group instanceof ContainerShape)) {
       throw new EditorError("registered g provider must return a container");
     }

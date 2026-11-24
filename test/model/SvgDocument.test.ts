@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { GroupShape } from "../../src/builtin/shapes/GroupShape";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument creation", () => {
   it("places a rectangle in an existing group and exposes a read-only tree", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
 
     createFromCommand(document, "g", "node1", []);
     createFromCommand(document, "rect", "start", ["120", "100", "160", "60", "#4a90d9"], "node1");
@@ -37,7 +37,7 @@ describe("SvgDocument creation", () => {
   });
 
   it("rejects duplicate ids and invalid containers without changing the tree", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "node1", []);
     createFromCommand(document, "rect", "start", ["1", "2", "3", "4"], "node1");
     const before = document.tree();
@@ -55,7 +55,7 @@ describe("SvgDocument creation", () => {
   });
 
   it("treats ids as case sensitive and rejects future-stage box", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "Node", []);
     createFromCommand(document, "g", "node", []);
 
@@ -66,11 +66,11 @@ describe("SvgDocument creation", () => {
   });
 
   it("rejects an unusable id and invalid canvas without creating partial state", () => {
-    expect(() => new SvgDocument(0, 600)).toThrow(
+    expect(() => createDefaultDocument(0, 600)).toThrow(
       "canvas dimensions must be positive finite numbers"
     );
 
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     expect(() => createFromCommand(document, "g", "", [])).toThrow("invalid id:");
     expect(() => createFromCommand(document, "g", "two words", [])).toThrow(
       "invalid id: two words"
@@ -79,7 +79,7 @@ describe("SvgDocument creation", () => {
   });
 
   it("does not orphan descendants when a creation receipt is used out of order", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     const group = createFromCommand(document, "g", "parent", []);
     createFromCommand(document, "rect", "child", ["0", "0", "1", "1"], "parent");
     const before = document.tree();
@@ -91,7 +91,7 @@ describe("SvgDocument creation", () => {
   });
 
   it("rejects restoring a child after its parent was detached without corrupting the id index", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     document.createCandidate(new GroupShape("parent"));
     const child = document.createCandidate(new RectShape("child", 0, 0, 1, 1), "parent");
     document.undoCreation(child);
@@ -114,7 +114,7 @@ describe("SvgDocument creation", () => {
   });
 
   it("does not mistake a replacement parent with the same id for the original parent", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     document.createCandidate(new GroupShape("parent"));
     const child = document.createCandidate(new RectShape("child", 0, 0, 1, 1), "parent");
     document.undoCreation(child);

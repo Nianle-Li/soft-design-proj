@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GroupShape } from "../../src/builtin/shapes/GroupShape";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { TextShape } from "../../src/builtin/shapes/TextShape";
 
 function candidate(id = "card") {
@@ -13,7 +13,7 @@ function candidate(id = "card") {
 
 describe("detached candidate creation", () => {
   it("indexes a complete subtree as one creation and removes/restores it as one unit", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(new GroupShape("outer"));
     const receipt = document.createCandidate(candidate(), "outer");
 
@@ -69,7 +69,7 @@ describe("detached candidate creation", () => {
       "duplicate shape instance"
     ]
   ] as const)("rejects a %s before changing the document", (_name, make, error) => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(new RectShape("existing", 0, 0, 1, 1));
     const before = document.tree();
 
@@ -79,7 +79,7 @@ describe("detached candidate creation", () => {
   });
 
   it("rejects a descendant id colliding with an existing shape", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     document.createCandidate(new RectShape("card-label", 0, 0, 1, 1));
     const before = document.tree();
 
@@ -89,7 +89,7 @@ describe("detached candidate creation", () => {
   });
 
   it("indexes nested descendants and restores their original source order", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     const root = new GroupShape("root");
     const nested = candidate();
     root.insertChild(0, new RectShape("before", 0, 0, 1, 1));
@@ -112,7 +112,7 @@ describe("detached candidate creation", () => {
   });
 
   it("rejects redo when a descendant id has been claimed, without partial attachment", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     const receipt = document.createCandidate(candidate());
     document.undoCreation(receipt);
     document.createCandidate(new RectShape("card-label", 0, 0, 1, 1));
@@ -127,7 +127,7 @@ describe("detached candidate creation", () => {
   });
 
   it("does not undo later child additions out of order", () => {
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     const receipt = document.createCandidate(candidate());
     document.createCandidate(new RectShape("later", 0, 0, 1, 1), "card");
     const before = document.tree();

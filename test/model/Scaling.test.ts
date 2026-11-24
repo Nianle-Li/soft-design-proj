@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument scale", () => {
   it("scales every geometric attribute in a nested container and restores it exactly", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "g", "inner", [], "outer");
     createFromCommand(document, "rect", "rect", ["1", "2", "3", "4", "red"], "inner");
@@ -60,7 +60,7 @@ describe("SvgDocument scale", () => {
   });
 
   it("rejects an overflowing descendant before scaling any sibling", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "group", []);
     createFromCommand(document, "rect", "first", ["1", "2", "3", "4"], "group");
     createFromCommand(document, "rect", "last", ["1e308", "2", "3", "4"], "group");
@@ -71,7 +71,7 @@ describe("SvgDocument scale", () => {
   });
 
   it("rejects missing targets and non-positive factors without changing geometry", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "circle", "c1", ["10", "10", "5"]);
     const before = document.tree();
 

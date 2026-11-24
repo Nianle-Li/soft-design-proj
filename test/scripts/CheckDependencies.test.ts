@@ -142,7 +142,7 @@ describe("dependency boundary checker", () => {
     expect(result.stderr).toContain("core/model -> model");
   });
 
-  it("allows only the remaining legacy group construction to import a built-in shape", () => {
+  it("rejects every model import of a built-in shape", () => {
     const migrated = [
       "GroupShape",
       "RectShape",
@@ -151,13 +151,7 @@ describe("dependency boundary checker", () => {
       "LineShape",
       "TextShape"
     ];
-    const allowed = checkFiles({
-      "builtin/shapes/GroupShape.ts": 'import { ContainerShape } from "../../core/plugin-api";',
-      "model/SvgDocument.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
-    });
-    expect(allowed.status, allowed.stderr).toBe(0);
-
-    for (const source of ["model/Other.ts", "model/ShapeFactory.ts"]) {
+    for (const source of ["model/Other.ts", "model/ShapeFactory.ts", "model/SvgDocument.ts"]) {
       const forbidden = checkFiles({
         [source]: migrated
           .map((name) => `import { ${name} } from "../builtin/shapes/${name}";`)

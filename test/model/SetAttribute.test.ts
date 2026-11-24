@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument set", () => {
@@ -14,7 +14,7 @@ describe("SvgDocument set", () => {
 
     for (const [type, parameters, attributes] of cases) {
       for (const attribute of attributes) {
-        const document = new SvgDocument(800, 600);
+        const document = createDefaultDocument(800, 600);
         createFromCommand(document, type, "target", parameters);
         const before = document.tree();
 
@@ -29,7 +29,7 @@ describe("SvgDocument set", () => {
   });
 
   it("sets text content without confusing it with a geometry or style attribute", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "text", "label", ["1", "2", "old"]);
 
     const receipt = document.set("label", "text", "a new label");
@@ -42,7 +42,7 @@ describe("SvgDocument set", () => {
 
   it("keeps common style attributes on the target element and restores absence exactly", () => {
     for (const type of ["rect", "circle", "ellipse", "line", "text", "g"]) {
-      const document = new SvgDocument(800, 600);
+      const document = createDefaultDocument(800, 600);
       const params: Record<string, string[]> = {
         rect: ["1", "2", "3", "4"],
         circle: ["1", "2", "3"],
@@ -69,7 +69,7 @@ describe("SvgDocument set", () => {
       expect(document.explicitStyle("target")).toEqual({});
     }
 
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "rect", "filled", ["1", "2", "3", "4", "red"]);
     createFromCommand(document, "line", "outlined", ["1", "2", "3", "4", "black"]);
     expect(document.explicitStyle("filled")).toEqual({ fill: "red" });
@@ -77,7 +77,7 @@ describe("SvgDocument set", () => {
   });
 
   it("sets group style locally while preserving descendant overrides and future inheritance", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "g", "inner", [], "outer");
     createFromCommand(document, "rect", "explicit", ["1", "2", "3", "4", "green"], "inner");
@@ -100,7 +100,7 @@ describe("SvgDocument set", () => {
   });
 
   it("rejects unknown attributes and invalid numeric values without touching the document", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "group", []);
     createFromCommand(document, "rect", "rect", ["1", "2", "3", "4"], "group");
     const before = document.tree();

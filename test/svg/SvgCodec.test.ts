@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 import { SvgCodec } from "../../src/adapters/svg/SvgCodec";
 import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
@@ -32,7 +32,7 @@ describe("strict SVG codec", () => {
   });
 
   it("round-trips hierarchy, z-order, explicit styles and escaped Unicode text", () => {
-    const document = new SvgDocument(80, 60);
+    const document = createDefaultDocument(80, 60);
     createFromCommand(document, "g", "group", []);
     createFromCommand(document, "text", "label", ["10", "20", `处理 <&> "引号"`], "group");
     document.set("label", "stroke", "red");
@@ -54,7 +54,7 @@ describe("strict SVG codec", () => {
   });
 
   it("round-trips every Phase 1 shape without filling in omitted paint defaults", () => {
-    const document = new SvgDocument(300, 200);
+    const document = createDefaultDocument(300, 200);
     createFromCommand(document, "g", "group", []);
     createFromCommand(document, "rect", "r", ["1", "2", "3", "4"], "group");
     createFromCommand(document, "circle", "c", ["5", "6", "7"], "group");

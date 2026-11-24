@@ -4,7 +4,7 @@ import { RectShape } from "../../src/builtin/shapes/RectShape";
 import type { Shape } from "../../src/core/model/Shape";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 import type { ShapeProvider } from "../../src/core/model/ShapeProvider";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 
 const rectProvider: ShapeProvider = {
   type: "rect",
@@ -25,7 +25,7 @@ describe("shape provider registry", () => {
       }
     };
     const registry = new ShapeProviderRegistry([composite, rectProvider]);
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     const receipt = document.createCandidate(registry.create("card", "item", []));
 
     expect(receipt.label).toBe("g#item");
@@ -86,7 +86,7 @@ describe("shape provider registry", () => {
       }
     };
     const registry = new ShapeProviderRegistry([throwing, shared]);
-    const document = new SvgDocument(100, 100);
+    const document = createDefaultDocument(100, 100);
     const before = document.tree();
 
     expect(() => registry.create("throwing", "x", [])).toThrow("provider failed");

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument deletion", () => {
   it("removes a nested subtree and restores its ids, parent and sibling position", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "outer", []);
     createFromCommand(document, "rect", "before", ["0", "0", "1", "1"], "outer");
     createFromCommand(document, "g", "nested", [], "outer");
@@ -24,7 +24,7 @@ describe("SvgDocument deletion", () => {
   });
 
   it("restores a root leaf at its original index", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "rect", "left", ["0", "0", "1", "1"]);
     createFromCommand(document, "rect", "middle", ["1", "0", "1", "1"]);
     createFromCommand(document, "rect", "right", ["2", "0", "1", "1"]);
@@ -40,7 +40,7 @@ describe("SvgDocument deletion", () => {
   });
 
   it("rejects an unknown id without changing the document", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "group", []);
     const before = document.tree();
 
@@ -49,7 +49,7 @@ describe("SvgDocument deletion", () => {
   });
 
   it("does not partially restore a subtree when one of its ids is reused", () => {
-    const document = new SvgDocument(800, 600);
+    const document = createDefaultDocument(800, 600);
     createFromCommand(document, "g", "group", []);
     createFromCommand(document, "rect", "child", ["0", "0", "1", "1"], "group");
     const deletion = document.delete("group");
