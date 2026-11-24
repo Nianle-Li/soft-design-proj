@@ -1,6 +1,7 @@
 import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../../model/SvgDocument";
 import type { ShapeProviderRegistry } from "../model/ShapeProviderRegistry";
+import { AttributeHandlerRegistry } from "../model/AttributeHandlerRegistry";
 import { Shape } from "../model/Shape";
 import type { StackingEdge } from "../../model/SvgDocument";
 import type { ShapeDetailsView, TreeView } from "../model/TreeView";
@@ -35,11 +36,12 @@ export class EditorSession {
 
   constructor(
     private readonly store: DocumentStore | undefined,
-    private readonly shapeProviders: ShapeProviderRegistry
+    private readonly shapeProviders: ShapeProviderRegistry,
+    private readonly attributeHandlers = new AttributeHandlerRegistry([])
   ) {}
 
   init(width = 800, height = 600): Readonly<{ width: number; height: number }> {
-    const document = new SvgDocument(width, height, this.shapeProviders);
+    const document = new SvgDocument(width, height, this.shapeProviders, this.attributeHandlers);
     this.document = document;
     this.readPath = undefined;
     this.executor.ioBarrier();

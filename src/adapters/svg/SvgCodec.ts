@@ -9,12 +9,16 @@ import { Shape } from "../../core/model/Shape";
 import { SvgDocument } from "../../model/SvgDocument";
 import type { ShapeProviderRegistry } from "../../core/model/ShapeProviderRegistry";
 import type { SvgNodeView } from "../../core/model/SvgNodeView";
+import { AttributeHandlerRegistry } from "../../core/model/AttributeHandlerRegistry";
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 /** Translates the deliberately supported SVG subset without leaking DOM nodes into the model. */
 export class SvgCodec {
-  constructor(private readonly shapeProviders: ShapeProviderRegistry) {}
+  constructor(
+    private readonly shapeProviders: ShapeProviderRegistry,
+    private readonly attributeHandlers = new AttributeHandlerRegistry([])
+  ) {}
 
   decode(xml: string): Readonly<{
     document: SvgDocument;
@@ -88,7 +92,7 @@ export class SvgCodec {
       if (child.nodeType === 1) collectIds(child as XmlElement);
     }
 
-    const document = new SvgDocument(width, height, this.shapeProviders);
+    const document = new SvgDocument(width, height, this.shapeProviders, this.attributeHandlers);
     const assignedIds: { id: string; tag: string }[] = [];
     const nextByTag = new Map<string, number>();
     const reservedIds = new Set(explicitIds);

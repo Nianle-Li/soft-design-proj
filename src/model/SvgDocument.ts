@@ -2,6 +2,7 @@ import { EditorError } from "../core/model/EditorError";
 import { ContainerShape } from "../core/model/ContainerShape";
 import { Shape } from "../core/model/Shape";
 import type { ShapeProviderRegistry } from "../core/model/ShapeProviderRegistry";
+import { AttributeHandlerRegistry } from "../core/model/AttributeHandlerRegistry";
 import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "../core/model/Shape";
 import type { ExplicitStyle } from "../core/model/PaintStyle";
 import type { SvgDocumentView } from "../core/model/SvgNodeView";
@@ -100,7 +101,8 @@ export class SvgDocument {
   constructor(
     width: number,
     height: number,
-    private readonly shapeProviders: ShapeProviderRegistry
+    private readonly shapeProviders: ShapeProviderRegistry,
+    private readonly attributeHandlers = new AttributeHandlerRegistry([])
   ) {
     SvgDocument.validateCanvasSize(width, height);
     this.canvasWidth = width;
@@ -766,8 +768,9 @@ export class SvgDocument {
     if (shape === undefined) {
       throw new EditorError(`no such shape: ${id}`);
     }
-    const plan = shape.prepareSet(attribute, value);
-    plan.apply();
+    const plan =
+      this.attributeHandlers.prepare(shape, attribute, value) ?? shape.prepareSet(attribute, value);
+    this.applySetPlan(plan);
     return this.issueReceipt(
       "set",
       { label: shape.label, attribute, value: plan.value, previousValue: plan.previousValue },
@@ -784,7 +787,16 @@ export class SvgDocument {
   redoSet(receipt: SetReceipt): void {
     const data = this.receiptData(receipt, "set") as SetData;
     this.ensureSetTarget(data);
-    data.plan.apply();
+    this.applySetPlan(data.plan);
+  }
+
+  private applySetPlan(plan: PreparedSet): void {
+    try {
+      plan.apply();
+    } catch (error) {
+      plan.undo();
+      throw error;
+    }
   }
 
   explicitStyle(id: string): ExplicitStyle {

@@ -7,9 +7,15 @@ import { createDefaultShapeProviders } from "./host/assembly/DefaultShapes";
 import { StatsCommand } from "../plugins/stats/StatsCommand";
 import { DirCommand } from "../plugins/dir/DirCommand";
 import { NodeDirectoryReader } from "../plugins/dir/adapters/NodeDirectoryReader";
+import { createDefaultAttributeHandlers } from "./host/assembly/DefaultAttributes";
 
 const shapeProviders = createDefaultShapeProviders();
-const session = new EditorSession(new SvgFileStore(new SvgCodec(shapeProviders)), shapeProviders);
+const attributeHandlers = createDefaultAttributeHandlers();
+const session = new EditorSession(
+  new SvgFileStore(new SvgCodec(shapeProviders, attributeHandlers)),
+  shapeProviders,
+  attributeHandlers
+);
 const app = new CliApp(session, [
   new StatsCommand(() => session.tree()),
   new DirCommand(new NodeDirectoryReader())
