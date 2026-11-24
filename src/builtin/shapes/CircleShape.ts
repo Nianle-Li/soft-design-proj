@@ -91,6 +91,8 @@ export class CircleShape extends Shape {
 
   override toView(): ShapeView {
     return {
+      kind: this.kind,
+      isContainer: false,
       label: this.label,
       details: this.attributeDetails(true),
       children: []

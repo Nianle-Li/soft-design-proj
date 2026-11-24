@@ -15,6 +15,8 @@ export type TreeDetailPart =
     }>;
 
 export interface ShapeView {
+  readonly kind: string;
+  readonly isContainer: boolean;
   readonly label: string;
   readonly details: readonly TreeDetailPart[];
   readonly children: readonly ShapeView[];

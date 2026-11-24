@@ -93,6 +93,8 @@ export abstract class ContainerShape extends Shape {
 
   override toView(): ShapeView {
     return {
+      kind: this.kind,
+      isContainer: true,
       label: this.label,
       details: [],
       children: this.children.map((child) => child.toView())

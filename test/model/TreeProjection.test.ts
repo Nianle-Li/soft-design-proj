@@ -3,6 +3,18 @@ import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("tree projection", () => {
+  it("exposes semantic type and container facts independently of display labels", () => {
+    const document = createDefaultDocument(100, 100);
+    createFromCommand(document, "g", "empty", []);
+    createFromCommand(document, "g", "outer", []);
+    createFromCommand(document, "rect", "child", ["0", "0", "1", "1"], "outer");
+
+    const [empty, outer] = document.tree().roots;
+    expect(empty).toMatchObject({ kind: "g", isContainer: true, children: [] });
+    expect(outer).toMatchObject({ kind: "g", isContainer: true });
+    expect(outer?.children[0]).toMatchObject({ kind: "rect", isContainer: false });
+  });
+
   it("returns geometry facts rather than CLI-formatted detail text", () => {
     const document = createDefaultDocument(100, 100);
     createFromCommand(document, "rect", "r", ["1", "2", "3", "4", "red"]);

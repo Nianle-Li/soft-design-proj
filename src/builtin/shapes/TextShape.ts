@@ -92,6 +92,8 @@ export class TextShape extends Shape {
 
   override toView(): ShapeView {
     return {
+      kind: this.kind,
+      isContainer: false,
       label: this.label,
       details: [
         {

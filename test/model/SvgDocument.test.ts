@@ -16,10 +16,14 @@ describe("SvgDocument creation", () => {
       height: 600,
       roots: [
         {
+          kind: "g",
+          isContainer: true,
           label: "g#node1",
           details: [],
           children: [
             {
+              kind: "rect",
+              isContainer: false,
               label: "rect#start",
               details: [
                 { kind: "attribute", name: "x", value: "120" },
