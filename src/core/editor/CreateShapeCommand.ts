@@ -1,24 +1,20 @@
 import type { CreationReceipt } from "../../model/SvgDocument";
 import { SvgDocument } from "../../model/SvgDocument";
 import { Shape } from "../model/Shape";
-import type { ShapeSpec } from "../../model/ShapeSpec";
 import type { EditCommand, ShapeChange } from "./EditCommand";
 
-/** Binds a typed create request to its Receiver and retains an opaque undo receipt. */
+/** Binds a detached shape to its Receiver and retains an opaque undo receipt. */
 export class CreateShapeCommand implements EditCommand<ShapeChange> {
   private receipt?: CreationReceipt;
 
   constructor(
     private readonly document: SvgDocument,
-    private readonly creation: ShapeSpec | Shape,
+    private readonly creation: Shape,
     private readonly parentId?: string
   ) {}
 
   execute(): ShapeChange {
-    this.receipt =
-      this.creation instanceof Shape
-        ? this.document.createCandidate(this.creation, this.parentId)
-        : this.document.create(this.creation, this.parentId);
+    this.receipt = this.document.createCandidate(this.creation, this.parentId);
     return this.change("created");
   }
 

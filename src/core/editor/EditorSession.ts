@@ -87,7 +87,7 @@ export class EditorSession {
       return this.executor.execute(new CreateShapeCommand(document, candidate, parentId));
     }
     const spec = this.shapeFactory.parseCommand(type, id, parameters);
-    const command = new CreateShapeCommand(document, spec, parentId);
+    const command = new CreateShapeCommand(document, this.shapeFactory.create(spec), parentId);
     return this.executor.execute(command);
   }
 

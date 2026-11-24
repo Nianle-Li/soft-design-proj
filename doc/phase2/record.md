@@ -54,3 +54,4 @@
 - 确认所有 `SvgCodec` 调用均显式传入注册表后，删除适配器中的 `ShapeFactory`、旧逐节点导入分支及可选构造参数；读回统一经提供者构造候选树，再由文档接入。此步只清除 SVG 适配器的旧工厂依赖，文档 typed 方法和无注册表编辑会话仍保留工厂，E1 未完成。
 - 全仓引用搜索确认 `ShapeFactory.parseSvg` 与其 SVG 几何表只在工厂内部互相引用；适配器读回已退出该路径，因此删去死代码并校正工厂说明。余下 `parseCommand` 与 typed `create` 仍供无注册表会话和文档使用，不能据此声称工厂整体退出。
 - 回看近期提交后，将后续切片从逐图形测试迁移调整为围绕一个生产依赖及其调用面。文档的 `importShape(ShapeSpec)` 已无调用方，故删除；六组非 typed 专项测试统一改用 `createCandidate`，保留文档统一验证、局部收据及结构操作的反例。`TypedCreation.test.ts` 仍单独保护旧 typed 行为；`ShapeFactory` 在文档与无注册表会话中的剩余依赖尚未移除。
+- 文档 `create(ShapeSpec)` 只剩旧工厂创建路径；比较让文档继续接收封闭 spec 与由会话先构造分离候选树，选择后者，使 `CreateShapeCommand` 和 `SvgDocument` 只处理 `Shape`，复用整树接入与局部收据。旧 typed 几何测试改为直接检验工厂构造后接入；无注册表会话仍暂用工厂，E1 未完成。

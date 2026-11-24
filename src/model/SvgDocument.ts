@@ -5,8 +5,6 @@ import { Shape } from "../core/model/Shape";
 import type { ShapeProviderRegistry } from "../core/model/ShapeProviderRegistry";
 import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "../core/model/Shape";
 import type { ExplicitStyle } from "../core/model/PaintStyle";
-import { ShapeFactory } from "./ShapeFactory";
-import type { ShapeSpec } from "./ShapeSpec";
 import type { SvgDocumentView } from "../core/model/SvgNodeView";
 import type { ShapeDetailsView, TreeView } from "../core/model/TreeView";
 
@@ -97,7 +95,6 @@ export class SvgDocument {
   private readonly roots: Shape[] = [];
   private readonly shapes = new Map<string, ShapeEntry>();
   private readonly receipts = new WeakMap<object, Readonly<{ kind: string; data: unknown }>>();
-  private readonly shapeFactory = new ShapeFactory();
   private canvasWidth: number;
   private canvasHeight: number;
 
@@ -178,14 +175,6 @@ export class SvgDocument {
     if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
       throw new EditorError("canvas dimensions must be positive finite numbers");
     }
-  }
-
-  create(spec: ShapeSpec, parentId?: string): CreationReceipt {
-    this.ensureAvailableId(spec.id);
-    const parent = this.creationParent(parentId);
-    // Validate and construct before touching the document.
-    const shape = this.shapeFactory.create(spec);
-    return this.attachCandidate(shape, parent);
   }
 
   /** Attaches a complete detached tree only after validating every member. */
