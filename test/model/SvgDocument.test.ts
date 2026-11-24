@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
+import { GroupShape } from "../../src/builtin/shapes/GroupShape";
+import { RectShape } from "../../src/builtin/shapes/RectShape";
 import { createFromCommand } from "../support/createFromCommand";
 
 describe("SvgDocument creation", () => {
@@ -90,11 +92,8 @@ describe("SvgDocument creation", () => {
 
   it("rejects restoring a child after its parent was detached without corrupting the id index", () => {
     const document = new SvgDocument(800, 600);
-    document.create({ kind: "g", id: "parent" });
-    const child = document.create(
-      { kind: "rect", id: "child", x: 0, y: 0, width: 1, height: 1 },
-      "parent"
-    );
+    document.createCandidate(new GroupShape("parent"));
+    const child = document.createCandidate(new RectShape("child", 0, 0, 1, 1), "parent");
     document.undoCreation(child);
     const detachedParent = document.delete("parent");
     const beforeTree = document.tree();
@@ -116,14 +115,11 @@ describe("SvgDocument creation", () => {
 
   it("does not mistake a replacement parent with the same id for the original parent", () => {
     const document = new SvgDocument(800, 600);
-    document.create({ kind: "g", id: "parent" });
-    const child = document.create(
-      { kind: "rect", id: "child", x: 0, y: 0, width: 1, height: 1 },
-      "parent"
-    );
+    document.createCandidate(new GroupShape("parent"));
+    const child = document.createCandidate(new RectShape("child", 0, 0, 1, 1), "parent");
     document.undoCreation(child);
     document.delete("parent");
-    document.create({ kind: "g", id: "parent" });
+    document.createCandidate(new GroupShape("parent"));
     const before = document.tree();
 
     expect(() => {

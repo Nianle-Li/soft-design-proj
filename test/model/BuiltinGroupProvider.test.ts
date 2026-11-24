@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { GroupShape } from "../../src/builtin/shapes/GroupShape";
 import { GroupShapeProvider } from "../../src/builtin/shapes/GroupShapeProvider";
+import { RectShape } from "../../src/builtin/shapes/RectShape";
 import { ContainerShape } from "../../src/core/model/ContainerShape";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 import { SvgDocument } from "../../src/model/SvgDocument";
@@ -15,7 +16,7 @@ describe("built-in g provider", () => {
     expect(shape).toBeInstanceOf(ContainerShape);
     expect(shape).toBeInstanceOf(GroupShape);
     expect(receipt.label).toBe("g#outer");
-    document.create({ kind: "rect", id: "child", x: 0, y: 0, width: 1, height: 1 }, "outer");
+    document.createCandidate(new RectShape("child", 0, 0, 1, 1), "outer");
     expect(document.show("child").parentLabel).toBe("g#outer");
   });
 

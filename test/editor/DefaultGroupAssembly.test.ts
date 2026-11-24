@@ -70,7 +70,7 @@ describe("default g assembly", () => {
       { type: "g", create: (id) => new RectShape(id, 0, 0, 1, 1) }
     ]);
     const document = new SvgDocument(100, 100, registry);
-    document.create({ kind: "rect", id: "r1", x: 0, y: 0, width: 1, height: 1 });
+    document.createCandidate(new RectShape("r1", 0, 0, 1, 1));
     const before = document.tree();
 
     expect(() => document.group("bundle", ["r1"])).toThrow(
@@ -92,7 +92,7 @@ describe("default g assembly", () => {
       }
     ]);
     const document = new SvgDocument(100, 100, registry);
-    document.create({ kind: "rect", id: "r1", x: 0, y: 0, width: 1, height: 1 });
+    document.createCandidate(new RectShape("r1", 0, 0, 1, 1));
     const before = document.tree();
 
     expect(() => document.group("bundle", ["r1"])).toThrow(
@@ -111,7 +111,7 @@ describe("default g assembly", () => {
       { type: "g", create: (id) => new WrongTagGroup(id) }
     ]);
     const document = new SvgDocument(100, 100, registry);
-    document.create({ kind: "rect", id: "r1", x: 0, y: 0, width: 1, height: 1 });
+    document.createCandidate(new RectShape("r1", 0, 0, 1, 1));
     const before = document.tree();
 
     expect(() => document.group("bundle", ["r1"])).toThrow(

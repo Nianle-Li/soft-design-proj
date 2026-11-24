@@ -146,17 +146,6 @@ export class SvgDocument {
     };
   }
 
-  importShape(spec: ShapeSpec, parentId?: string): void {
-    this.ensureAvailableId(spec.id);
-    const parent = this.importParent(parentId);
-    const shape = this.shapeFactory.create(spec);
-    this.restoreCreatedShape({
-      shape,
-      parent,
-      index: parent === null ? this.roots.length : parent.childCount
-    });
-  }
-
   /** Imports a provider-built subtree without issuing an edit-history receipt. */
   importCandidate(shape: Shape, parentId?: string): void {
     this.ensureAvailableId(shape.id);

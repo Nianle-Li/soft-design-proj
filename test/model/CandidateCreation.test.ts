@@ -14,7 +14,7 @@ function candidate(id = "card") {
 describe("detached candidate creation", () => {
   it("indexes a complete subtree as one creation and removes/restores it as one unit", () => {
     const document = new SvgDocument(100, 100);
-    document.create({ kind: "g", id: "outer" });
+    document.createCandidate(new GroupShape("outer"));
     const receipt = document.createCandidate(candidate(), "outer");
 
     expect(receipt).toEqual({ label: "g#card", parentLabel: "g#outer" });
@@ -70,7 +70,7 @@ describe("detached candidate creation", () => {
     ]
   ] as const)("rejects a %s before changing the document", (_name, make, error) => {
     const document = new SvgDocument(100, 100);
-    document.create({ kind: "rect", id: "existing", x: 0, y: 0, width: 1, height: 1 });
+    document.createCandidate(new RectShape("existing", 0, 0, 1, 1));
     const before = document.tree();
 
     expect(() => document.createCandidate(make())).toThrow(error);
@@ -80,7 +80,7 @@ describe("detached candidate creation", () => {
 
   it("rejects a descendant id colliding with an existing shape", () => {
     const document = new SvgDocument(100, 100);
-    document.create({ kind: "rect", id: "card-label", x: 0, y: 0, width: 1, height: 1 });
+    document.createCandidate(new RectShape("card-label", 0, 0, 1, 1));
     const before = document.tree();
 
     expect(() => document.createCandidate(candidate())).toThrow("id already exists: card-label");
@@ -115,7 +115,7 @@ describe("detached candidate creation", () => {
     const document = new SvgDocument(100, 100);
     const receipt = document.createCandidate(candidate());
     document.undoCreation(receipt);
-    document.create({ kind: "rect", id: "card-label", x: 0, y: 0, width: 1, height: 1 });
+    document.createCandidate(new RectShape("card-label", 0, 0, 1, 1));
     const before = document.tree();
 
     expect(() => {
@@ -129,7 +129,7 @@ describe("detached candidate creation", () => {
   it("does not undo later child additions out of order", () => {
     const document = new SvgDocument(100, 100);
     const receipt = document.createCandidate(candidate());
-    document.create({ kind: "rect", id: "later", x: 0, y: 0, width: 1, height: 1 }, "card");
+    document.createCandidate(new RectShape("later", 0, 0, 1, 1), "card");
     const before = document.tree();
 
     expect(() => {

@@ -66,7 +66,7 @@ describe("container structural prechecks", () => {
   it("rejects moving a required child but accepts ordinary children", () => {
     const document = new SvgDocument(100, 100);
     document.createCandidate(guarded());
-    document.create({ kind: "g", id: "dest" });
+    document.createCandidate(new GroupShape("dest"));
     const before = document.tree();
 
     expect(() => document.addTo("dest", "box-fixed")).toThrow("protected child: box-fixed");
@@ -78,7 +78,7 @@ describe("container structural prechecks", () => {
   it("prechecks every group target before moving any subtree", () => {
     const document = new SvgDocument(100, 100);
     document.createCandidate(guarded());
-    document.create({ kind: "rect", id: "outside", x: 0, y: 0, width: 1, height: 1 });
+    document.createCandidate(new RectShape("outside", 0, 0, 1, 1));
     const before = document.tree();
 
     expect(() => document.group("bundle", ["box-free", "box-fixed", "outside"])).toThrow(
@@ -97,7 +97,7 @@ describe("container structural prechecks", () => {
     document.undoGroup(grouped);
 
     expect(() => document.ungroup("box")).toThrow("cannot ungroup composite shape: box");
-    document.create({ kind: "g", id: "outer" });
+    document.createCandidate(new GroupShape("outer"));
     document.addTo("outer", "box");
     expect(document.show("box").parentLabel).toBe("g#outer");
     expect(() => document.ungroup("box")).toThrow("cannot ungroup composite shape: box");
@@ -132,7 +132,7 @@ describe("container structural prechecks", () => {
 
   it("still allows ordinary groups to ungroup", () => {
     const document = new SvgDocument(100, 100);
-    document.create({ kind: "g", id: "outer" });
+    document.createCandidate(new GroupShape("outer"));
     document.createCandidate(new GroupShape("inner"), "outer");
     expect(document.ungroup("inner").label).toBe("g#inner");
   });
