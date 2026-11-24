@@ -8,6 +8,8 @@ import type {
 } from "../../src/core/plugin-api";
 import { PluginInstaller } from "../../src/host/assembly/PluginInstaller";
 
+const services = { tree: () => ({ width: 1, height: 1, roots: [] }) };
+
 const shape = (type: string): ShapeProvider => ({
   type,
   create: () => {
@@ -26,7 +28,7 @@ const attribute = (name: string): AttributeHandler => ({
 
 describe("plugin installation transaction", () => {
   it("publishes four declared categories in activation order and passes options unchanged", () => {
-    const installer = new PluginInstaller();
+    const installer = new PluginInstaller(services);
     const options = { fill: "orange" };
     let received: unknown;
     const plugin: Plugin = {
@@ -60,7 +62,7 @@ describe("plugin installation transaction", () => {
   });
 
   it("rolls back every staged category when the manifest does not match", () => {
-    const installer = new PluginInstaller();
+    const installer = new PluginInstaller(services);
     expect(() => {
       installer.install({
         name: "bad-manifest",
@@ -84,7 +86,7 @@ describe("plugin installation transaction", () => {
   });
 
   it("rolls back an activation failure while keeping earlier plugins and accepting later ones", () => {
-    const installer = new PluginInstaller();
+    const installer = new PluginInstaller(services);
     installer.install({
       name: "first",
       contributes: { commands: ["first"] },
@@ -125,7 +127,7 @@ describe("plugin installation transaction", () => {
   });
 
   it("rejects duplicate names atomically within and across plugins", () => {
-    const installer = new PluginInstaller();
+    const installer = new PluginInstaller(services);
     installer.install({
       name: "first",
       contributes: { decorators: ["label"] },

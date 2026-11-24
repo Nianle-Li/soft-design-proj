@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import { PluginInstaller } from "../../src/host/assembly/PluginInstaller";
 import { PluginLoader } from "../../src/host/assembly/PluginLoader";
 
+const services = { tree: () => ({ width: 1, height: 1, roots: [] }) };
+
 function writePlugin(
   root: string,
   directory: string,
@@ -46,7 +48,7 @@ describe("plugin configuration loader", () => {
         }),
         "utf8"
       );
-      const installer = new PluginInstaller();
+      const installer = new PluginInstaller(services);
 
       await expect(new PluginLoader(installer).load(configPath)).resolves.toEqual([]);
       const commands = installer.contributions().commands;
@@ -62,7 +64,7 @@ describe("plugin configuration loader", () => {
     try {
       const configPath = join(directory, "plugins.config.json");
       writeFileSync(configPath, "not json", "utf8");
-      const installer = new PluginInstaller();
+      const installer = new PluginInstaller(services);
 
       await expect(new PluginLoader(installer).load(configPath)).resolves.toEqual([
         "error: invalid plugin config"
@@ -119,7 +121,7 @@ describe("plugin configuration loader", () => {
         }),
         "utf8"
       );
-      const installer = new PluginInstaller();
+      const installer = new PluginInstaller(services);
 
       const errors = await new PluginLoader(installer).load(configPath);
       expect(errors[0]).toBe("error: plugin not found: ./absent/plugin.mjs");

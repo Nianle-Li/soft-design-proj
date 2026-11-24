@@ -1,6 +1,7 @@
 {
   "name": "@svgframe/plugin-stats",
   "private": true,
+  "main": "./index.ts",
   "contributes": {
     "commands": [
       "stats"

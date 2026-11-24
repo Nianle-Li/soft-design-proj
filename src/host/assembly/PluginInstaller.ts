@@ -2,6 +2,7 @@ import type { Command } from "../../core/command/Command";
 import type { AttributeHandler } from "../../core/model/AttributeHandler";
 import { EditorError } from "../../core/model/EditorError";
 import type { ShapeProvider } from "../../core/model/ShapeProvider";
+import type { TreeView } from "../../core/model/TreeView";
 import type { Plugin, PluginContext } from "../../core/plugin/Plugin";
 import type { TreeDecorator } from "../../core/tree/TreeDecorator";
 
@@ -24,6 +25,10 @@ export interface PluginContributions {
   readonly attributes: readonly AttributeHandler[];
 }
 
+export interface PluginHostServices {
+  readonly tree: () => TreeView;
+}
+
 class DuplicateRegistrationError extends EditorError {}
 
 /** Atomically validates and publishes one plugin's four extension categories. */
@@ -35,6 +40,8 @@ export class PluginInstaller {
     attributes: AttributeHandler[];
   } = { shapes: [], commands: [], decorators: [], attributes: [] };
 
+  constructor(private readonly services: PluginHostServices) {}
+
   install(installation: PluginInstallation): void {
     const staged = { shapes: [], commands: [], decorators: [], attributes: [] } as {
       shapes: ShapeProvider[];
@@ -43,6 +50,7 @@ export class PluginInstaller {
       attributes: AttributeHandler[];
     };
     const context: PluginContext = {
+      tree: this.services.tree,
       registerShape: (value) => {
         this.stage(staged.shapes, this.accepted.shapes, value, "shapes");
       },

@@ -1,6 +1,7 @@
 {
   "name": "@svgframe/plugin-dir",
   "private": true,
+  "main": "./index.ts",
   "contributes": {
     "commands": [
       "dir"

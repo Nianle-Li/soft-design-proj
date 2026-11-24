@@ -1,0 +1,16 @@
+{
+  "name": "@svgframe/plugin-shape-box",
+  "private": true,
+  "main": "./index.ts",
+  "contributes": {
+    "shapes": [
+      "box"
+    ],
+    "attributes": [
+      "box-attributes"
+    ],
+    "decorators": [
+      "box-type-label"
+    ]
+  }
+}
