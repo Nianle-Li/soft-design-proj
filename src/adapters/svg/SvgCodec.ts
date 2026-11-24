@@ -6,7 +6,7 @@ import type {
 } from "@xmldom/xmldom";
 import { EditorError } from "../../core/model/EditorError";
 import { Shape } from "../../core/model/Shape";
-import { SvgDocument } from "../../model/SvgDocument";
+import { SvgDocument } from "../../core/model/SvgDocument";
 import type { ShapeProviderRegistry } from "../../core/model/ShapeProviderRegistry";
 import type { SvgNodeView } from "../../core/model/SvgNodeView";
 import { AttributeHandlerRegistry } from "../../core/model/AttributeHandlerRegistry";

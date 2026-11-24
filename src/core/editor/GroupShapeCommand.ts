@@ -1,5 +1,5 @@
-import type { GroupReceipt } from "../../model/SvgDocument";
-import { SvgDocument } from "../../model/SvgDocument";
+import type { GroupReceipt } from "../model/SvgDocument";
+import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, GroupChange } from "./EditCommand";
 
 /** Binds one group request and retains its receiver-owned inverse receipt. */

@@ -3,7 +3,7 @@ import { closeSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSyn
 import { basename, dirname, join } from "node:path";
 import type { DocumentStore } from "../../core/editor/DocumentStore";
 import { EditorError } from "../../core/model/EditorError";
-import type { SvgDocument } from "../../model/SvgDocument";
+import type { SvgDocument } from "../../core/model/SvgDocument";
 import { SvgCodec } from "./SvgCodec";
 
 /** File adapter: a complete read precedes session replacement; writes use a sibling temporary file. */

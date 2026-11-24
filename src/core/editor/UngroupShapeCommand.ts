@@ -1,5 +1,5 @@
-import type { UngroupReceipt } from "../../model/SvgDocument";
-import { SvgDocument } from "../../model/SvgDocument";
+import type { UngroupReceipt } from "../model/SvgDocument";
+import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, UngroupChange } from "./EditCommand";
 
 /** Binds one ungroup request and retains its receiver-owned inverse receipt. */

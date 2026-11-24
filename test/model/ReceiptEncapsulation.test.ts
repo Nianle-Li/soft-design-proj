@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultDocument } from "../support/createDefaultDocument";
 import { createFromCommand } from "../support/createFromCommand";
-import type { CreationReceipt, DeletionReceipt } from "../../src/model/SvgDocument";
+import type { CreationReceipt, DeletionReceipt } from "../../src/core/model/SvgDocument";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
 
 describe("document receipt encapsulation", () => {

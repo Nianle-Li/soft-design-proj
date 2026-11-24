@@ -1,5 +1,5 @@
-import type { CreationReceipt } from "../../model/SvgDocument";
-import { SvgDocument } from "../../model/SvgDocument";
+import type { CreationReceipt } from "../model/SvgDocument";
+import { SvgDocument } from "../model/SvgDocument";
 import { Shape } from "../model/Shape";
 import type { EditCommand, ShapeChange } from "./EditCommand";
 

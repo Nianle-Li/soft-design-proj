@@ -1,6 +1,6 @@
 import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
 import type { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
-import type { CreationReceipt, SvgDocument } from "../../src/model/SvgDocument";
+import type { CreationReceipt, SvgDocument } from "../../src/core/model/SvgDocument";
 
 /** Builds a detached candidate through the same provider contract as CLI creation. */
 export function createFromCommand(

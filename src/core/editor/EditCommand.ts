@@ -1,5 +1,5 @@
 import type { MoveLocation, SetEffect } from "../model/Shape";
-import type { StackingEdge } from "../../model/SvgDocument";
+import type { StackingEdge } from "../model/SvgDocument";
 
 export interface ShapeChange {
   readonly kind: "shape";

@@ -60,7 +60,7 @@ describe("dependency boundary checker", () => {
     expect(result.stderr).toContain(expected);
   });
 
-  it.each(["model", "core/editor", "host/cli"])(
+  it.each(["core/model", "core/editor", "host/cli"])(
     "rejects third-party runtime packages in %s",
     (module) => {
       const result = checkFiles({
@@ -87,7 +87,7 @@ describe("dependency boundary checker", () => {
 
   it("rejects a third-party package loaded through dynamic import", () => {
     const result = checkFiles({
-      "model/Bad.ts": 'export async function load() { return import("@xmldom/xmldom"); }'
+      "core/model/Bad.ts": 'export async function load() { return import("@xmldom/xmldom"); }'
     });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("@xmldom/xmldom");
@@ -131,23 +131,25 @@ describe("dependency boundary checker", () => {
     expect(result.status, result.stderr).toBe(0);
   });
 
-  it("allows legacy model implementations to depend on migrated core abstractions", () => {
+  it("rejects the retired legacy model directory", () => {
     const result = checkFiles({
       "core/model/Shape.ts": "export abstract class Shape {}",
-      "model/RectShape.ts": 'import { Shape } from "../core/model/Shape";'
-    });
-    expect(result.status, result.stderr).toBe(0);
-  });
-
-  it("keeps migrated core abstractions independent of the legacy model", () => {
-    const result = checkFiles({
-      "core/model/Shape.ts": 'import { RectShape } from "../../model/RectShape";'
+      "model/SvgDocument.ts": 'import { Shape } from "../core/model/Shape";'
     });
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("core/model -> model");
+    expect(result.stderr).toContain("model/SvgDocument.ts: unknown source module");
   });
 
-  it("rejects every model import of a built-in shape", () => {
+  it("keeps core model imports inside the migrated directory", () => {
+    const result = checkFiles({
+      "core/model/Bad.ts": 'import { SvgDocument } from "../../model/SvgDocument";',
+      "model/SvgDocument.ts": "export class SvgDocument {}"
+    });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("model/SvgDocument");
+  });
+
+  it("rejects every core model import of a built-in shape", () => {
     const migrated = [
       "GroupShape",
       "RectShape",
@@ -156,7 +158,11 @@ describe("dependency boundary checker", () => {
       "LineShape",
       "TextShape"
     ];
-    for (const source of ["model/Other.ts", "model/ShapeFactory.ts", "model/SvgDocument.ts"]) {
+    for (const source of [
+      "core/model/Other.ts",
+      "core/model/ShapeFactory.ts",
+      "core/model/SvgDocument.ts"
+    ]) {
       const forbidden = checkFiles({
         [source]: migrated
           .map((name) => `import { ${name} } from "../builtin/shapes/${name}";`)
@@ -169,11 +175,11 @@ describe("dependency boundary checker", () => {
     }
 
     const wrongTarget = checkFiles({
-      "model/ShapeFactory.ts":
-        'import { GroupShapeProvider } from "../builtin/shapes/GroupShapeProvider";'
+      "core/model/ShapeFactory.ts":
+        'import { GroupShapeProvider } from "../../builtin/shapes/GroupShapeProvider";'
     });
     expect(wrongTarget.status).toBe(1);
-    expect(wrongTarget.stderr).toContain("model -> builtin/shapes");
+    expect(wrongTarget.stderr).toContain("core/model -> builtin/shapes");
   });
 
   it.each([

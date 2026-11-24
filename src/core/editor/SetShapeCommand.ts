@@ -1,5 +1,5 @@
-import type { SetReceipt } from "../../model/SvgDocument";
-import { SvgDocument } from "../../model/SvgDocument";
+import type { SetReceipt } from "../model/SvgDocument";
+import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, SetChange } from "./EditCommand";
 
 /** Retains a receipt for the Receiver's previous and next explicit values. */

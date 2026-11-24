@@ -3,7 +3,7 @@ import type { AttributeHandler, PreparedSet, Shape } from "../../src/core/plugin
 import { AttributeHandlerRegistry } from "../../src/core/model/AttributeHandlerRegistry";
 import { EditorSession } from "../../src/core/editor/EditorSession";
 import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { SvgDocument } from "../../src/core/model/SvgDocument";
 import { createFromCommand } from "../support/createFromCommand";
 
 function handler(

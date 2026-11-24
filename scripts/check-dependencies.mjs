@@ -7,9 +7,8 @@ import ts from "typescript";
 const sourceRoot = resolve(process.argv[2] ?? "src");
 const pluginsRoot = resolve(sourceRoot, "../plugins");
 const allowed = new Map([
-  ["model", new Set(["model", "core/model"])],
   ["core/model", new Set(["core/model"])],
-  ["core/editor", new Set(["core/editor", "core/model", "model"])],
+  ["core/editor", new Set(["core/editor", "core/model"])],
   ["core/command", new Set(["core/command", "core/editor", "core/model"])],
   ["core/tree", new Set(["core/tree", "core/model"])],
   ["core/plugin", new Set(["core/plugin", "core/model", "core/command", "core/tree"])],
@@ -36,13 +35,12 @@ const allowed = new Map([
       "core/tree",
       "core/plugin",
       "adapters/svg",
-      "builtin/shapes",
-      "model"
+      "builtin/shapes"
     ])
   ],
-  ["adapters/svg", new Set(["adapters/svg", "core/model", "core/editor", "model"])],
+  ["adapters/svg", new Set(["adapters/svg", "core/model", "core/editor"])],
   ["builtin/shapes", new Set(["builtin/shapes", "core/plugin-api"])],
-  ["main", new Set(["main", "host/cli", "host/assembly", "adapters/svg", "core/editor", "model"])]
+  ["main", new Set(["main", "host/cli", "host/assembly", "adapters/svg", "core/editor"])]
 ]);
 const approvedPackages = new Map([["@xmldom/xmldom", new Set(["adapters/svg"])]]);
 const approvedNodeApis = new Map([
@@ -82,7 +80,6 @@ function moduleOf(path) {
   if (sourceParts !== undefined) {
     const [first, second] = sourceParts;
     if (sourceParts.length === 1) return first === "main.ts" ? "main" : undefined;
-    if (first === "model") return first;
     if (
       first === "core" &&
       ["plugin-api", "plugin-api.ts"].includes(second) &&

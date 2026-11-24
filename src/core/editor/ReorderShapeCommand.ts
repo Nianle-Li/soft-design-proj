@@ -1,5 +1,5 @@
-import type { ReorderReceipt, StackingEdge } from "../../model/SvgDocument";
-import { SvgDocument } from "../../model/SvgDocument";
+import type { ReorderReceipt, StackingEdge } from "../model/SvgDocument";
+import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, ReorderChange } from "./EditCommand";
 
 /** Binds one z-order request and retains its receiver-owned inverse receipt. */

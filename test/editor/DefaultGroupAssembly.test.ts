@@ -5,7 +5,7 @@ import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistr
 import type { ShapeProvider } from "../../src/core/model/ShapeProvider";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
 import { RectShapeProvider } from "../../src/builtin/shapes/RectShapeProvider";
-import { SvgDocument } from "../../src/model/SvgDocument";
+import { SvgDocument } from "../../src/core/model/SvgDocument";
 import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
 
 class CountingGroupProvider implements ShapeProvider {

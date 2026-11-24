@@ -1,5 +1,5 @@
-import type { ScaleReceipt } from "../../model/SvgDocument";
-import { SvgDocument } from "../../model/SvgDocument";
+import type { ScaleReceipt } from "../model/SvgDocument";
+import { SvgDocument } from "../model/SvgDocument";
 import type { EditCommand, ScaleChange } from "./EditCommand";
 
 /** The Receiver owns geometry and inverse values; this command retains its receipt. */

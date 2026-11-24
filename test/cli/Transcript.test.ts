@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
 import type { DocumentStore } from "../../src/core/editor/DocumentStore";
 import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
-import type { SvgDocument } from "../../src/model/SvgDocument";
+import type { SvgDocument } from "../../src/core/model/SvgDocument";
 import { createSvgFileStore } from "../support/createSvgFileStore";
 
 class TranscriptStore implements DocumentStore {
