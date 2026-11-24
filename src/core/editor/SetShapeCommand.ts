@@ -39,6 +39,13 @@ export class SetShapeCommand implements EditCommand<SetChange> {
 
   private change(action: SetChange["action"], value: string | undefined): SetChange {
     const receipt = this.executedReceipt();
-    return { kind: "set", label: receipt.label, attribute: receipt.attribute, action, value };
+    return {
+      kind: "set",
+      label: receipt.label,
+      attribute: receipt.attribute,
+      action,
+      value,
+      ...(receipt.effect === undefined ? {} : { effect: receipt.effect })
+    };
   }
 }

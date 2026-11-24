@@ -17,7 +17,11 @@ describe("detached candidate creation", () => {
     document.createCandidate(new GroupShape("outer"));
     const receipt = document.createCandidate(candidate(), "outer");
 
-    expect(receipt).toEqual({ label: "g#card", parentLabel: "g#outer" });
+    expect(receipt).toEqual({
+      label: "g#card",
+      parentLabel: "g#outer",
+      parts: ["g#card", "rect#card-rect", "text#card-label"]
+    });
     expect(document.tree("outer").roots[0]?.children[0]?.children).toHaveLength(2);
     expect(document.show("card-rect").label).toBe("rect#card-rect");
     expect(document.show("card-label").label).toBe("text#card-label");

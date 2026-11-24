@@ -1,10 +1,11 @@
-import type { MoveLocation } from "../model/Shape";
+import type { MoveLocation, SetEffect } from "../model/Shape";
 import type { StackingEdge } from "../../model/SvgDocument";
 
 export interface ShapeChange {
   readonly kind: "shape";
   readonly label: string;
   readonly parentLabel?: string;
+  readonly parts?: readonly string[];
   readonly action: "created" | "removed" | "deleted" | "restored";
 }
 
@@ -30,6 +31,7 @@ export interface SetChange {
   readonly attribute: string;
   readonly action: "set" | "restored";
   readonly value: string | undefined;
+  readonly effect?: SetEffect;
 }
 
 export interface GroupChange {

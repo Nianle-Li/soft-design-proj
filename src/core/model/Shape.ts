@@ -18,9 +18,13 @@ export interface PreparedScale {
   undo(): void;
 }
 
+export type SetEffect =
+  Readonly<{ kind: "propagated"; targetId: string }> | Readonly<{ kind: "text" }>;
+
 export interface PreparedSet {
   readonly value: string;
   readonly previousValue: string | undefined;
+  readonly effect?: SetEffect;
   apply(): void;
   undo(): void;
 }

@@ -309,6 +309,13 @@ export class CliApp {
       if (change.attribute === "text") {
         return `${change.label} updated: text="${change.value}"`;
       }
+      if (change.effect?.kind === "propagated" && change.action === "set") {
+        return `${change.label} ${change.attribute} propagated to ${change.effect.targetId}`;
+      }
+      if (change.effect?.kind === "text") {
+        const verb = change.action === "set" ? "updated" : "restored";
+        return `${change.label} ${change.attribute} ${verb}: "${change.value}"`;
+      }
       const verb = change.action === "set" ? "set to" : "restored to";
       return `${change.label} ${change.attribute} ${verb} ${change.value}`;
     }
@@ -354,6 +361,7 @@ export class CliApp {
     // New shape actions must receive an explicit CLI response before this assignment can compile.
     const createdAction: "created" = change.action;
     const parent = change.parentLabel === undefined ? "" : ` in ${change.parentLabel}`;
-    return `${change.label} ${createdAction}${parent}`;
+    const parts = change.parts === undefined ? "" : ` (${change.parts.join(" + ")})`;
+    return `${change.label} ${createdAction}${parts}${parent}`;
   }
 }

@@ -18,7 +18,7 @@ export class BoxShape extends ContainerShape {
   }
 
   override get label(): string {
-    return `g#${this.id}`;
+    return `box#${this.id}`;
   }
 
   override assertCanDetach(child: Shape): void {
@@ -33,11 +33,13 @@ export class BoxShape extends ContainerShape {
   }
 
   prepareFill(value: string): PreparedSet {
-    return this.frame.prepareSet("fill", value);
+    const plan = this.frame.prepareSet("fill", value);
+    return { ...plan, effect: { kind: "propagated", targetId: this.frame.id } };
   }
 
   prepareLabel(value: string): PreparedSet {
-    return this.title.prepareSet("text", value);
+    const plan = this.title.prepareSet("text", value);
+    return { ...plan, effect: { kind: "text" } };
   }
 
   override toView(): ShapeView {

@@ -41,7 +41,8 @@ export class CreateShapeCommand implements EditCommand<ShapeChange> {
     const change: ShapeChange = {
       kind: "shape",
       label: receipt.label,
-      action
+      action,
+      ...(receipt.parts === undefined ? {} : { parts: receipt.parts })
     };
     if (receipt.parentLabel === undefined) {
       return change;

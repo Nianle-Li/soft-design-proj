@@ -3,10 +3,16 @@ import { ContainerShape } from "../core/model/ContainerShape";
 import { Shape } from "../core/model/Shape";
 import type { ShapeProviderRegistry } from "../core/model/ShapeProviderRegistry";
 import { AttributeHandlerRegistry } from "../core/model/AttributeHandlerRegistry";
-import type { MoveLocation, PreparedMove, PreparedScale, PreparedSet } from "../core/model/Shape";
+import type {
+  MoveLocation,
+  PreparedMove,
+  PreparedScale,
+  PreparedSet,
+  SetEffect
+} from "../core/model/Shape";
 import type { ExplicitStyle } from "../core/model/PaintStyle";
 import type { SvgDocumentView } from "../core/model/SvgNodeView";
-import type { ShapeDetailsView, TreeView } from "../core/model/TreeView";
+import type { ShapeDetailsView, ShapeView, TreeView } from "../core/model/TreeView";
 
 declare const receiptBrand: unique symbol;
 type Receipt<TKind extends string, TSummary extends object> = Readonly<
@@ -14,13 +20,22 @@ type Receipt<TKind extends string, TSummary extends object> = Readonly<
 >;
 
 /** Commands retain opaque receipts; this document privately owns their exact inverse data. */
-export type CreationReceipt = Receipt<"create", { label: string; parentLabel?: string }>;
+export type CreationReceipt = Receipt<
+  "create",
+  { label: string; parentLabel?: string; parts?: readonly string[] }
+>;
 export type DeletionReceipt = Receipt<"delete", { label: string; parentLabel?: string }>;
 export type MoveReceipt = Receipt<"move", { label: string; location: MoveLocation }>;
 export type ScaleReceipt = Receipt<"scale", { label: string }>;
 export type SetReceipt = Receipt<
   "set",
-  { label: string; attribute: string; value: string; previousValue: string | undefined }
+  {
+    label: string;
+    attribute: string;
+    value: string;
+    previousValue: string | undefined;
+    effect?: SetEffect;
+  }
 >;
 export type GroupReceipt = Receipt<"group", { label: string; childCount: number }>;
 export type UngroupReceipt = Receipt<"ungroup", { label: string; childCount: number }>;
@@ -206,9 +221,18 @@ export class SvgDocument {
       index: parent === null ? this.roots.length : parent.childCount
     };
     this.insertCandidate({ position, members });
-    const summary =
-      parent === null ? { label: shape.label } : { label: shape.label, parentLabel: parent.label };
+    const view = shape.toView();
+    const parts = view.children.length === 0 ? undefined : this.flattenViewLabels(view);
+    const summary = {
+      label: shape.label,
+      ...(parent === null ? {} : { parentLabel: parent.label }),
+      ...(parts === undefined ? {} : { parts })
+    };
     return this.issueReceipt("create", summary, { position, members }) as CreationReceipt;
+  }
+
+  private flattenViewLabels(root: ShapeView): readonly string[] {
+    return [root.label, ...root.children.flatMap((child) => this.flattenViewLabels(child))];
   }
 
   undoCreation(receipt: CreationReceipt): void {
@@ -771,11 +795,14 @@ export class SvgDocument {
     const plan =
       this.attributeHandlers.prepare(shape, attribute, value) ?? shape.prepareSet(attribute, value);
     this.applySetPlan(plan);
-    return this.issueReceipt(
-      "set",
-      { label: shape.label, attribute, value: plan.value, previousValue: plan.previousValue },
-      { shape, plan }
-    ) as SetReceipt;
+    const summary = {
+      label: shape.label,
+      attribute,
+      value: plan.value,
+      previousValue: plan.previousValue,
+      ...(plan.effect === undefined ? {} : { effect: plan.effect })
+    };
+    return this.issueReceipt("set", summary, { shape, plan }) as SetReceipt;
   }
 
   undoSet(receipt: SetReceipt): void {
