@@ -9,10 +9,13 @@ import { DirCommand } from "../plugins/dir/DirCommand";
 import { NodeDirectoryReader } from "../plugins/dir/adapters/NodeDirectoryReader";
 import { createDefaultAttributeHandlers } from "./host/assembly/DefaultAttributes";
 import { createDefaultTreeDecorators } from "./host/assembly/DefaultTreeDecorators";
+import { BoxShapeProvider } from "../plugins/box/BoxShapeProvider";
+import { BoxAttributeHandler } from "../plugins/box/BoxAttributeHandler";
+import { BoxTypeDecorator } from "../plugins/box/BoxTypeDecorator";
 
-const shapeProviders = createDefaultShapeProviders();
-const attributeHandlers = createDefaultAttributeHandlers();
-const treeDecorators = createDefaultTreeDecorators();
+const shapeProviders = createDefaultShapeProviders([new BoxShapeProvider()]);
+const attributeHandlers = createDefaultAttributeHandlers([new BoxAttributeHandler()]);
+const treeDecorators = createDefaultTreeDecorators([new BoxTypeDecorator()]);
 const session = new EditorSession(
   new SvgFileStore(new SvgCodec(shapeProviders, attributeHandlers)),
   shapeProviders,

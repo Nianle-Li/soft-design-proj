@@ -109,6 +109,35 @@ describe("real REPL process", () => {
     }
   });
 
+  it("loads the complete box capability in the code-assembled process", () => {
+    const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-box-repl-"));
+    const outputFile = join(directory, "box.svg");
+    try {
+      const tsxLoader = pathToFileURL(createRequire(resolve("package.json")).resolve("tsx")).href;
+      const result = spawnSync(process.execPath, ["--import", tsxLoader, resolve("src/main.ts")], {
+        cwd: directory,
+        input:
+          'init 200 100\ncreate box n1 10 20 100 40 "Title"\nset n1 fill #f5a623\nset n1 label "Title v2"\ntree\nsave box.svg\n',
+        encoding: "utf8",
+        timeout: 10000
+      });
+
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("└── g#n1 (box)");
+      expect(result.stdout).toContain("rect#n1-rect  x=10 y=20 w=100 h=40 fill=#f5a623");
+      expect(result.stdout).toContain('text#n1-label (30,45) "Title v2"');
+
+      const saved = readFileSync(outputFile, "utf8");
+      expect(saved).toContain('<g id="n1" data-kind="box">');
+      expect(saved).toContain(">Title v2</text>");
+    } finally {
+      if (existsSync(outputFile)) unlinkSync(outputFile);
+      rmdirSync(directory);
+    }
+  });
+
   it.each([
     ["phase1-reference.golden.txt", "demo.svg", 5],
     ["phase1-flowchart.golden.txt", "flowchart.svg", 8]
