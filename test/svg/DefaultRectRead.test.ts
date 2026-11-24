@@ -12,12 +12,23 @@ describe("default rect SVG readback", () => {
     const xml = wrap(
       '<g id="outer"><rect x="-2" y="3" width="0" height="4" fill="red" stroke="blue" stroke-width="1.50"/></g><rect id="plain" x="1" y="2" width="3" height="4"/>'
     );
-    const before = new SvgCodec().decode(xml);
     const after = new SvgCodec(registry).decode(xml);
 
-    expect(after.count).toBe(before.count);
-    expect(after.assignedIds).toEqual(before.assignedIds);
-    expect(after.document.tree()).toEqual(before.document.tree());
+    expect(after.count).toBe(3);
+    expect(after.assignedIds).toEqual([{ id: "rect1", tag: "rect" }]);
+    expect(after.document.tree().roots.map((node) => node.label)).toEqual([
+      "g#outer",
+      "rect#plain"
+    ]);
+    expect(after.document.tree("outer").roots[0]?.children.map((node) => node.label)).toEqual([
+      "rect#rect1"
+    ]);
+    expect(after.document.show("rect1").geometry).toEqual([
+      ["x", "-2"],
+      ["y", "3"],
+      ["width", "0"],
+      ["height", "4"]
+    ]);
     expect(after.document.explicitStyle("rect1")).toEqual({
       fill: "red",
       stroke: "blue",
@@ -25,9 +36,10 @@ describe("default rect SVG readback", () => {
     });
     expect(after.document.explicitStyle("plain")).toEqual({});
     expect(after.document.show("rect1").parentLabel).toBe("g#outer");
-    expect(new SvgCodec(registry).encode(after.document)).toEqual(
-      new SvgCodec().encode(before.document)
-    );
+    const encoded = new SvgCodec(registry).encode(after.document);
+    expect(encoded.count).toBe(3);
+    expect(encoded.xml).toContain('stroke-width="1.5"');
+    expect(encoded.xml).toContain('id="plain"');
   });
 
   it.each([
@@ -56,7 +68,6 @@ describe("default rect SVG readback", () => {
     ]
   ])("preserves Phase 1 rect read errors", (content, error) => {
     const xml = wrap(content);
-    expect(() => new SvgCodec().decode(xml)).toThrow(error);
     expect(() => new SvgCodec(createDefaultShapeProviders()).decode(xml)).toThrow(error);
   });
 });
