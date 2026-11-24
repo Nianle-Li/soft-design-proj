@@ -6,10 +6,10 @@ import { CliApp } from "../../src/host/cli/CliApp";
 import type { DocumentStore } from "../../src/core/editor/DocumentStore";
 import { EditorSession } from "../../src/core/editor/EditorSession";
 import type { SvgDocument } from "../../src/model/SvgDocument";
-import { SvgFileStore } from "../../src/adapters/svg/SvgFileStore";
+import { createSvgFileStore } from "../support/createSvgFileStore";
 
 class TranscriptStore implements DocumentStore {
-  private readonly delegate = new SvgFileStore();
+  private readonly delegate = createSvgFileStore();
 
   constructor(private readonly directory: string) {}
 

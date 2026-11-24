@@ -8,7 +8,7 @@ import { SvgCodec } from "./SvgCodec";
 
 /** File adapter: a complete read precedes session replacement; writes use a sibling temporary file. */
 export class SvgFileStore implements DocumentStore {
-  constructor(private readonly codec = new SvgCodec()) {}
+  constructor(private readonly codec: SvgCodec) {}
 
   read(path: string) {
     let xml: string;

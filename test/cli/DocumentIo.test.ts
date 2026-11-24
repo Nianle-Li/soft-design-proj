@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
 import { EditorSession } from "../../src/core/editor/EditorSession";
-import { SvgFileStore } from "../../src/adapters/svg/SvgFileStore";
+import { createSvgFileStore } from "../support/createSvgFileStore";
 
 describe("read/save CLI", () => {
   it("round-trips through temporary files without changing the read source on explicit save", () => {
@@ -19,7 +19,7 @@ describe("read/save CLI", () => {
     const source = join(directory, "source.svg");
     const copy = join(directory, "copy.svg");
     try {
-      const app = new CliApp(new EditorSession(new SvgFileStore()));
+      const app = new CliApp(new EditorSession(createSvgFileStore()));
       expect(app.runLine("init 40 30")).toEqual(["canvas 40x30 created"]);
       expect(app.runLine("create rect r 1 2 3 4")).toEqual(["rect#r created"]);
       expect(app.runLine(`save ${source}`)).toEqual([`saved to ${source} (1 elements)`]);
@@ -37,7 +37,7 @@ describe("read/save CLI", () => {
   });
 
   it("prints the assignment warning, count and strict path error", () => {
-    const app = new CliApp(new EditorSession(new SvgFileStore()));
+    const app = new CliApp(new EditorSession(createSvgFileStore()));
     expect(app.runLine("init")).toEqual(["canvas 800x600 created"]);
     expect(app.runLine("save")).toEqual(["error: no read path for save"]);
     const source = "test/fixtures/svg/other.svg";
@@ -70,7 +70,7 @@ describe("read/save CLI", () => {
         '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30" viewBox="0 0 40 30"><rect x="0" y="0" width="1" height="1"/><g id="bad" transform="scale(2)"/></svg>',
         "utf8"
       );
-      const app = new CliApp(new EditorSession(new SvgFileStore()));
+      const app = new CliApp(new EditorSession(createSvgFileStore()));
       app.runLine("init");
       app.runLine("create rect old 0 0 1 1");
       expect(app.runLine(`read ${path}`)).toEqual([
@@ -93,7 +93,7 @@ describe("read/save CLI", () => {
         '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30" viewBox="0 0 40 30"><rect x="0" y="0" width="1" height="1"/><circle id="bad" cx="0" cy="0" r="-2"/></svg>',
         "utf8"
       );
-      const app = new CliApp(new EditorSession(new SvgFileStore()));
+      const app = new CliApp(new EditorSession(createSvgFileStore()));
       app.runLine("init");
       app.runLine("create rect old 0 0 1 1");
       const before = app.runLine("tree");

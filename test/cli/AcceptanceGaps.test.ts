@@ -11,7 +11,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
 import { EditorSession } from "../../src/core/editor/EditorSession";
-import { SvgFileStore } from "../../src/adapters/svg/SvgFileStore";
+import { createSvgFileStore } from "../support/createSvgFileStore";
 
 describe("remaining explicit Phase 1 acceptance scenarios", () => {
   it("creates default and fractional canvases while keeping failed init atomic", () => {
@@ -29,7 +29,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
   });
 
   it("reports the required no-document error for every document-dependent command", () => {
-    const app = new CliApp(new EditorSession(new SvgFileStore()));
+    const app = new CliApp(new EditorSession(createSvgFileStore()));
     const commands = [
       "save",
       "canvas",
@@ -60,7 +60,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
     const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-acceptance-"));
     const path = join(directory, "root.svg");
     try {
-      const app = new CliApp(new EditorSession(new SvgFileStore()));
+      const app = new CliApp(new EditorSession(createSvgFileStore()));
       app.runLine("init 80 60");
       const commands = [
         "create rect r 1 2 3 4",
@@ -84,7 +84,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
       for (const tag of ["rect", "circle", "ellipse", "line", "text", "g"]) {
         expect(xml).toContain(`<${tag} `);
       }
-      const restored = new SvgFileStore().read(path);
+      const restored = createSvgFileStore().read(path);
       expect(restored.document.tree().roots.map((shape) => shape.label)).toEqual([
         "rect#r",
         "circle#c",
@@ -232,7 +232,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
         ['create text x 1 2 "unclosed', undefined]
       ];
       for (const [command, exactError] of failures) {
-        const app = new CliApp(new EditorSession(new SvgFileStore()));
+        const app = new CliApp(new EditorSession(createSvgFileStore()));
         app.runLine("init 80 60");
         app.runLine("create g parent");
         app.runLine("create rect child 1 2 3 4 in parent");
@@ -257,7 +257,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
     const unsupported = join(directory, "unsupported.svg");
     const unwritable = join(directory, "missing-parent", "output.svg");
     try {
-      const app = new CliApp(new EditorSession(new SvgFileStore()));
+      const app = new CliApp(new EditorSession(createSvgFileStore()));
       app.runLine("init 40 30");
       app.runLine("create rect base 0 0 1 1");
       expect(app.runLine(`save ${source}`)).toEqual([`saved to ${source} (1 elements)`]);
@@ -279,7 +279,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
       expect(app.runLine("undo")).toEqual(["circle#later creation undone"]);
       expect(app.runLine("redo")).toEqual(["circle#later created"]);
       expect(app.runLine("save")).toEqual([`saved to ${source} (2 elements)`]);
-      const reloaded = new SvgFileStore().read(source);
+      const reloaded = createSvgFileStore().read(source);
       expect(reloaded.count).toBe(2);
       expect(reloaded.document.tree().roots.map((shape) => shape.label)).toEqual([
         "rect#base",

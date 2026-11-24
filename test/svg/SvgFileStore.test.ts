@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
 import { createFromCommand } from "../support/createFromCommand";
-import { SvgFileStore } from "../../src/adapters/svg/SvgFileStore";
+import { createSvgFileStore } from "../support/createSvgFileStore";
 
 describe("SVG file adapter", () => {
   it("writes a browser-readable file and reads it back with nested order intact", () => {
@@ -24,7 +24,7 @@ describe("SVG file adapter", () => {
       createFromCommand(document, "g", "layer", []);
       createFromCommand(document, "line", "edge", ["1", "2", "3", "4", "red"], "layer");
       createFromCommand(document, "text", "name", ["5", "6", "A&B"], "layer");
-      const store = new SvgFileStore();
+      const store = createSvgFileStore();
       expect(store.write(path, document)).toBe(3);
       const saved = readFileSync(path, "utf8");
       expect(saved).toContain('viewBox="0 0 200 100"');
@@ -49,7 +49,9 @@ describe("SVG file adapter", () => {
       writeFileSync(path, "original", "utf8");
       const document = new SvgDocument(20, 10);
       createFromCommand(document, "text", "bad", ["0", "0", "bad\u0000text"]);
-      expect(() => new SvgFileStore().write(path, document)).toThrow(`cannot write file: ${path}`);
+      expect(() => createSvgFileStore().write(path, document)).toThrow(
+        `cannot write file: ${path}`
+      );
       expect(readFileSync(path, "utf8")).toBe("original");
       expect(readdirSync(directory)).toEqual(["drawing.svg"]);
     } finally {
@@ -64,7 +66,7 @@ describe("SVG file adapter", () => {
     mkdirSync(destination);
     try {
       const document = new SvgDocument(20, 10);
-      expect(() => new SvgFileStore().write(destination, document)).toThrow(
+      expect(() => createSvgFileStore().write(destination, document)).toThrow(
         `cannot write file: ${destination}`
       );
       expect(readdirSync(directory)).toEqual(["directory.svg"]);
