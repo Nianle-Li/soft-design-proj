@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("front/back command history", () => {
   it("undoes and redoes successive z-order edits in exact sibling order", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     for (const id of ["a", "b", "c"]) {
       session.create("rect", id, ["0", "0", "1", "1"]);
@@ -30,7 +30,7 @@ describe("front/back command history", () => {
   });
 
   it("preserves the I/O barrier and current undo entry after failures", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     expect(() => session.reorder("missing", "front")).toThrow("no such shape: missing");
     expect(() => session.undo()).toThrow("undo not allowed after io command");

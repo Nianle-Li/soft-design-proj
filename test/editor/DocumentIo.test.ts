@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DocumentStore } from "../../src/core/editor/DocumentStore";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 import { EditorError } from "../../src/core/model/EditorError";
 import { SvgDocument } from "../../src/model/SvgDocument";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
@@ -27,7 +27,7 @@ class FakeStore implements DocumentStore {
 describe("document I/O session policy", () => {
   it("keeps only the read source as the implicit save destination", () => {
     const store = new FakeStore();
-    const session = new EditorSession(store);
+    const session = createDefaultEditorSession(store);
     session.init();
     session.save("first.svg");
     expect(() => session.save()).toThrow("no read path for save");
@@ -42,7 +42,7 @@ describe("document I/O session policy", () => {
 
   it("commits read and save barriers only after success", () => {
     const store = new FakeStore();
-    const session = new EditorSession(store);
+    const session = createDefaultEditorSession(store);
     session.init();
     session.create("rect", "old", ["0", "0", "1", "1"]);
     store.failRead = true;

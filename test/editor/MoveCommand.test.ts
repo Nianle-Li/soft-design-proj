@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("move command history", () => {
   it("moves a nested group as one undo unit and redoes the same displacement", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "group", []);
     session.create("circle", "child", ["10", "20", "5"], "group");
@@ -26,7 +26,7 @@ describe("move command history", () => {
   });
 
   it("keeps both history and geometry unchanged after a failed move", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "r1", ["1", "2", "3", "4"]);
     const before = session.tree();
@@ -38,7 +38,7 @@ describe("move command history", () => {
   });
 
   it("restores exact decimal coordinates instead of relying on inverse floating-point arithmetic", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "r1", ["0.1", "0.2", "3", "4"]);
     const before = session.tree();

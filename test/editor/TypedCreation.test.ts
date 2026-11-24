@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
 
 describe("candidate editor creation", () => {
   it("uses the same command history as CLI creation for a detached shape", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     expect(session.createShape(new RectShape("r", 1, 2, 3, 4))).toMatchObject({
       label: "rect#r",

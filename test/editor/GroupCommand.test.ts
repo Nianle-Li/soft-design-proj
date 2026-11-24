@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("group command history", () => {
   it("treats a multi-target group as one undo unit and restores redo", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "a", ["0", "0", "1", "1"]);
     session.create("rect", "b", ["1", "0", "1", "1"]);
@@ -22,7 +22,7 @@ describe("group command history", () => {
   });
 
   it("preserves the history and I/O barrier after a failed grouping", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     expect(() => session.group("bad", ["missing"])).toThrow("no such shape: missing");
     expect(() => session.undo()).toThrow("undo not allowed after io command");
@@ -35,7 +35,7 @@ describe("group command history", () => {
   });
 
   it("can undo a later member edit before undoing the group", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "r1", ["0", "0", "1", "1"]);
     const before = session.tree();

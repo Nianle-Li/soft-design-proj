@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("canvas session history", () => {
   it("leaves history untouched on queries and failures, then blocks history after resizing", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "r1", ["1", "2", "3", "4"]);
     expect(session.canvas()).toEqual({ width: 800, height: 600 });
@@ -32,7 +32,7 @@ describe("canvas session history", () => {
   });
 
   it("does not replace the document after resizing", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "group", []);
     session.create("rect", "r1", ["1", "2", "3", "4"], "group");

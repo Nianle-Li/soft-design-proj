@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("ungroup command history", () => {
   it("undoes and redoes one ungroup as one unit after grouping", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "outer", []);
     session.create("rect", "a", ["0", "0", "1", "1"], "outer");
@@ -32,7 +32,7 @@ describe("ungroup command history", () => {
   });
 
   it("keeps the current undo unit and I/O barrier after failures", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     expect(() => session.ungroup("missing")).toThrow("no such shape: missing");
     expect(() => session.undo()).toThrow("undo not allowed after io command");

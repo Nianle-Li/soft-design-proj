@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("addto command history", () => {
   it("moves across parents as one unit and restores the source position", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "source", []);
     session.create("g", "target", []);
@@ -26,7 +26,7 @@ describe("addto command history", () => {
   });
 
   it("does not change history after a cycle error", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "outer", []);
     session.create("g", "inner", [], "outer");

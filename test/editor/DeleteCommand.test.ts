@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("delete command history", () => {
   it("deletes a container as one unit and restores its descendants on undo", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "group", []);
     session.create("rect", "child", ["0", "0", "1", "1"], "group");
@@ -18,7 +18,7 @@ describe("delete command history", () => {
   });
 
   it("preserves history on failed delete and clears redo after a later edit", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "first", ["0", "0", "1", "1"]);
     expect(() => session.delete("missing")).toThrow("no such shape: missing");
@@ -31,7 +31,7 @@ describe("delete command history", () => {
   });
 
   it("restores a deleted group before older create commands are undone", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "group", []);
     session.create("rect", "child", ["0", "0", "1", "1"], "group");
@@ -46,7 +46,7 @@ describe("delete command history", () => {
   });
 
   it("undoes and redoes successive deletions in the original sibling order", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "left", ["0", "0", "1", "1"]);
     session.create("rect", "middle", ["1", "0", "1", "1"]);
@@ -64,7 +64,7 @@ describe("delete command history", () => {
   });
 
   it("keeps the I/O history barrier after a failed deletion", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
 
     expect(() => session.delete("missing")).toThrow("no such shape: missing");

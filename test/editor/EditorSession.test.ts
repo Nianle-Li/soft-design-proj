@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("EditorSession initial edit history", () => {
   it.each([
@@ -8,7 +8,7 @@ describe("EditorSession initial edit history", () => {
     { type: "line", parameters: ["1", "2", "3", "4", "black"] },
     { type: "text", parameters: ["1", "2", "label"] }
   ])("undoes and redoes a nested $type creation", ({ type, parameters }) => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "parent", []);
     session.create(type, "child", parameters, "parent");
@@ -21,7 +21,7 @@ describe("EditorSession initial edit history", () => {
   });
 
   it("creates shapes as commands and undoes/redoes the latest creation", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "node1", []);
     session.create("rect", "start", ["120", "100", "160", "60"], "node1");
@@ -34,7 +34,7 @@ describe("EditorSession initial edit history", () => {
   });
 
   it("keeps undo history after a failed edit and clears redo after a new edit", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "node1", []);
     session.create("rect", "start", ["1", "2", "3", "4"], "node1");
@@ -49,14 +49,14 @@ describe("EditorSession initial edit history", () => {
   });
 
   it("reports the specified error before a document exists", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     expect(() => session.create("g", "node1", [])).toThrow(
       "no document. use 'init' or 'read' first"
     );
   });
 
   it("keeps the init history barrier through a read-only tree query", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.tree();
 

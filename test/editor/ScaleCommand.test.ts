@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("scale command history", () => {
   it("scales a group as one history unit and redoes after an exact undo", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("g", "group", []);
     session.create("rect", "r1", ["0.1", "0.2", "3", "4"], "group");
@@ -19,7 +19,7 @@ describe("scale command history", () => {
   });
 
   it("preserves undo history after a failed scale and clears redo after a new edit", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "r1", ["1", "2", "3", "4"]);
     const before = session.tree();

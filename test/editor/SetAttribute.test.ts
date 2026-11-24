@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("set command history", () => {
   it("restores a pre-existing style and keeps each set as one history unit", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "r1", ["1", "2", "3", "4", "red"]);
 
@@ -52,7 +52,7 @@ describe("set command history", () => {
   });
 
   it("preserves redo after a failed set and clears it after a successful new set", () => {
-    const session = new EditorSession();
+    const session = createDefaultEditorSession();
     session.init();
     session.create("rect", "r1", ["1", "2", "3", "4"]);
     session.set("r1", "fill", "blue");
