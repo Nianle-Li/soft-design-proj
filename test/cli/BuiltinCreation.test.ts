@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("six built-in create types through the CLI", () => {
   it("matches the assignment's nested flowchart tree alignment", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     const commands = [
       "init 800 600",
       "create g flowchart",
@@ -46,7 +46,7 @@ describe("six built-in create types through the CLI", () => {
   });
 
   it("creates circle and ellipse, and keeps state unchanged on invalid numeric input", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     expect(app.runLine("create circle c1 50 50 10 red")).toEqual(["circle#c1 created"]);
     expect(app.runLine("create ellipse e1 1 2 3 4")).toEqual(["ellipse#e1 created"]);
@@ -61,7 +61,7 @@ describe("six built-in create types through the CLI", () => {
   });
 
   it("preserves the redo entry when a negative dimension rejects creation", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create rect existing 0 0 1 1");
     expect(app.runLine("undo")).toEqual(["rect#existing creation undone"]);

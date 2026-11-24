@@ -1,6 +1,5 @@
 import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../../model/SvgDocument";
-import { ShapeFactory } from "../../model/ShapeFactory";
 import type { ShapeProviderRegistry } from "../model/ShapeProviderRegistry";
 import { Shape } from "../model/Shape";
 import type { StackingEdge } from "../../model/SvgDocument";
@@ -33,11 +32,10 @@ export class EditorSession {
   private document?: SvgDocument;
   private readPath: string | undefined;
   private readonly executor = new CommandExecutor();
-  private readonly shapeFactory = new ShapeFactory();
 
   constructor(
-    private readonly store?: DocumentStore,
-    private readonly shapeProviders?: ShapeProviderRegistry
+    private readonly store: DocumentStore | undefined,
+    private readonly shapeProviders: ShapeProviderRegistry
   ) {}
 
   init(width = 800, height = 600): Readonly<{ width: number; height: number }> {
@@ -82,13 +80,8 @@ export class EditorSession {
 
   create(type: string, id: string, parameters: readonly string[], parentId?: string): ShapeChange {
     const document = this.currentDocument();
-    if (this.shapeProviders !== undefined) {
-      const candidate = this.shapeProviders.create(type, id, parameters);
-      return this.executor.execute(new CreateShapeCommand(document, candidate, parentId));
-    }
-    const spec = this.shapeFactory.parseCommand(type, id, parameters);
-    const command = new CreateShapeCommand(document, this.shapeFactory.create(spec), parentId);
-    return this.executor.execute(command);
+    const candidate = this.shapeProviders.create(type, id, parameters);
+    return this.executor.execute(new CreateShapeCommand(document, candidate, parentId));
   }
 
   createShape(candidate: Shape, parentId?: string): ShapeChange {

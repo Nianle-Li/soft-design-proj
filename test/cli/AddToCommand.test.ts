@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("addto CLI command", () => {
   it("moves an existing shape into a group and reports undo and redo", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create rect r1 0 0 1 1");
     app.runLine("create g target");
@@ -16,7 +16,7 @@ describe("addto CLI command", () => {
   });
 
   it("emits one error line for invalid placement and preserves state", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g outer");
     app.runLine("create g inner in outer");

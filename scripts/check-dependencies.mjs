@@ -124,18 +124,7 @@ function allowsDependency(from, to, file, target) {
   if (from === "model" && to === "builtin/shapes") {
     const legacySource = relative(sourceRoot, file).split(sep).join("/");
     const builtinTarget = relative(sourceRoot, target).split(sep).join("/");
-    return (
-      (legacySource === "model/ShapeFactory.ts" &&
-        [
-          "builtin/shapes/GroupShape",
-          "builtin/shapes/RectShape",
-          "builtin/shapes/CircleShape",
-          "builtin/shapes/EllipseShape",
-          "builtin/shapes/LineShape",
-          "builtin/shapes/TextShape"
-        ].includes(builtinTarget)) ||
-      (legacySource === "model/SvgDocument.ts" && builtinTarget === "builtin/shapes/GroupShape")
-    );
+    return legacySource === "model/SvgDocument.ts" && builtinTarget === "builtin/shapes/GroupShape";
   }
   return allowed.get(from)?.has(to) ?? false;
 }

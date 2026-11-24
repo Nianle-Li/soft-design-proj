@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("set CLI command", () => {
   it("sets quoted text and geometric attributes with undo and redo", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine('create text label 1 2 "old text"');
 
@@ -19,7 +19,7 @@ describe("set CLI command", () => {
   });
 
   it("reports the specified unknown-attribute error and leaves history unchanged", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("set r1 fill red")).toEqual([
       "error: no document. use 'init' or 'read' first"
     ]);
@@ -35,7 +35,7 @@ describe("set CLI command", () => {
   });
 
   it("treats a group style as one edit and removes a previously absent value on undo", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g group");
     app.runLine("create rect child 1 2 3 4 in group");
@@ -53,7 +53,7 @@ describe("set CLI command", () => {
     ["ellipse", "1 2 3 4", "rx"],
     ["ellipse", "1 2 3 4", "ry"]
   ])("rejects a negative %s %s without losing redo", (type, parameters, attribute) => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine(`create ${type} target ${parameters}`);
     app.runLine("create g later");

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("ungroup CLI command", () => {
   it("promotes children and reports the result with one history entry", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g outer");
     app.runLine("create g nested in outer");
@@ -17,7 +17,7 @@ describe("ungroup CLI command", () => {
   });
 
   it("uses the assignment's top-level error and preserves history", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g root");
     const before = app.runLine("tree");

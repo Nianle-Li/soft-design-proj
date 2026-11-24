@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("move CLI command", () => {
   it("matches the assignment's circle move, undo and redo feedback", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create circle c1 100 100 20 red");
 
@@ -14,7 +14,7 @@ describe("move CLI command", () => {
   });
 
   it("matches the assignment's group displacement feedback and moves descendants", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g node2");
     app.runLine('create text label 545 135 "处理数据" in node2');
@@ -26,7 +26,7 @@ describe("move CLI command", () => {
   });
 
   it("reports one error line for invalid input and preserves the previous undo unit", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("move r1 1 2")).toEqual(["error: no document. use 'init' or 'read' first"]);
     app.runLine("init");
     app.runLine("create rect r1 1 2 3 4");

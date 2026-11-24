@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("group CLI command", () => {
   it("matches the assignment's group creation summary", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create rect bg 0 0 1 1");
     app.runLine("create circle c1 1 1 1");
@@ -19,7 +19,7 @@ describe("group CLI command", () => {
   });
 
   it("reports ancestor conflicts exactly and leaves tree and history unchanged", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g markers");
     app.runLine("create circle c1 1 1 1 in markers");

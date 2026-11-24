@@ -10,12 +10,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 import { createSvgFileStore } from "../support/createSvgFileStore";
 
 describe("remaining explicit Phase 1 acceptance scenarios", () => {
   it("creates default and fractional canvases while keeping failed init atomic", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("init")).toEqual(["canvas 800x600 created"]);
     expect(app.runLine("init 640.5 480.25")).toEqual(["canvas 640.5x480.25 created"]);
     app.runLine("create rect r 1 2 3 4");
@@ -29,7 +29,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
   });
 
   it("reports the required no-document error for every document-dependent command", () => {
-    const app = new CliApp(new EditorSession(createSvgFileStore()));
+    const app = new CliApp(createDefaultEditorSession(createSvgFileStore()));
     const commands = [
       "save",
       "canvas",
@@ -60,7 +60,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
     const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-acceptance-"));
     const path = join(directory, "root.svg");
     try {
-      const app = new CliApp(new EditorSession(createSvgFileStore()));
+      const app = new CliApp(createDefaultEditorSession(createSvgFileStore()));
       app.runLine("init 80 60");
       const commands = [
         "create rect r 1 2 3 4",
@@ -131,7 +131,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
   });
 
   it("creates every built-in type through in inside a nested group", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g outer");
     expect(app.runLine("create g inner in outer")).toEqual(["g#inner created in g#outer"]);
@@ -157,7 +157,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
   });
 
   it("distinguishes case-sensitive ids and rejects invalid creation targets without state loss", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g Node");
     app.runLine("create rect r 1 2 3 4");
@@ -176,7 +176,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
   });
 
   it("handles consecutive undo and redo, then clears stale redo after a new edit", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g a");
     app.runLine("create g b");
@@ -190,7 +190,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
   });
 
   it("keeps history and state when the future-stage box type is rejected", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g existing");
     const before = app.runLine("tree");
@@ -232,7 +232,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
         ['create text x 1 2 "unclosed', undefined]
       ];
       for (const [command, exactError] of failures) {
-        const app = new CliApp(new EditorSession(createSvgFileStore()));
+        const app = new CliApp(createDefaultEditorSession(createSvgFileStore()));
         app.runLine("init 80 60");
         app.runLine("create g parent");
         app.runLine("create rect child 1 2 3 4 in parent");
@@ -257,7 +257,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
     const unsupported = join(directory, "unsupported.svg");
     const unwritable = join(directory, "missing-parent", "output.svg");
     try {
-      const app = new CliApp(new EditorSession(createSvgFileStore()));
+      const app = new CliApp(createDefaultEditorSession(createSvgFileStore()));
       app.runLine("init 40 30");
       app.runLine("create rect base 0 0 1 1");
       expect(app.runLine(`save ${source}`)).toEqual([`saved to ${source} (1 elements)`]);
@@ -298,7 +298,7 @@ describe("remaining explicit Phase 1 acceptance scenarios", () => {
   });
 
   it("does not discard an available redo entry after a failed edit", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create rect r 1 2 3 4");
     expect(app.runLine("undo")).toEqual(["rect#r creation undone"]);

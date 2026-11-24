@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("front/back CLI commands", () => {
   it("uses the SVG painting order and reports undo and redo", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create rect a 0 0 1 1");
     app.runLine("create rect b 0 0 1 1");
@@ -27,7 +27,7 @@ describe("front/back CLI commands", () => {
   });
 
   it("reports invalid syntax and missing shapes without changing the tree or history", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create rect a 0 0 1 1");
     const before = app.runLine("tree");

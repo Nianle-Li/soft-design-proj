@@ -4,7 +4,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
 import type { DocumentStore } from "../../src/core/editor/DocumentStore";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 import type { SvgDocument } from "../../src/model/SvgDocument";
 import { createSvgFileStore } from "../support/createSvgFileStore";
 
@@ -57,7 +57,7 @@ describe("assignment transcripts", () => {
     const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-transcript-"));
     const outputPath = join(directory, outputName);
     try {
-      const app = new CliApp(new EditorSession(new TranscriptStore(directory)));
+      const app = new CliApp(createDefaultEditorSession(new TranscriptStore(directory)));
       const mismatches: string[] = [];
       for (const { command, expected } of stepsFromGolden(filename)) {
         const actual = app.runLine(command);

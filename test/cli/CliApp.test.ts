@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("initial CLI slice", () => {
   it("replays init, nested creation and tree with the specified output", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
 
     expect(app.runLine("init 800 600")).toEqual(["canvas 800x600 created"]);
     expect(app.runLine("create g node1")).toEqual(["g#node1 created"]);
@@ -19,7 +19,7 @@ describe("initial CLI slice", () => {
   });
 
   it("ignores comments and emits one error line for failed commands", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("# create g ignored")).toEqual([]);
     expect(app.runLine("create g node1")).toEqual([
       "error: no document. use 'init' or 'read' first"
@@ -39,7 +39,7 @@ describe("initial CLI slice", () => {
   });
 
   it("supports a subtree query without adding absent fill to the display", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("init")).toEqual(["canvas 800x600 created"]);
     app.runLine("create rect r1 1.5 2 3 4");
 

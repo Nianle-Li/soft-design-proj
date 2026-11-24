@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("canvas CLI command", () => {
   it("queries and resizes the canvas without disturbing shapes", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("canvas")).toEqual(["error: no document. use 'init' or 'read' first"]);
     app.runLine("init");
     app.runLine("create rect r1 1 2 3 4");
@@ -17,7 +17,7 @@ describe("canvas CLI command", () => {
   });
 
   it("keeps document and history unchanged after invalid input", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create rect r1 1 2 3 4");
     const before = app.runLine("tree");

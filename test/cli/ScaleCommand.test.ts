@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("scale CLI command", () => {
   it("scales nested content while preserving its existing style and text", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g group");
     app.runLine("create rect r1 1 2 3 4 red in group");
@@ -20,7 +20,7 @@ describe("scale CLI command", () => {
   });
 
   it("reports the specified non-positive-factor error without changing state or history", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("scale r1 2")).toEqual(["error: no document. use 'init' or 'read' first"]);
     app.runLine("init");
     app.runLine("create rect r1 1 2 3 4");

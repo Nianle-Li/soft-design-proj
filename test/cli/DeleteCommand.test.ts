@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("delete CLI command", () => {
   it("uses the assignment's delete and restore output inside a group", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g markers");
     app.runLine("create rect box 0 0 10 10 in markers");
@@ -17,7 +17,7 @@ describe("delete CLI command", () => {
   });
 
   it("rejects an absent target and bad arity with one error line and no state change", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("delete x")).toEqual(["error: no document. use 'init' or 'read' first"]);
     app.runLine("init");
     app.runLine("create rect r1 0 0 1 1");

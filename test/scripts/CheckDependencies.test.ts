@@ -142,7 +142,7 @@ describe("dependency boundary checker", () => {
     expect(result.stderr).toContain("core/model -> model");
   });
 
-  it("limits legacy imports of migrated built-in classes to their construction sites", () => {
+  it("allows only the remaining legacy group construction to import a built-in shape", () => {
     const migrated = [
       "GroupShape",
       "RectShape",
@@ -153,21 +153,20 @@ describe("dependency boundary checker", () => {
     ];
     const allowed = checkFiles({
       "builtin/shapes/GroupShape.ts": 'import { ContainerShape } from "../../core/plugin-api";',
-      "model/ShapeFactory.ts": migrated
-        .map((name) => `import { ${name} } from "../builtin/shapes/${name}";`)
-        .join("\n"),
       "model/SvgDocument.ts": 'import { GroupShape } from "../builtin/shapes/GroupShape";'
     });
     expect(allowed.status, allowed.stderr).toBe(0);
 
-    const forbidden = checkFiles({
-      "model/Other.ts": migrated
-        .map((name) => `import { ${name} } from "../builtin/shapes/${name}";`)
-        .join("\n")
-    });
-    expect(forbidden.status).toBe(1);
-    for (const name of migrated) {
-      expect(forbidden.stderr).toContain(`../builtin/shapes/${name}`);
+    for (const source of ["model/Other.ts", "model/ShapeFactory.ts"]) {
+      const forbidden = checkFiles({
+        [source]: migrated
+          .map((name) => `import { ${name} } from "../builtin/shapes/${name}";`)
+          .join("\n")
+      });
+      expect(forbidden.status).toBe(1);
+      for (const name of migrated) {
+        expect(forbidden.stderr).toContain(`../builtin/shapes/${name}`);
+      }
     }
 
     const wrongTarget = checkFiles({

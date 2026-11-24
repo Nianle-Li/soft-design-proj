@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { CliApp } from "../../src/host/cli/CliApp";
-import { EditorSession } from "../../src/core/editor/EditorSession";
+import { createDefaultEditorSession } from "../support/createDefaultEditorSession";
 
 describe("show and help", () => {
   it("matches the assignment's circle example and leaves undo history unchanged", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("show c1")).toEqual(["error: no document. use 'init' or 'read' first"]);
     app.runLine("init");
     app.runLine("create g markers");
@@ -21,7 +21,7 @@ describe("show and help", () => {
   });
 
   it("shows only explicit attributes for a top-level group and text", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     app.runLine("init");
     app.runLine("create g layer");
     app.runLine("set layer fill #eee");
@@ -39,7 +39,7 @@ describe("show and help", () => {
   });
 
   it("lists every Phase 1 command with its syntax even before init", () => {
-    const app = new CliApp(new EditorSession());
+    const app = new CliApp(createDefaultEditorSession());
     expect(app.runLine("help")).toEqual([
       "Commands:",
       "  init [w] [h]",
