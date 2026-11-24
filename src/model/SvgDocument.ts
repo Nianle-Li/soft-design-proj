@@ -458,9 +458,10 @@ export class SvgDocument {
       }
       branch = ancestor;
     }
-    const group = this.shapeProviders?.has("g")
-      ? this.shapeProviders.create("g", id, [])
-      : new GroupShape(id);
+    const group =
+      this.shapeProviders !== undefined
+        ? this.shapeProviders.create("g", id, [])
+        : new GroupShape(id);
     if (!(group instanceof ContainerShape)) {
       throw new EditorError("registered g provider must return a container");
     }

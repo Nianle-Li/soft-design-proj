@@ -47,6 +47,24 @@ describe("default g assembly", () => {
     expect(session.show("r1").parentLabel).toBe("g#bundle");
   });
 
+  it("rejects grouping without a registered g provider and preserves redo", () => {
+    const session = new EditorSession(
+      undefined,
+      new ShapeProviderRegistry([new RectShapeProvider()])
+    );
+    session.init();
+    session.create("rect", "r1", ["0", "0", "1", "1"]);
+    session.create("rect", "r2", ["1", "0", "1", "1"]);
+    session.undo();
+    const before = session.tree();
+
+    expect(() => session.group("bundle", ["r1"])).toThrow(
+      "unknown shape type: g (is the plugin loaded?)"
+    );
+    expect(session.tree()).toEqual(before);
+    expect(session.redo()).toMatchObject({ label: "rect#r2", action: "created" });
+  });
+
   it("rejects a g provider that returns a leaf before changing the group targets", () => {
     const registry = new ShapeProviderRegistry([
       { type: "g", create: (id) => new RectShape(id, 0, 0, 1, 1) }
