@@ -8,18 +8,21 @@ import { StatsCommand } from "../plugins/stats/StatsCommand";
 import { DirCommand } from "../plugins/dir/DirCommand";
 import { NodeDirectoryReader } from "../plugins/dir/adapters/NodeDirectoryReader";
 import { createDefaultAttributeHandlers } from "./host/assembly/DefaultAttributes";
+import { createDefaultTreeDecorators } from "./host/assembly/DefaultTreeDecorators";
 
 const shapeProviders = createDefaultShapeProviders();
 const attributeHandlers = createDefaultAttributeHandlers();
+const treeDecorators = createDefaultTreeDecorators();
 const session = new EditorSession(
   new SvgFileStore(new SvgCodec(shapeProviders, attributeHandlers)),
   shapeProviders,
   attributeHandlers
 );
-const app = new CliApp(session, [
-  new StatsCommand(() => session.tree()),
-  new DirCommand(new NodeDirectoryReader())
-]);
+const app = new CliApp(
+  session,
+  [new StatsCommand(() => session.tree()), new DirCommand(new NodeDirectoryReader())],
+  treeDecorators
+);
 const repl = createInterface({ input: process.stdin, output: process.stdout });
 
 process.stdout.write("svg-editor 0.1 — type 'help' for commands\n\n");

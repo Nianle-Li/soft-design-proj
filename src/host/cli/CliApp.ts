@@ -5,18 +5,21 @@ import { CommandRegistry } from "../../core/command/CommandRegistry";
 import { EditorError } from "../../core/model/EditorError";
 import { CommandLineParser } from "./CommandLineParser";
 import { TreeFormatter } from "./TreeFormatter";
+import { TreeDecoratorRegistry } from "../../core/tree/TreeDecoratorRegistry";
 
 /** One-line application boundary; the REPL only handles streams and prompts. */
 export class CliApp {
   private readonly parser = new CommandLineParser();
-  private readonly treeFormatter = new TreeFormatter();
+  private readonly treeFormatter: TreeFormatter;
   private readonly commands: CommandRegistry;
 
   constructor(
     private readonly session: EditorSession,
-    extensions: readonly Command[] = []
+    extensions: readonly Command[] = [],
+    private readonly treeDecorators = new TreeDecoratorRegistry([])
   ) {
     this.commands = new CommandRegistry([...this.builtInCommands(), ...extensions]);
+    this.treeFormatter = new TreeFormatter(treeDecorators);
   }
 
   runLine(line: string): string[] {
@@ -156,6 +159,7 @@ export class CliApp {
     const width = arguments_.length === 0 ? 800 : Number(arguments_[0]);
     const height = arguments_.length === 0 ? 600 : Number(arguments_[1]);
     const canvas = this.session.init(width, height);
+    this.treeDecorators.resetBaseline(this.session.tree());
     return [`canvas ${String(canvas.width)}x${String(canvas.height)} created`];
   }
 
@@ -173,6 +177,7 @@ export class CliApp {
 
   private read(path: string): string[] {
     const result = this.session.read(path);
+    this.treeDecorators.resetBaseline(this.session.tree());
     const warnings = result.assignedIds.map(
       ({ id, tag }) => `warning: assigned id ${id} to unnamed <${tag}>`
     );
@@ -181,6 +186,7 @@ export class CliApp {
 
   private save(path?: string): string[] {
     const result = this.session.save(path);
+    this.treeDecorators.resetBaseline(this.session.tree());
     return [`saved to ${result.path} (${String(result.count)} elements)`];
   }
 

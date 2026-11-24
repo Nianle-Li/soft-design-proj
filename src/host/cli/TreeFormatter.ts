@@ -1,7 +1,10 @@
 import type { ShapeView, TreeDetailPart, TreeView } from "../../core/model/TreeView";
+import { TreeDecoratorRegistry } from "../../core/tree/TreeDecoratorRegistry";
 
 /** CLI-only tree glyphs and column alignment. */
 export class TreeFormatter {
+  constructor(private readonly decorators = new TreeDecoratorRegistry([])) {}
+
   format(tree: TreeView, selected = false): string[] {
     if (selected) {
       const root = tree.roots[0];
@@ -13,7 +16,10 @@ export class TreeFormatter {
     }
     const column = this.attributeColumn(tree.roots);
     return [
-      `svg (${String(tree.width)}x${String(tree.height)})`,
+      this.withLabels(`svg (${String(tree.width)}x${String(tree.height)})`, {
+        kind: "canvas",
+        tree
+      }),
       ...this.children(tree.roots, "", column)
     ];
   }
@@ -46,10 +52,19 @@ export class TreeFormatter {
   }
 
   private line(node: ShapeView, column: number): string {
-    if (node.details.length === 0) {
-      return node.label;
-    }
-    return `${node.label}${" ".repeat(Math.max(1, column - node.label.length))}${this.details(node.details)}`;
+    const content =
+      node.details.length === 0
+        ? node.label
+        : `${node.label}${" ".repeat(Math.max(1, column - node.label.length))}${this.details(node.details)}`;
+    return this.withLabels(content, { kind: "shape", shape: node });
+  }
+
+  private withLabels(
+    content: string,
+    target: Parameters<TreeDecoratorRegistry["labels"]>[0]
+  ): string {
+    const labels = this.decorators.labels(target);
+    return labels.length === 0 ? content : `${content} ${labels.join(" ")}`;
   }
 
   private details(parts: readonly TreeDetailPart[]): string {
