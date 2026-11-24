@@ -7,25 +7,46 @@ import { createDefaultAttributeHandlers } from "./DefaultAttributes";
 import { createDefaultShapeProviders } from "./DefaultShapes";
 import { createDefaultTreeDecorators } from "./DefaultTreeDecorators";
 import { PluginInstaller } from "./PluginInstaller";
+import { PluginLoader } from "./PluginLoader";
+
+export interface ApplicationStartup {
+  readonly app: CliApp;
+  readonly errors: readonly string[];
+}
 
 /** Builds the complete code-selected application while hiding its construction order. */
 export function createCodeApplication(): CliApp {
-  const application: { session?: EditorSession } = {};
-  const installer = new PluginInstaller({
+  const assembly = new ApplicationAssembly();
+  installCodePlugins(assembly.installer);
+  return assembly.build();
+}
+
+/** Builds only successfully configured plugins; invalid config falls back to built-ins. */
+export async function createConfiguredApplication(configPath: string): Promise<ApplicationStartup> {
+  const assembly = new ApplicationAssembly();
+  const errors = await new PluginLoader(assembly.installer).load(configPath);
+  return { app: assembly.build(), errors };
+}
+
+class ApplicationAssembly {
+  private readonly state: { session?: EditorSession } = {};
+  readonly installer = new PluginInstaller({
     tree: () => {
-      if (application.session === undefined) throw new Error("application assembly is incomplete");
-      return application.session.tree();
+      if (this.state.session === undefined) throw new Error("application assembly is incomplete");
+      return this.state.session.tree();
     }
   });
-  installCodePlugins(installer);
-  const contributions = installer.contributions();
-  const shapeProviders = createDefaultShapeProviders(contributions.shapes);
-  const attributeHandlers = createDefaultAttributeHandlers(contributions.attributes);
-  const treeDecorators = createDefaultTreeDecorators(contributions.decorators);
-  application.session = new EditorSession(
-    new SvgFileStore(new SvgCodec(shapeProviders, attributeHandlers)),
-    shapeProviders,
-    attributeHandlers
-  );
-  return new CliApp(application.session, contributions.commands, treeDecorators);
+
+  build(): CliApp {
+    const contributions = this.installer.contributions();
+    const shapeProviders = createDefaultShapeProviders(contributions.shapes);
+    const attributeHandlers = createDefaultAttributeHandlers(contributions.attributes);
+    const treeDecorators = createDefaultTreeDecorators(contributions.decorators);
+    this.state.session = new EditorSession(
+      new SvgFileStore(new SvgCodec(shapeProviders, attributeHandlers)),
+      shapeProviders,
+      attributeHandlers
+    );
+    return new CliApp(this.state.session, contributions.commands, treeDecorators);
+  }
 }

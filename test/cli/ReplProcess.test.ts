@@ -138,6 +138,72 @@ describe("real REPL process", () => {
     }
   });
 
+  it("loads the configured plugin set without inheriting code-selected plugins", () => {
+    const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-config-repl-"));
+    const configPath = join(directory, "plugins.config.json");
+    try {
+      writeFileSync(
+        configPath,
+        JSON.stringify({
+          plugins: [
+            { module: resolve("plugins/stats/index.ts") },
+            { module: resolve("plugins/modified-star/index.ts") }
+          ]
+        }),
+        "utf8"
+      );
+      const tsxLoader = pathToFileURL(createRequire(resolve("package.json")).resolve("tsx")).href;
+      const result = spawnSync(
+        process.execPath,
+        ["--import", tsxLoader, resolve("src/main.ts"), "--config", configPath],
+        {
+          cwd: directory,
+          input: "init 100 80\ncreate rect r 1 2 3 4\nstats\ntree\ncreate box b 1 2 3 4 title\n",
+          encoding: "utf8",
+          timeout: 10000
+        }
+      );
+
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("rect: 1  (total 1, containers 0)");
+      expect(result.stdout).toContain("svg (100x80) *");
+      expect(result.stdout).toMatch(/rect#r\s+x=1 y=2 w=3 h=4 \*/u);
+      expect(result.stdout).toContain("error: unknown shape type: box (is the plugin loaded?)");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("reports invalid config and starts with default built-in capabilities", () => {
+    const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-config-repl-"));
+    const configPath = join(directory, "plugins.config.json");
+    try {
+      writeFileSync(configPath, "not json", "utf8");
+      const tsxLoader = pathToFileURL(createRequire(resolve("package.json")).resolve("tsx")).href;
+      const result = spawnSync(
+        process.execPath,
+        ["--import", tsxLoader, resolve("src/main.ts"), "--config", configPath],
+        {
+          cwd: directory,
+          input: "init\ncreate rect r 1 2 3 4\nstats\n",
+          encoding: "utf8",
+          timeout: 10000
+        }
+      );
+
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("error: invalid plugin config");
+      expect(result.stdout).toContain("rect#r created");
+      expect(result.stdout).toContain("error: unknown command: stats");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it.each([
     ["phase1-reference.golden.txt", "demo.svg", 5],
     ["phase1-flowchart.golden.txt", "flowchart.svg", 8]
