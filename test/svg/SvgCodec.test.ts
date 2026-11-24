@@ -4,13 +4,14 @@ import { describe, expect, it } from "vitest";
 import { SvgDocument } from "../../src/model/SvgDocument";
 import { createFromCommand } from "../support/createFromCommand";
 import { SvgCodec } from "../../src/adapters/svg/SvgCodec";
+import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const wrap = (content: string, rootAttributes = "") =>
   `<svg xmlns="${SVG_NS}" width="40" height="30" viewBox="0 0 40 30" ${rootAttributes}>${content}</svg>`;
 
 describe("strict SVG codec", () => {
-  const codec = new SvgCodec();
+  const codec = new SvgCodec(createDefaultShapeProviders());
 
   it("loads the assignment's other.svg with one warning and seven ordered elements", () => {
     const xml = readFileSync(resolve("test/fixtures/svg/other.svg"), "utf8");

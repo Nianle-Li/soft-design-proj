@@ -101,7 +101,9 @@ describe("SVG adapter provider readback", () => {
 
   it("rejects unavailable or invalid providers without treating custom SVG as a built-in", () => {
     const xml = wrap('<frame id="f1"/>');
-    expect(() => new SvgCodec().decode(xml)).toThrow("unsupported SVG element: <frame>");
+    expect(() => new SvgCodec(createDefaultShapeProviders()).decode(xml)).toThrow(
+      "unsupported SVG element: <frame>"
+    );
     const wrongId: ShapeProvider = {
       type: "frame",
       create: (id) => new GroupShape(id),
