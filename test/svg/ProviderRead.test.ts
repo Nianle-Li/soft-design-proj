@@ -7,6 +7,7 @@ import type { ShapeProvider, SvgReadInput } from "../../src/core/plugin-api";
 import type { DocumentStore } from "../../src/core/editor/DocumentStore";
 import { EditorSession } from "../../src/core/editor/EditorSession";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
+import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
 
 const wrap = (content: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="30" viewBox="0 0 40 30">${content}</svg>`;
@@ -25,9 +26,28 @@ function frameReader(seen: SvgReadInput[]): ShapeProvider {
 }
 
 describe("SVG adapter provider readback", () => {
-  it("reads a provider subtree within a legacy group and keeps ordered built-in children", () => {
+  it("requires every type in a configured registry to supply SVG readback", () => {
+    const rect = wrap('<rect id="r1" x="0" y="0" width="1" height="1"/>');
+    expect(() => new SvgCodec(new ShapeProviderRegistry([])).decode(rect)).toThrow(
+      "unsupported SVG element: <rect>"
+    );
+    const creationOnly = new ShapeProviderRegistry([
+      { type: "rect", create: (id) => new RectShape(id, 0, 0, 1, 1) }
+    ]);
+    expect(() => new SvgCodec(creationOnly).decode(rect)).toThrow(
+      "shape provider rect does not support SVG read"
+    );
+    expect(() => new SvgCodec(creationOnly).decode(wrap('<rect id="r1"><path/></rect>'))).toThrow(
+      "shape provider rect does not support SVG read"
+    );
+    expect(() =>
+      new SvgCodec(createDefaultShapeProviders()).decode(wrap('<path id="p1" d="M0 0"/>'))
+    ).toThrow("unsupported SVG element: <path>");
+  });
+
+  it("reads a provider subtree within a built-in group and keeps ordered children", () => {
     const seen: SvgReadInput[] = [];
-    const codec = new SvgCodec(new ShapeProviderRegistry([frameReader(seen)]));
+    const codec = new SvgCodec(createDefaultShapeProviders([frameReader(seen)]));
     const result = codec.decode(
       wrap(
         '<g id="outer"><frame id="f1" data-test="kept"><rect x="1" y="2" width="3" height="4" fill="red"/><text id="t1" x="5" y="6">A &amp; B</text></frame></g>'
@@ -52,7 +72,7 @@ describe("SVG adapter provider readback", () => {
 
   it("recurses into provider children and rejects duplicate ids before invoking providers", () => {
     const seen: SvgReadInput[] = [];
-    const codec = new SvgCodec(new ShapeProviderRegistry([frameReader(seen)]));
+    const codec = new SvgCodec(createDefaultShapeProviders([frameReader(seen)]));
     const result = codec.decode(wrap('<frame id="top"><frame id="inner"/></frame>'));
     expect(result.count).toBe(2);
     expect(seen.map((element) => element.id)).toEqual(["inner", "top"]);
@@ -74,7 +94,7 @@ describe("SVG adapter provider readback", () => {
     ]
   ])("preserves built-in validation inside a provider subtree", (child, error) => {
     const seen: SvgReadInput[] = [];
-    const codec = new SvgCodec(new ShapeProviderRegistry([frameReader(seen)]));
+    const codec = new SvgCodec(createDefaultShapeProviders([frameReader(seen)]));
     expect(() => codec.decode(wrap(`<frame id="f1">${child}</frame>`))).toThrow(error);
     expect(seen).toEqual([]);
   });

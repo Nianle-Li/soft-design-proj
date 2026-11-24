@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { GroupShape } from "../../src/builtin/shapes/GroupShape";
+import { RectShapeProvider } from "../../src/builtin/shapes/RectShapeProvider";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 import { SvgCodec } from "../../src/adapters/svg/SvgCodec";
 
@@ -7,6 +8,7 @@ describe("group provider after SVG read", () => {
   it("keeps the configured provider for later grouping", () => {
     const created: string[] = [];
     const registry = new ShapeProviderRegistry([
+      new RectShapeProvider(),
       {
         type: "g",
         create(id) {

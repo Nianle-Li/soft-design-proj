@@ -5,7 +5,6 @@ import type {
   Node as XmlNode
 } from "@xmldom/xmldom";
 import { EditorError } from "../../core/model/EditorError";
-import { ContainerShape } from "../../core/model/ContainerShape";
 import { Shape } from "../../core/model/Shape";
 import { SvgDocument } from "../../model/SvgDocument";
 import { ShapeFactory } from "../../model/ShapeFactory";
@@ -132,61 +131,39 @@ export class SvgCodec {
       }
       return { type, id, attributes, children, text };
     };
-    const readCandidate = (element: XmlElement): Shape => {
+    const readCandidate = (element: XmlElement, registry: ShapeProviderRegistry): Shape => {
       const { type, id, attributes, children, text } = describe(element);
-      let shape: Shape;
-      if (this.shapeProviders?.hasSvgReader(type)) {
-        const members = children.map(readCandidate);
-        shape = this.shapeProviders.readSvg(type, {
-          tag: type,
-          id,
-          attributes,
-          text,
-          children: members
-        });
-      } else {
-        shape = this.shapeFactory.create(
-          this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0)
-        );
-        if (children.length > 0) {
-          if (!(shape instanceof ContainerShape)) {
-            throw new EditorError(`no such container: ${id}`);
-          }
-          for (const child of children) {
-            shape.insertChild(shape.childCount, readCandidate(child));
-          }
-        }
+      if (!registry.has(type)) {
+        throw new EditorError(`unsupported SVG element: <${type}>`);
       }
+      if (!registry.hasSvgReader(type)) {
+        throw new EditorError(`shape provider ${type} does not support SVG read`);
+      }
+      const members = children.map((child) => readCandidate(child, registry));
+      const shape = registry.readSvg(type, {
+        tag: type,
+        id,
+        attributes,
+        text,
+        children: members
+      });
       count += 1;
       return shape;
     };
-    const add = (element: XmlElement, parentId?: string): void => {
+    const addLegacy = (element: XmlElement, parentId?: string): void => {
       const { type, id, attributes, children, text } = describe(element);
-      const useProvider = this.shapeProviders?.hasSvgReader(type) ?? false;
-      if (useProvider && this.shapeProviders !== undefined) {
-        const members = children.map(readCandidate);
-        const candidate = this.shapeProviders.readSvg(type, {
-          tag: type,
-          id,
-          attributes,
-          text,
-          children: members
-        });
-        document.importCandidate(candidate, parentId);
-      } else {
-        document.importShape(
-          this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0),
-          parentId
-        );
-      }
+      document.importShape(
+        this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0),
+        parentId
+      );
       count += 1;
-      if (!useProvider) {
-        for (const child of children) add(child, id);
-      }
+      for (const child of children) addLegacy(child, id);
     };
     for (const child of this.nodes(root)) {
-      if (child.nodeType === 1) add(child as XmlElement);
-      else if (child.nodeType !== 3 || child.nodeValue?.trim() !== "") {
+      if (child.nodeType === 1) {
+        if (this.shapeProviders === undefined) addLegacy(child as XmlElement);
+        else document.importCandidate(readCandidate(child as XmlElement, this.shapeProviders));
+      } else if (child.nodeType !== 3 || child.nodeValue?.trim() !== "") {
         throw new EditorError("unsupported content in <svg>");
       }
     }
