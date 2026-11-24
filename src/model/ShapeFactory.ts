@@ -8,17 +8,8 @@ import { Shape } from "../core/model/Shape";
 import type { ShapeSpec } from "./ShapeSpec";
 import { TextShape } from "../builtin/shapes/TextShape";
 
-/** The sole shape-name boundary; both CLI arguments and SVG attributes become typed specs here. */
+/** Legacy typed construction used by unconfigured sessions and document tests. */
 export class ShapeFactory {
-  private readonly svgGeometry = new Map<string, readonly string[]>([
-    ["g", []],
-    ["rect", ["x", "y", "width", "height"]],
-    ["circle", ["cx", "cy", "r"]],
-    ["ellipse", ["cx", "cy", "rx", "ry"]],
-    ["line", ["x1", "y1", "x2", "y2"]],
-    ["text", ["x", "y"]]
-  ]);
-
   parseCommand(type: string, id: string, parameters: readonly string[]): ShapeSpec {
     switch (type) {
       case "g":
@@ -79,47 +70,6 @@ export class ShapeFactory {
       default:
         throw new EditorError(`unknown shape type: ${type} (is the plugin loaded?)`);
     }
-  }
-
-  parseSvg(
-    type: string,
-    id: string,
-    attributes: ReadonlyMap<string, string>,
-    text: string,
-    hasElementChildren: boolean
-  ): ShapeSpec {
-    const geometry = this.svgGeometry.get(type);
-    if (geometry === undefined) {
-      throw new EditorError(`unsupported SVG element: <${type}>`);
-    }
-    if (type === "text" && hasElementChildren) {
-      throw new EditorError("unsupported child element in <text>");
-    }
-    const styles = ["fill", "stroke", "stroke-width"] as const;
-    const allowed = new Set(["id", ...geometry, ...styles]);
-    for (const attribute of attributes.keys()) {
-      if (!allowed.has(attribute)) {
-        throw new EditorError(`unsupported SVG attribute: ${attribute} on <${type}>`);
-      }
-    }
-    if (type !== "text" && text.trim() !== "") {
-      throw new EditorError(`unsupported text content in <${type}>`);
-    }
-    const parameters = geometry.map((name) => {
-      const value = attributes.get(name);
-      if (value === undefined) {
-        throw new EditorError(`missing SVG attribute: ${name} on <${type}>`);
-      }
-      return value;
-    });
-    if (type === "text") parameters.push(text);
-    const spec = this.parseCommand(type, id, parameters);
-    return {
-      ...spec,
-      ...(attributes.has("fill") ? { fill: attributes.get("fill") } : {}),
-      ...(attributes.has("stroke") ? { stroke: attributes.get("stroke") } : {}),
-      ...(attributes.has("stroke-width") ? { strokeWidth: attributes.get("stroke-width") } : {})
-    } as ShapeSpec;
   }
 
   create(spec: ShapeSpec): Shape {
