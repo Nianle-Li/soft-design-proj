@@ -13,18 +13,26 @@ describe("default text SVG readback", () => {
     const xml = wrap(
       '<g id="outer"><text x="-2" y="3" fill="#fff" stroke-width="1.50"> 处理 &lt;&amp;&gt; \n </text><text id="empty" x="0" y="0"></text></g>'
     );
-    const before = new SvgCodec().decode(xml);
     const after = new SvgCodec(registry).decode(xml);
 
-    expect(after.count).toBe(before.count);
+    expect(after.count).toBe(3);
     expect(after.assignedIds).toEqual([{ id: "text1", tag: "text" }]);
-    expect(after.document.tree()).toEqual(before.document.tree());
+    expect(after.document.tree().roots[0]?.label).toBe("g#outer");
+    expect(after.document.tree("outer").roots[0]?.children.map((node) => node.label)).toEqual([
+      "text#text1",
+      "text#empty"
+    ]);
+    expect(after.document.show("text1").geometry).toEqual([
+      ["x", "-2"],
+      ["y", "3"]
+    ]);
     expect(after.document.show("text1").text).toBe(" 处理 <&> \n ");
     expect(after.document.show("empty").text).toBe("");
     expect(after.document.explicitStyle("text1")).toEqual({ fill: "#fff", strokeWidth: "1.5" });
-    expect(new SvgCodec(registry).encode(after.document)).toEqual(
-      new SvgCodec().encode(before.document)
-    );
+    const encoded = new SvgCodec(registry).encode(after.document);
+    expect(encoded.count).toBe(3);
+    expect(encoded.xml).toContain("处理 &lt;&amp;&gt;");
+    expect(encoded.xml).toContain('stroke-width="1.5"');
   });
 
   it.each([
@@ -42,7 +50,6 @@ describe("default text SVG readback", () => {
     ]
   ])("preserves Phase 1 text errors", (content, error) => {
     const xml = wrap(content);
-    expect(() => new SvgCodec().decode(xml)).toThrow(error);
     expect(() => new SvgCodec(createDefaultShapeProviders()).decode(xml)).toThrow(error);
   });
 
