@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { EditorSession } from "../../src/core/editor/EditorSession";
+import { RectShape } from "../../src/builtin/shapes/RectShape";
 
-describe("typed editor creation", () => {
-  it("uses the same command history as CLI creation without passing token arrays", () => {
+describe("candidate editor creation", () => {
+  it("uses the same command history as CLI creation for a detached shape", () => {
     const session = new EditorSession();
     session.init();
-    expect(
-      session.createShape({ kind: "rect", id: "r", x: 1, y: 2, width: 3, height: 4 })
-    ).toMatchObject({
+    expect(session.createShape(new RectShape("r", 1, 2, 3, 4))).toMatchObject({
       label: "rect#r",
       action: "created"
     });

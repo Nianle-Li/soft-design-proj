@@ -2,7 +2,7 @@ import { EditorError } from "../model/EditorError";
 import { SvgDocument } from "../../model/SvgDocument";
 import { ShapeFactory } from "../../model/ShapeFactory";
 import type { ShapeProviderRegistry } from "../model/ShapeProviderRegistry";
-import type { ShapeSpec } from "../../model/ShapeSpec";
+import { Shape } from "../model/Shape";
 import type { StackingEdge } from "../../model/SvgDocument";
 import type { ShapeDetailsView, TreeView } from "../model/TreeView";
 import { AddToShapeCommand } from "./AddToShapeCommand";
@@ -91,8 +91,8 @@ export class EditorSession {
     return this.executor.execute(command);
   }
 
-  createShape(spec: ShapeSpec, parentId?: string): ShapeChange {
-    const command = new CreateShapeCommand(this.currentDocument(), spec, parentId);
+  createShape(candidate: Shape, parentId?: string): ShapeChange {
+    const command = new CreateShapeCommand(this.currentDocument(), candidate, parentId);
     return this.executor.execute(command);
   }
 
