@@ -18,6 +18,6 @@ export interface ShapeCreationContext {
 export interface ShapeProvider {
   readonly type: string;
   create(id: string, parameters: readonly string[], context: ShapeCreationContext): Shape;
-  /** Optional while built-in SVG readback migrates from ShapeFactory. */
+  /** Creation-only providers cannot read their registered SVG type. */
   readSvg?(element: SvgReadInput): Shape;
 }

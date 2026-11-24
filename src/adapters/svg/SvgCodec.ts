@@ -7,7 +7,6 @@ import type {
 import { EditorError } from "../../core/model/EditorError";
 import { Shape } from "../../core/model/Shape";
 import { SvgDocument } from "../../model/SvgDocument";
-import { ShapeFactory } from "../../model/ShapeFactory";
 import type { ShapeProviderRegistry } from "../../core/model/ShapeProviderRegistry";
 import type { SvgNodeView } from "../../core/model/SvgNodeView";
 
@@ -15,8 +14,7 @@ const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 
 /** Translates the deliberately supported SVG subset without leaking DOM nodes into the model. */
 export class SvgCodec {
-  private readonly shapeFactory = new ShapeFactory();
-  constructor(private readonly shapeProviders?: ShapeProviderRegistry) {}
+  constructor(private readonly shapeProviders: ShapeProviderRegistry) {}
 
   decode(xml: string): Readonly<{
     document: SvgDocument;
@@ -131,16 +129,16 @@ export class SvgCodec {
       }
       return { type, id, attributes, children, text };
     };
-    const readCandidate = (element: XmlElement, registry: ShapeProviderRegistry): Shape => {
+    const readCandidate = (element: XmlElement): Shape => {
       const { type, id, attributes, children, text } = describe(element);
-      if (!registry.has(type)) {
+      if (!this.shapeProviders.has(type)) {
         throw new EditorError(`unsupported SVG element: <${type}>`);
       }
-      if (!registry.hasSvgReader(type)) {
+      if (!this.shapeProviders.hasSvgReader(type)) {
         throw new EditorError(`shape provider ${type} does not support SVG read`);
       }
-      const members = children.map((child) => readCandidate(child, registry));
-      const shape = registry.readSvg(type, {
+      const members = children.map(readCandidate);
+      const shape = this.shapeProviders.readSvg(type, {
         tag: type,
         id,
         attributes,
@@ -150,19 +148,9 @@ export class SvgCodec {
       count += 1;
       return shape;
     };
-    const addLegacy = (element: XmlElement, parentId?: string): void => {
-      const { type, id, attributes, children, text } = describe(element);
-      document.importShape(
-        this.shapeFactory.parseSvg(type, id, attributes, text, children.length > 0),
-        parentId
-      );
-      count += 1;
-      for (const child of children) addLegacy(child, id);
-    };
     for (const child of this.nodes(root)) {
       if (child.nodeType === 1) {
-        if (this.shapeProviders === undefined) addLegacy(child as XmlElement);
-        else document.importCandidate(readCandidate(child as XmlElement, this.shapeProviders));
+        document.importCandidate(readCandidate(child as XmlElement));
       } else if (child.nodeType !== 3 || child.nodeValue?.trim() !== "") {
         throw new EditorError("unsupported content in <svg>");
       }
