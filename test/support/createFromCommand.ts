@@ -1,13 +1,15 @@
-import { ShapeFactory } from "../../src/model/ShapeFactory";
+import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
+import type { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 import type { CreationReceipt, SvgDocument } from "../../src/model/SvgDocument";
 
-/** Converts command syntax at the test boundary; the document receives a typed request. */
+/** Builds a detached candidate through the same provider contract as CLI creation. */
 export function createFromCommand(
   document: SvgDocument,
   type: string,
   id: string,
   parameters: readonly string[],
-  parentId?: string
+  parentId?: string,
+  providers: ShapeProviderRegistry = createDefaultShapeProviders()
 ): CreationReceipt {
-  return document.create(new ShapeFactory().parseCommand(type, id, parameters), parentId);
+  return document.createCandidate(providers.create(type, id, parameters), parentId);
 }
