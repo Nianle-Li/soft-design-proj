@@ -1,5 +1,5 @@
 import { EditorError } from "../../src/core/plugin-api";
-import type { ShapeCreationContext, ShapeProvider } from "../../src/core/plugin-api";
+import type { ShapeCreationContext, ShapeProvider, SvgReadInput } from "../../src/core/plugin-api";
 import { BoxShape } from "./BoxShape";
 
 const DEFAULT_FILL = "#4a90d9";
@@ -31,6 +31,37 @@ export class BoxShapeProvider implements ShapeProvider {
       throw new EditorError("box requires rect and text providers");
     }
     return new BoxShape(id, frame, label);
+  }
+
+  readSvg(element: SvgReadInput): BoxShape {
+    if (element.tag !== "g" || element.attributes.get("data-kind") !== "box") {
+      throw new EditorError(`invalid box structure: ${element.id}`);
+    }
+    const allowed = new Set(["id", "data-kind", "fill", "stroke", "stroke-width"]);
+    for (const attribute of element.attributes.keys()) {
+      if (!allowed.has(attribute)) {
+        throw new EditorError(`unsupported SVG attribute: ${attribute} on <g>`);
+      }
+    }
+    if (element.text.trim() !== "") {
+      throw new EditorError("unsupported text content in <g>");
+    }
+    const [frame, title, ...content] = element.children;
+    if (
+      frame?.kind !== "rect" ||
+      frame.id !== `${element.id}-rect` ||
+      title?.kind !== "text" ||
+      title.id !== `${element.id}-label`
+    ) {
+      throw new EditorError(`invalid box structure: ${element.id}`);
+    }
+    const box = new BoxShape(element.id, frame, title);
+    for (const child of content) box.insertChild(box.childCount, child);
+    for (const attribute of ["fill", "stroke", "stroke-width"] as const) {
+      const value = element.attributes.get(attribute);
+      if (value !== undefined) box.prepareSet(attribute, value).apply();
+    }
+    return box;
   }
 
   private number(value: string | undefined): number {

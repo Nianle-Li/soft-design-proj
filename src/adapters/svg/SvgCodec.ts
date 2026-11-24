@@ -135,17 +135,24 @@ export class SvgCodec {
     };
     const readCandidate = (element: XmlElement): Shape => {
       const { type, id, attributes, children, text } = describe(element);
-      if (!this.shapeProviders.has(type)) {
+      const semanticType = type === "g" ? attributes.get("data-kind") : undefined;
+      const providerType =
+        semanticType !== undefined && semanticType !== type && this.shapeProviders.has(semanticType)
+          ? semanticType
+          : type;
+      if (!this.shapeProviders.has(providerType)) {
         throw new EditorError(`unsupported SVG element: <${type}>`);
       }
-      if (!this.shapeProviders.hasSvgReader(type)) {
-        throw new EditorError(`shape provider ${type} does not support SVG read`);
+      if (!this.shapeProviders.hasSvgReader(providerType)) {
+        throw new EditorError(`shape provider ${providerType} does not support SVG read`);
       }
       const members = children.map(readCandidate);
-      const shape = this.shapeProviders.readSvg(type, {
+      const providerAttributes = new Map(attributes);
+      if (providerType === type) providerAttributes.delete("data-kind");
+      const shape = this.shapeProviders.readSvg(providerType, {
         tag: type,
         id,
-        attributes,
+        attributes: providerAttributes,
         text,
         children: members
       });
