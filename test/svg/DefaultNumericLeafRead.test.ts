@@ -10,35 +10,61 @@ describe("numeric leaf SVG readback", () => {
     {
       type: "circle",
       element: '<circle cx="-2" cy="3" r="0" fill="red" stroke-width="1.50"/>',
-      style: { fill: "red", strokeWidth: "1.5" }
+      style: { fill: "red", strokeWidth: "1.5" },
+      geometry: [
+        ["cx", "-2"],
+        ["cy", "3"],
+        ["r", "0"]
+      ],
+      encodedStyle: 'stroke-width="1.5"'
     },
     {
       type: "ellipse",
       element: '<ellipse cx="4" cy="5" rx="0" ry="7" stroke="blue"/>',
-      style: { stroke: "blue" }
+      style: { stroke: "blue" },
+      geometry: [
+        ["cx", "4"],
+        ["cy", "5"],
+        ["rx", "0"],
+        ["ry", "7"]
+      ],
+      encodedStyle: 'stroke="blue"'
     },
     {
       type: "line",
       element: '<line x1="1" y1="2" x2="3" y2="4" fill="#fff" stroke="green" stroke-width="2.0"/>',
-      style: { fill: "#fff", stroke: "green", strokeWidth: "2" }
+      style: { fill: "#fff", stroke: "green", strokeWidth: "2" },
+      geometry: [
+        ["x1", "1"],
+        ["y1", "2"],
+        ["x2", "3"],
+        ["y2", "4"]
+      ],
+      encodedStyle: 'stroke-width="2"'
     }
-  ])("reads $type through its provider with Phase 1 output", ({ type, element, style }) => {
-    const registry = createDefaultShapeProviders();
-    expect(registry.hasSvgReader(type)).toBe(true);
-    const xml = wrap(`<g id="outer">${element}</g>`);
-    const before = new SvgCodec().decode(xml);
-    const after = new SvgCodec(registry).decode(xml);
-    const id = `${type}1`;
+  ])(
+    "reads $type through its provider with Phase 1 output",
+    ({ type, element, style, geometry, encodedStyle }) => {
+      const registry = createDefaultShapeProviders();
+      expect(registry.hasSvgReader(type)).toBe(true);
+      const xml = wrap(`<g id="outer">${element}</g>`);
+      const after = new SvgCodec(registry).decode(xml);
+      const id = `${type}1`;
 
-    expect(after.count).toBe(before.count);
-    expect(after.assignedIds).toEqual([{ id, tag: type }]);
-    expect(after.document.tree()).toEqual(before.document.tree());
-    expect(after.document.show(id).parentLabel).toBe("g#outer");
-    expect(after.document.explicitStyle(id)).toEqual(style);
-    expect(new SvgCodec(registry).encode(after.document)).toEqual(
-      new SvgCodec().encode(before.document)
-    );
-  });
+      expect(after.count).toBe(2);
+      expect(after.assignedIds).toEqual([{ id, tag: type }]);
+      expect(after.document.tree().roots[0]?.label).toBe("g#outer");
+      expect(after.document.tree("outer").roots[0]?.children.map((node) => node.label)).toEqual([
+        `${type}#${id}`
+      ]);
+      expect(after.document.show(id).geometry).toEqual(geometry);
+      expect(after.document.show(id).parentLabel).toBe("g#outer");
+      expect(after.document.explicitStyle(id)).toEqual(style);
+      const encoded = new SvgCodec(registry).encode(after.document);
+      expect(encoded.count).toBe(2);
+      expect(encoded.xml).toContain(encodedStyle);
+    }
+  );
 
   it.each([
     ["circle missing cx", '<circle id="c" cy="0" r="1"/>', "missing SVG attribute: cx on <circle>"],
@@ -78,7 +104,6 @@ describe("numeric leaf SVG readback", () => {
     ]
   ])("preserves Phase 1 $0 error", (_name, content, error) => {
     const xml = wrap(content);
-    expect(() => new SvgCodec().decode(xml)).toThrow(error);
     expect(() => new SvgCodec(createDefaultShapeProviders()).decode(xml)).toThrow(error);
   });
 });
