@@ -6,3 +6,4 @@ export { Shape } from "./model/Shape";
 export type { PreparedMove, PreparedScale, PreparedSet } from "./model/Shape";
 export type { ShapeCreationContext, ShapeProvider, SvgReadInput } from "./model/ShapeProvider";
 export type { ShapeView } from "./model/TreeView";
+export type { Command } from "./command/Command";

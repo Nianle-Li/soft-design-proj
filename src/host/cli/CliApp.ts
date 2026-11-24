@@ -1,5 +1,7 @@
 import { EditorSession } from "../../core/editor/EditorSession";
 import type { EditChange, ShapeChange } from "../../core/editor/EditCommand";
+import type { Command } from "../../core/command/Command";
+import { CommandRegistry } from "../../core/command/CommandRegistry";
 import { EditorError } from "../../core/model/EditorError";
 import { CommandLineParser } from "./CommandLineParser";
 import { TreeFormatter } from "./TreeFormatter";
@@ -8,8 +10,14 @@ import { TreeFormatter } from "./TreeFormatter";
 export class CliApp {
   private readonly parser = new CommandLineParser();
   private readonly treeFormatter = new TreeFormatter();
+  private readonly commands: CommandRegistry;
 
-  constructor(private readonly session: EditorSession) {}
+  constructor(
+    private readonly session: EditorSession,
+    extensions: readonly Command[] = []
+  ) {
+    this.commands = new CommandRegistry([...this.builtInCommands(), ...extensions]);
+  }
 
   runLine(line: string): string[] {
     try {
@@ -19,97 +27,126 @@ export class CliApp {
         return [];
       }
 
-      // This is the one command-name dispatch site allowed by the assignment.
-      switch (command) {
-        case "init":
-          return this.init(tokens.slice(1));
-        case "canvas":
-          return this.canvas(tokens.slice(1));
-        case "read":
-          if (tokens.length !== 2 || tokens[1] === undefined) {
-            throw new EditorError("usage: read <file.svg>");
-          }
-          return this.read(tokens[1]);
-        case "save":
-          if (tokens.length > 2) {
-            throw new EditorError("usage: save [file.svg]");
-          }
-          return this.save(tokens[1]);
-        case "create":
-          return this.create(tokens.slice(1));
-        case "delete":
-          if (tokens.length !== 2 || tokens[1] === undefined) {
-            throw new EditorError("usage: delete <id>");
-          }
-          return [this.describeChange(this.session.delete(tokens[1]))];
-        case "move":
-          return this.move(tokens.slice(1));
-        case "scale":
-          return this.scale(tokens.slice(1));
-        case "set":
-          return this.set(tokens.slice(1));
-        case "group":
-          return this.group(tokens.slice(1));
-        case "ungroup":
-          if (tokens.length !== 2 || tokens[1] === undefined) {
-            throw new EditorError("usage: ungroup <gid>");
-          }
-          return [this.describeChange(this.session.ungroup(tokens[1]))];
-        case "addto":
-          if (tokens.length !== 3 || tokens[1] === undefined || tokens[2] === undefined) {
-            throw new EditorError("usage: addto <gid> <id>");
-          }
-          return [this.describeChange(this.session.addTo(tokens[1], tokens[2]))];
-        case "front":
-          return this.reorder(tokens, "front");
-        case "back":
-          return this.reorder(tokens, "back");
-        case "tree":
-          return this.tree(tokens.slice(1));
-        case "show":
-          if (tokens.length !== 2 || tokens[1] === undefined) {
-            throw new EditorError("usage: show <id>");
-          }
-          return this.show(tokens[1]);
-        case "undo":
-          this.noArguments(tokens);
-          return [this.describeChange(this.session.undo())];
-        case "redo":
-          this.noArguments(tokens);
-          return [this.describeChange(this.session.redo())];
-        case "help":
-          this.noArguments(tokens);
-          return [
-            "Commands:",
-            "  init [w] [h]",
-            "  read <file.svg>",
-            "  save [file.svg]",
-            "  canvas [w] [h]",
-            "  create <type> <id> [params...] [in <containerId>]",
-            "  delete <id>",
-            "  move <id> <dx> <dy>",
-            "  scale <id> <factor>",
-            "  set <id> <attr> <value>",
-            "  group <newGid> <id1> [id2...]",
-            "  ungroup <gid>",
-            "  addto <gid> <id>",
-            "  front <id>",
-            "  back <id>",
-            "  tree [id]",
-            "  show <id>",
-            "  help",
-            "  undo",
-            "  redo"
-          ];
-        default:
-          throw new EditorError(`unknown command: ${command}`);
-      }
+      return [...this.commands.execute(command, tokens.slice(1))];
     } catch (error) {
       if (error instanceof EditorError) {
         return [`error: ${error.message}`];
       }
       throw error;
     }
+  }
+
+  private builtInCommands(): readonly Command[] {
+    return [
+      { name: "init", help: "init [w] [h]", execute: (args) => this.init(args) },
+      {
+        name: "read",
+        help: "read <file.svg>",
+        execute: (args) => {
+          if (args.length !== 1 || args[0] === undefined) {
+            throw new EditorError("usage: read <file.svg>");
+          }
+          return this.read(args[0]);
+        }
+      },
+      {
+        name: "save",
+        help: "save [file.svg]",
+        execute: (args) => {
+          if (args.length > 1) throw new EditorError("usage: save [file.svg]");
+          return this.save(args[0]);
+        }
+      },
+      { name: "canvas", help: "canvas [w] [h]", execute: (args) => this.canvas(args) },
+      {
+        name: "create",
+        help: "create <type> <id> [params...] [in <containerId>]",
+        execute: (args) => this.create(args)
+      },
+      {
+        name: "delete",
+        help: "delete <id>",
+        execute: (args) => {
+          if (args.length !== 1 || args[0] === undefined) {
+            throw new EditorError("usage: delete <id>");
+          }
+          return [this.describeChange(this.session.delete(args[0]))];
+        }
+      },
+      { name: "move", help: "move <id> <dx> <dy>", execute: (args) => this.move(args) },
+      { name: "scale", help: "scale <id> <factor>", execute: (args) => this.scale(args) },
+      { name: "set", help: "set <id> <attr> <value>", execute: (args) => this.set(args) },
+      {
+        name: "group",
+        help: "group <newGid> <id1> [id2...]",
+        execute: (args) => this.group(args)
+      },
+      {
+        name: "ungroup",
+        help: "ungroup <gid>",
+        execute: (args) => {
+          if (args.length !== 1 || args[0] === undefined) {
+            throw new EditorError("usage: ungroup <gid>");
+          }
+          return [this.describeChange(this.session.ungroup(args[0]))];
+        }
+      },
+      {
+        name: "addto",
+        help: "addto <gid> <id>",
+        execute: (args) => {
+          if (args.length !== 2 || args[0] === undefined || args[1] === undefined) {
+            throw new EditorError("usage: addto <gid> <id>");
+          }
+          return [this.describeChange(this.session.addTo(args[0], args[1]))];
+        }
+      },
+      {
+        name: "front",
+        help: "front <id>",
+        execute: (args) => this.reorder(["front", ...args], "front")
+      },
+      {
+        name: "back",
+        help: "back <id>",
+        execute: (args) => this.reorder(["back", ...args], "back")
+      },
+      { name: "tree", help: "tree [id]", execute: (args) => this.tree(args) },
+      {
+        name: "show",
+        help: "show <id>",
+        execute: (args) => {
+          if (args.length !== 1 || args[0] === undefined) {
+            throw new EditorError("usage: show <id>");
+          }
+          return this.show(args[0]);
+        }
+      },
+      {
+        name: "help",
+        help: "help",
+        execute: (args) => {
+          this.noArguments(["help", ...args]);
+          return ["Commands:", ...this.commands.help().map((line) => `  ${line}`)];
+        }
+      },
+      {
+        name: "undo",
+        help: "undo",
+        execute: (args) => {
+          this.noArguments(["undo", ...args]);
+          return [this.describeChange(this.session.undo())];
+        }
+      },
+      {
+        name: "redo",
+        help: "redo",
+        execute: (args) => {
+          this.noArguments(["redo", ...args]);
+          return [this.describeChange(this.session.redo())];
+        }
+      }
+    ];
   }
 
   private init(arguments_: readonly string[]): string[] {
