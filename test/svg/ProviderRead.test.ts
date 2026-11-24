@@ -113,7 +113,7 @@ describe("SVG adapter provider readback", () => {
   });
 
   it("keeps the current session and undo history if a provider rejects readback", () => {
-    const registry = new ShapeProviderRegistry([
+    const registry = createDefaultShapeProviders([
       {
         type: "frame",
         create: (id) => new GroupShape(id),

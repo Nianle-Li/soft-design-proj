@@ -82,7 +82,7 @@ export class EditorSession {
 
   create(type: string, id: string, parameters: readonly string[], parentId?: string): ShapeChange {
     const document = this.currentDocument();
-    if (this.shapeProviders?.has(type)) {
+    if (this.shapeProviders !== undefined) {
       const candidate = this.shapeProviders.create(type, id, parameters);
       return this.executor.execute(new CreateShapeCommand(document, candidate, parentId));
     }

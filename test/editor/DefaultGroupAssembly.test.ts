@@ -4,6 +4,7 @@ import { EditorSession } from "../../src/core/editor/EditorSession";
 import { ShapeProviderRegistry } from "../../src/core/model/ShapeProviderRegistry";
 import type { ShapeProvider } from "../../src/core/model/ShapeProvider";
 import { RectShape } from "../../src/builtin/shapes/RectShape";
+import { RectShapeProvider } from "../../src/builtin/shapes/RectShapeProvider";
 import { SvgDocument } from "../../src/model/SvgDocument";
 import { createDefaultShapeProviders } from "../../src/host/assembly/DefaultShapes";
 
@@ -28,7 +29,10 @@ describe("default g assembly", () => {
 
   it("uses the registered g provider for create and group as one undoable edit each", () => {
     const provider = new CountingGroupProvider();
-    const session = new EditorSession(undefined, new ShapeProviderRegistry([provider]));
+    const session = new EditorSession(
+      undefined,
+      new ShapeProviderRegistry([provider, new RectShapeProvider()])
+    );
     session.init();
 
     expect(session.create("g", "outer", []).label).toBe("g#outer");
