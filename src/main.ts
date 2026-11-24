@@ -5,10 +5,15 @@ import { SvgFileStore } from "./adapters/svg/SvgFileStore";
 import { SvgCodec } from "./adapters/svg/SvgCodec";
 import { createDefaultShapeProviders } from "./host/assembly/DefaultShapes";
 import { StatsCommand } from "../plugins/stats/StatsCommand";
+import { DirCommand } from "../plugins/dir/DirCommand";
+import { NodeDirectoryReader } from "../plugins/dir/adapters/NodeDirectoryReader";
 
 const shapeProviders = createDefaultShapeProviders();
 const session = new EditorSession(new SvgFileStore(new SvgCodec(shapeProviders)), shapeProviders);
-const app = new CliApp(session, [new StatsCommand(() => session.tree())]);
+const app = new CliApp(session, [
+  new StatsCommand(() => session.tree()),
+  new DirCommand(new NodeDirectoryReader())
+]);
 const repl = createInterface({ input: process.stdin, output: process.stdout });
 
 process.stdout.write("svg-editor 0.1 — type 'help' for commands\n\n");

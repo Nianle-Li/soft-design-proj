@@ -2,10 +2,13 @@ import { spawnSync } from "node:child_process";
 import {
   existsSync,
   copyFileSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
+  rmSync,
   rmdirSync,
-  unlinkSync
+  unlinkSync,
+  writeFileSync
 } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -77,6 +80,33 @@ describe("real REPL process", () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("rect: 1  (total 1, containers 1)");
     expect(result.stdout).toContain("  stats\n");
+  });
+
+  it("loads dir with the real adapter and lists the process working directory", () => {
+    const directory = mkdtempSync(join(tmpdir(), "sw-design-lab-dir-repl-"));
+    try {
+      mkdirSync(join(directory, ".cache"));
+      mkdirSync(join(directory, "docs"));
+      writeFileSync(join(directory, ".env"), "hidden");
+      writeFileSync(join(directory, "demo.svg"), "<svg/>");
+      const tsxLoader = pathToFileURL(createRequire(resolve("package.json")).resolve("tsx")).href;
+      const result = spawnSync(process.execPath, ["--import", tsxLoader, resolve("src/main.ts")], {
+        cwd: directory,
+        input: "dir\nhelp\n",
+        encoding: "utf8",
+        timeout: 10000
+      });
+
+      expect(result.error).toBeUndefined();
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain(
+        "[DIR]  .cache\n[DIR]  docs\n[FILE]  .env\n[FILE]  demo.svg\n"
+      );
+      expect(result.stdout).toContain("  dir\n");
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 
   it.each([
