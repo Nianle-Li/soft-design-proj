@@ -1,5 +1,5 @@
 import { ContainerShape, EditorError } from "../../src/core/plugin-api";
-import type { Shape, ShapeView } from "../../src/core/plugin-api";
+import type { PreparedSet, Shape, ShapeView } from "../../src/core/plugin-api";
 
 /** Composite box owns its frame and title while remaining open to nested content. */
 export class BoxShape extends ContainerShape {
@@ -30,6 +30,14 @@ export class BoxShape extends ContainerShape {
 
   override assertCanUngroup(): void {
     throw new EditorError(`cannot ungroup composite shape: ${this.id}`);
+  }
+
+  prepareFill(value: string): PreparedSet {
+    return this.frame.prepareSet("fill", value);
+  }
+
+  prepareLabel(value: string): PreparedSet {
+    return this.title.prepareSet("text", value);
   }
 
   override toView(): ShapeView {
