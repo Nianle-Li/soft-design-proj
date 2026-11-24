@@ -103,7 +103,8 @@ describe("dependency boundary checker", () => {
       "host/cli/CliApp.ts": 'import { Shape } from "../../core/model/Shape";',
       "main.ts": [
         'import { CliApp } from "./host/cli/CliApp";',
-        'import { SvgFileStore } from "./adapters/svg/SvgFileStore";'
+        'import { SvgFileStore } from "./adapters/svg/SvgFileStore";',
+        'import { StatsCommand } from "../plugins/stats/StatsCommand";'
       ].join("\n"),
       "host/assembly/CodePlugins.ts": 'import { Box } from "../../../plugins/box/Box";',
       "host/assembly/PluginLoader.ts":

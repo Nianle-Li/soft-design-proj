@@ -120,6 +120,7 @@ function isPlugin(module) {
 
 function allowsDependency(from, to) {
   if (isPlugin(from)) return to === from || to === "core/plugin-api";
+  if (from === "main" && isPlugin(to)) return true;
   if (from === "host/assembly" && isPlugin(to)) return true;
   return allowed.get(from)?.has(to) ?? false;
 }

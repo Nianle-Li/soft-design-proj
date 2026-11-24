@@ -65,6 +65,20 @@ describe("real REPL process", () => {
     expect(result.stdout).toContain('text#t1        (20,40) "处理数据"');
   });
 
+  it("loads the stats command in the code-assembled process", () => {
+    const result = spawnSync(process.execPath, ["--import", "tsx", "src/main.ts"], {
+      cwd: process.cwd(),
+      input: "init\ncreate g layer\ncreate rect r 0 0 1 1 in layer\nstats\nhelp\n",
+      encoding: "utf8",
+      timeout: 10000
+    });
+
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("rect: 1  (total 1, containers 1)");
+    expect(result.stdout).toContain("  stats\n");
+  });
+
   it.each([
     ["phase1-reference.golden.txt", "demo.svg", 5],
     ["phase1-flowchart.golden.txt", "flowchart.svg", 8]
