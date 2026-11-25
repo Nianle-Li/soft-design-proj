@@ -9,6 +9,7 @@ import boxPlugin, { boxManifest } from "../../plugins/box";
 import dirPlugin, { dirManifest } from "../../plugins/dir";
 import modifiedStarPlugin, { modifiedStarManifest } from "../../plugins/modified-star";
 import statsPlugin, { statsManifest } from "../../plugins/stats";
+import type { Plugin } from "../../src/core/plugin-api";
 import {
   createCodeApplication,
   createConfiguredApplication
@@ -30,6 +31,48 @@ function run(directory: string, input: string, configPath?: string) {
 }
 
 describe("code and configuration assembly equivalence", () => {
+  it("passes the same plugin options through both assembly modes", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "sw-design-option-assembly-"));
+    const pluginPath = join(directory, "plugin.mjs");
+    const configPath = join(directory, "plugins.config.json");
+    const options = { value: "configured" };
+    try {
+      writeFileSync(
+        join(directory, "package.json"),
+        JSON.stringify({ name: "option-plugin", contributes: { commands: ["echo-option"] } }),
+        "utf8"
+      );
+      writeFileSync(
+        pluginPath,
+        "export default { activate(context, options) { context.registerCommand({ name: 'echo-option', help: 'echo-option', execute: () => [options.value] }); } };",
+        "utf8"
+      );
+      writeFileSync(
+        configPath,
+        JSON.stringify({ plugins: [{ module: "./plugin.mjs", options }] }),
+        "utf8"
+      );
+      const loaded = (await import(pathToFileURL(pluginPath).href)) as { default: Plugin };
+      const code = createCodeApplication([
+        {
+          name: "option-plugin",
+          contributes: { commands: ["echo-option"] },
+          plugin: loaded.default,
+          options
+        }
+      ]);
+      const configured = await createConfiguredApplication(configPath);
+      expect(configured.errors).toEqual([]);
+
+      const input = ["echo-option", "help"];
+      expect(input.map((line) => configured.app.runLine(line))).toEqual(
+        input.map((line) => code.runLine(line))
+      );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it("produces the same tree state for the complete plugin set", async () => {
     const directory = mkdtempSync(join(tmpdir(), "sw-design-complete-assembly-"));
     const configPath = join(directory, "plugins.config.json");
