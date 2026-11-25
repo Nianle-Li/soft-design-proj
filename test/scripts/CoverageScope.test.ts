@@ -6,6 +6,7 @@ interface CoverageConfigView {
     readonly coverage?: {
       readonly include?: readonly string[];
       readonly exclude?: readonly string[];
+      readonly thresholds?: Readonly<Record<string, number>>;
     };
   };
 }
@@ -28,5 +29,11 @@ describe("coverage scope", () => {
       "src/core/tree/TreeDecorator.ts",
       "plugins/dir/DirectoryReader.ts"
     ]);
+    expect(coverage?.thresholds).toEqual({
+      statements: 95,
+      branches: 90,
+      functions: 95,
+      lines: 95
+    });
   });
 });
