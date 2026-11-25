@@ -2,11 +2,11 @@ import { SvgCodec } from "../../adapters/svg/SvgCodec";
 import { SvgFileStore } from "../../adapters/svg/SvgFileStore";
 import { EditorSession } from "../../core/editor/EditorSession";
 import { CliApp } from "../cli/CliApp";
-import { installCodePlugins } from "./CodePlugins";
+import { codePluginInstallations } from "./CodePlugins";
 import { createDefaultAttributeHandlers } from "./DefaultAttributes";
 import { createDefaultShapeProviders } from "./DefaultShapes";
 import { createDefaultTreeDecorators } from "./DefaultTreeDecorators";
-import { PluginInstaller } from "./PluginInstaller";
+import { PluginInstaller, type PluginInstallation } from "./PluginInstaller";
 import { PluginLoader } from "./PluginLoader";
 
 export interface ApplicationStartup {
@@ -15,9 +15,11 @@ export interface ApplicationStartup {
 }
 
 /** Builds the complete code-selected application while hiding its construction order. */
-export function createCodeApplication(): CliApp {
+export function createCodeApplication(
+  plugins: readonly PluginInstallation[] = codePluginInstallations
+): CliApp {
   const assembly = new ApplicationAssembly();
-  installCodePlugins(assembly.installer);
+  for (const plugin of plugins) assembly.installer.install(plugin);
   return assembly.build();
 }
 

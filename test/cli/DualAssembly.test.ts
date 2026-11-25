@@ -5,6 +5,14 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
+import boxPlugin, { boxManifest } from "../../plugins/box";
+import dirPlugin, { dirManifest } from "../../plugins/dir";
+import modifiedStarPlugin, { modifiedStarManifest } from "../../plugins/modified-star";
+import statsPlugin, { statsManifest } from "../../plugins/stats";
+import {
+  createCodeApplication,
+  createConfiguredApplication
+} from "../../src/host/assembly/ApplicationAssembly";
 
 const projectRoot = process.cwd();
 const entry = resolve("src/main.ts");
@@ -22,6 +30,53 @@ function run(directory: string, input: string, configPath?: string) {
 }
 
 describe("code and configuration assembly equivalence", () => {
+  it("produces the same tree state for the complete plugin set", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "sw-design-complete-assembly-"));
+    const configPath = join(directory, "plugins.config.json");
+    const savedPath = join(directory, "saved.svg");
+    try {
+      writeFileSync(
+        configPath,
+        JSON.stringify({
+          plugins: [
+            { module: resolve(projectRoot, "plugins/box/index.ts") },
+            { module: resolve(projectRoot, "plugins/modified-star/index.ts") },
+            { module: resolve(projectRoot, "plugins/stats/index.ts") },
+            { module: resolve(projectRoot, "plugins/dir/index.ts") }
+          ]
+        }),
+        "utf8"
+      );
+      const code = createCodeApplication([
+        { ...boxManifest, plugin: boxPlugin },
+        { ...modifiedStarManifest, plugin: modifiedStarPlugin },
+        { ...statsManifest, plugin: statsPlugin },
+        { ...dirManifest, plugin: dirPlugin }
+      ]);
+      const configured = await createConfiguredApplication(configPath);
+      expect(configured.errors).toEqual([]);
+
+      const input = [
+        "init 200 100",
+        'create box n1 10 20 100 40 "Title"',
+        "tree",
+        `save ${savedPath}`,
+        "tree",
+        "set n1 fill #f5a623",
+        "tree",
+        "undo",
+        "tree",
+        "redo",
+        "tree"
+      ];
+      expect(input.map((line) => configured.app.runLine(line))).toEqual(
+        input.map((line) => code.runLine(line))
+      );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
   it.each([
     [
       "Phase 1 reference",
