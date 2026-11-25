@@ -1,15 +1,16 @@
 import { EditorSession } from "../../core/editor/EditorSession";
-import type { EditChange, ShapeChange } from "../../core/editor/EditCommand";
 import type { Command } from "../../core/command/Command";
 import { CommandRegistry } from "../../core/command/CommandRegistry";
 import { EditorError } from "../../core/model/EditorError";
 import { CommandLineParser } from "./CommandLineParser";
 import { TreeFormatter } from "./TreeFormatter";
 import { TreeDecoratorRegistry } from "../../core/tree/TreeDecoratorRegistry";
+import { ChangePresenter } from "./ChangePresenter";
 
 /** One-line application boundary; the REPL only handles streams and prompts. */
 export class CliApp {
   private readonly parser = new CommandLineParser();
+  private readonly changePresenter = new ChangePresenter();
   private readonly treeFormatter: TreeFormatter;
   private readonly commands: CommandRegistry;
 
@@ -73,7 +74,7 @@ export class CliApp {
           if (args.length !== 1 || args[0] === undefined) {
             throw new EditorError("usage: delete <id>");
           }
-          return [this.describeChange(this.session.delete(args[0]))];
+          return [this.changePresenter.describe(this.session.delete(args[0]))];
         }
       },
       { name: "move", help: "move <id> <dx> <dy>", execute: (args) => this.move(args) },
@@ -91,7 +92,7 @@ export class CliApp {
           if (args.length !== 1 || args[0] === undefined) {
             throw new EditorError("usage: ungroup <gid>");
           }
-          return [this.describeChange(this.session.ungroup(args[0]))];
+          return [this.changePresenter.describe(this.session.ungroup(args[0]))];
         }
       },
       {
@@ -101,7 +102,7 @@ export class CliApp {
           if (args.length !== 2 || args[0] === undefined || args[1] === undefined) {
             throw new EditorError("usage: addto <gid> <id>");
           }
-          return [this.describeChange(this.session.addTo(args[0], args[1]))];
+          return [this.changePresenter.describe(this.session.addTo(args[0], args[1]))];
         }
       },
       {
@@ -138,7 +139,7 @@ export class CliApp {
         help: "undo",
         execute: (args) => {
           this.noArguments(["undo", ...args]);
-          return [this.describeChange(this.session.undo())];
+          return [this.changePresenter.describe(this.session.undo())];
         }
       },
       {
@@ -146,7 +147,7 @@ export class CliApp {
         help: "redo",
         execute: (args) => {
           this.noArguments(["redo", ...args]);
-          return [this.describeChange(this.session.redo())];
+          return [this.changePresenter.describe(this.session.redo())];
         }
       }
     ];
@@ -203,7 +204,7 @@ export class CliApp {
       remaining.splice(-2, 2);
     }
     const change = this.session.create(type, id, remaining, parentId);
-    return [this.describeChange(change)];
+    return [this.changePresenter.describe(change)];
   }
 
   private tree(arguments_: readonly string[]): string[] {
@@ -236,7 +237,7 @@ export class CliApp {
     }
     const dx = this.finiteNumber(arguments_[1]);
     const dy = this.finiteNumber(arguments_[2]);
-    return [this.describeChange(this.session.move(arguments_[0], dx, dy))];
+    return [this.changePresenter.describe(this.session.move(arguments_[0], dx, dy))];
   }
 
   private scale(arguments_: readonly string[]): string[] {
@@ -244,7 +245,7 @@ export class CliApp {
       throw new EditorError("usage: scale <id> <factor>");
     }
     const factor = this.finiteNumber(arguments_[1]);
-    return [this.describeChange(this.session.scale(arguments_[0], factor))];
+    return [this.changePresenter.describe(this.session.scale(arguments_[0], factor))];
   }
 
   private set(arguments_: readonly string[]): string[] {
@@ -257,7 +258,7 @@ export class CliApp {
     ) {
       throw new EditorError("usage: set <id> <attr> <value>");
     }
-    return [this.describeChange(this.session.set(id, attribute, value))];
+    return [this.changePresenter.describe(this.session.set(id, attribute, value))];
   }
 
   private group(arguments_: readonly string[]): string[] {
@@ -265,14 +266,14 @@ export class CliApp {
     if (id === undefined || arguments_.length < 2) {
       throw new EditorError("usage: group <newGid> <id1> [id2...]");
     }
-    return [this.describeChange(this.session.group(id, arguments_.slice(1)))];
+    return [this.changePresenter.describe(this.session.group(id, arguments_.slice(1)))];
   }
 
   private reorder(tokens: readonly string[], edge: "front" | "back"): string[] {
     if (tokens.length !== 2 || tokens[1] === undefined) {
       throw new EditorError(`usage: ${edge} <id>`);
     }
-    return [this.describeChange(this.session.reorder(tokens[1], edge))];
+    return [this.changePresenter.describe(this.session.reorder(tokens[1], edge))];
   }
 
   private finiteNumber(value: string | undefined): number {
@@ -287,81 +288,5 @@ export class CliApp {
     if (tokens.length !== 1) {
       throw new EditorError(`usage: ${tokens[0] ?? ""}`);
     }
-  }
-
-  private describeChange(change: EditChange): string {
-    if (change.kind === "move") {
-      const verb = change.action === "moved" ? "moved" : "moved back";
-      if (change.location.kind === "point") {
-        return `${change.label} ${verb} to (${String(change.location.x)},${String(change.location.y)})`;
-      }
-      return `${change.label} ${verb} by (${String(change.dx)},${String(change.dy)})`;
-    }
-    if (change.kind === "scale") {
-      return change.action === "scaled"
-        ? `${change.label} scaled by ${String(change.factor)}`
-        : `${change.label} scale undone`;
-    }
-    if (change.kind === "set") {
-      if (change.value === undefined) {
-        return `${change.label} ${change.attribute} removed`;
-      }
-      if (change.attribute === "text") {
-        return `${change.label} updated: text="${change.value}"`;
-      }
-      if (change.effect?.kind === "propagated" && change.action === "set") {
-        return `${change.label} ${change.attribute} propagated to ${change.effect.targetId}`;
-      }
-      if (change.effect?.kind === "text") {
-        const verb = change.action === "set" ? "updated" : "restored";
-        return `${change.label} ${change.attribute} ${verb}: "${change.value}"`;
-      }
-      const verb = change.action === "set" ? "set to" : "restored to";
-      return `${change.label} ${change.attribute} ${verb} ${change.value}`;
-    }
-    if (change.kind === "group") {
-      return change.action === "grouped"
-        ? `${change.label} created with ${String(change.childCount)} children`
-        : `${change.label} grouping undone`;
-    }
-    if (change.kind === "ungroup") {
-      if (change.action === "ungrouped") {
-        return `${change.label} ungrouped`;
-      }
-      const unit = change.childCount === 1 ? "child" : "children";
-      return `${change.label} restored with ${String(change.childCount)} ${unit}`;
-    }
-    if (change.kind === "addto") {
-      if (change.action === "added") {
-        return `${change.label} added to ${change.parentLabel}`;
-      }
-      return change.parentLabel === undefined
-        ? `${change.label} restored to canvas`
-        : `${change.label} restored into ${change.parentLabel}`;
-    }
-    if (change.kind === "reorder") {
-      return change.action === "moved"
-        ? `${change.label} moved to ${change.edge}`
-        : `${change.label} order restored`;
-    }
-    return this.describeShapeChange(change);
-  }
-
-  private describeShapeChange(change: ShapeChange): string {
-    if (change.action === "removed") {
-      return `${change.label} creation undone`;
-    }
-    if (change.action === "deleted") {
-      return `${change.label} deleted`;
-    }
-    if (change.action === "restored") {
-      const parent = change.parentLabel === undefined ? "" : ` into ${change.parentLabel}`;
-      return `${change.label} restored${parent}`;
-    }
-    // New shape actions must receive an explicit CLI response before this assignment can compile.
-    const createdAction: "created" = change.action;
-    const parent = change.parentLabel === undefined ? "" : ` in ${change.parentLabel}`;
-    const parts = change.parts === undefined ? "" : ` (${change.parts.join(" + ")})`;
-    return `${change.label} ${createdAction}${parts}${parent}`;
   }
 }
