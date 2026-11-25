@@ -12,15 +12,20 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/**/*.ts"],
+      include: ["src/**/*.ts", "plugins/**/*.ts"],
       exclude: [
         "src/main.ts",
         // Type-only contracts emit no executable statements.
-        "src/**/TreeView.ts",
-        "src/editor/EditCommand.ts",
-        "src/editor/DocumentStore.ts",
-        "src/model/ShapeSpec.ts",
-        "src/model/SvgNodeView.ts"
+        "src/core/command/Command.ts",
+        "src/core/model/AttributeHandler.ts",
+        "src/core/model/ShapeProvider.ts",
+        "src/core/model/TreeView.ts",
+        "src/core/editor/EditCommand.ts",
+        "src/core/editor/DocumentStore.ts",
+        "src/core/model/SvgNodeView.ts",
+        "src/core/plugin/Plugin.ts",
+        "src/core/tree/TreeDecorator.ts",
+        "plugins/dir/DirectoryReader.ts"
       ]
     }
   }
