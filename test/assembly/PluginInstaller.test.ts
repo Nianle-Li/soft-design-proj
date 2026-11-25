@@ -3,10 +3,11 @@ import type {
   AttributeHandler,
   Command,
   Plugin,
+  PluginContext,
   ShapeProvider,
   TreeDecorator
 } from "../../src/core/plugin-api";
-import { PluginInstaller } from "../../src/host/assembly/PluginInstaller";
+import { PluginInstaller, type PluginContributes } from "../../src/host/assembly/PluginInstaller";
 
 const services = { tree: () => ({ width: 1, height: 1, roots: [] }) };
 
@@ -163,5 +164,50 @@ describe("plugin installation transaction", () => {
     }).toThrowError("duplicate registration: commands/same");
     expect(installer.contributions().decorators.map((value) => value.name)).toEqual(["label"]);
     expect(installer.contributions().commands).toEqual([]);
+  });
+
+  it.each<readonly [string, (context: PluginContext) => void, PluginContributes]>([
+    [
+      "shapes",
+      (context) => {
+        context.registerShape(shape("  "));
+      },
+      { shapes: ["  "] }
+    ],
+    [
+      "commands",
+      (context) => {
+        context.registerCommand(command("  "));
+      },
+      { commands: ["  "] }
+    ],
+    [
+      "decorators",
+      (context) => {
+        context.registerDecorator(decorator("  "));
+      },
+      { decorators: ["  "] }
+    ],
+    [
+      "attributes",
+      (context) => {
+        context.registerAttribute(attribute("  "));
+      },
+      { attributes: ["  "] }
+    ]
+  ])("rejects a blank %s registration without publishing it", (category, activate, contributes) => {
+    const installer = new PluginInstaller(services);
+
+    expect(() => {
+      installer.install({ name: `blank-${category}`, contributes, plugin: { activate } });
+    }).toThrowError(
+      `plugin failed to activate: blank-${category} (invalid registration name: ${category})`
+    );
+    expect(installer.contributions()).toEqual({
+      shapes: [],
+      commands: [],
+      decorators: [],
+      attributes: []
+    });
   });
 });

@@ -103,7 +103,9 @@ export class PluginInstaller {
     category: Category
   ): void {
     const name = category === "shapes" ? value.type : value.name;
-    if (name === undefined) throw new Error(`missing registration name for ${category}`);
+    if (typeof name !== "string" || name.trim() === "") {
+      throw new Error(`invalid registration name: ${category}`);
+    }
     if (
       [...accepted, ...staged].some(
         (item) => (category === "shapes" ? item.type : item.name) === name
