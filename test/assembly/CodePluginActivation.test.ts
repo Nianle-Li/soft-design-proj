@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import boxPlugin, { boxManifest } from "../../plugins/box";
+import diamondPlugin, { diamondManifest } from "../../plugins/diamond";
 import dirPlugin, { dirManifest } from "../../plugins/dir";
 import modifiedStarPlugin, { modifiedStarManifest } from "../../plugins/modified-star";
 import statsPlugin, { statsManifest } from "../../plugins/stats";
@@ -11,6 +12,7 @@ import { PluginInstaller } from "../../src/host/assembly/PluginInstaller";
 describe("code plugin activation", () => {
   it.each([
     ["box", boxManifest],
+    ["diamond", diamondManifest],
     ["dir", dirManifest],
     ["modified-star", modifiedStarManifest],
     ["stats", statsManifest]
@@ -25,12 +27,13 @@ describe("code plugin activation", () => {
     let tree: TreeView = { width: 1, height: 1, roots: [] };
     const installer = new PluginInstaller({ tree: () => tree });
     installer.install({ ...boxManifest, plugin: boxPlugin });
+    installer.install({ ...diamondManifest, plugin: diamondPlugin });
     installer.install({ ...modifiedStarManifest, plugin: modifiedStarPlugin });
     installer.install({ ...statsManifest, plugin: statsPlugin });
     installer.install({ ...dirManifest, plugin: dirPlugin });
 
     const contributions = installer.contributions();
-    expect(contributions.shapes.map((provider) => provider.type)).toEqual(["box"]);
+    expect(contributions.shapes.map((provider) => provider.type)).toEqual(["box", "diamond"]);
     expect(contributions.attributes.map((handler) => handler.name)).toEqual(["box-attributes"]);
     expect(contributions.decorators.map((decorator) => decorator.name)).toEqual([
       "box-type-label",
