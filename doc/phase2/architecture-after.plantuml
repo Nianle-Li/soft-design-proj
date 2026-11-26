@@ -32,7 +32,7 @@ api ..> tree : 导出装饰契约
 api ..> plugin : 导出安装协议
 cli --> command : 注册与执行
 cli --> editor : 会话结果
-cli --> tree : 树行包装接口
+cli --> tree : 树标签查询与组合接口
 svg --> model : 元素与文档映射
 svg ..> editor : DocumentStore（类型端口）
 builtin --> api

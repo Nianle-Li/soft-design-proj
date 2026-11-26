@@ -277,6 +277,21 @@ _图 8　配置装配提交只修改仓库配置及其测试；针对 `src` 与�
 
 ## 7. 关键设计决策
 
+### 7.1 设计模式及实现位置
+
+本阶段实际采用三种经典 GoF 模式，并使用一个具有装饰意图的树标签扩展机制。下表明确区分模式角色、项目实现和详细说明位置，避免仅凭类名认定模式：
+
+| 模式或机制                          | 项目中的参与者与协作                                                                                                                                                        | 详细说明位置                                                                                                                                                       |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Command                             | `EditCommand` 封装可撤销编辑请求，`SvgDocument` 是 Receiver，`CommandExecutor` 只在成功后记录局部撤销信息；CLI 扩展点 `Command` 负责外部命令注册与调用，不另建一套编辑历史  | [ADR-005“模式协作”](adr/ADR-005-phase2-plugin-boundaries.md#模式协作代价与验证)、[ADR-007](adr/ADR-007-command-registration.md)，以及 §4.2 的 `Command` 扩展点清单 |
+| Composite                           | 叶子图形与容器共享图形抽象，普通 `g`、`box` 和 `diamond` 统一参与移动、缩放、删除与树投影；具体容器通过窄约束保护必要子节点                                                 | §5.2、§5.4，[ADR-006](adr/ADR-006-shape-provider-and-model-split.md) 与 [ADR-011](adr/ADR-011-box-read-and-structure-protection.md)                                |
+| Adapter                             | `DirectoryReader` 是 `dir` 客户端拥有的 Target，`NodeDirectoryReader` 把 Node 文件系统的 `Dirent` 转为中性目录项；VSCode Provider 也承担从 URI/XML 文本到宿主契约的接口转换 | §3.2、§5.1 的角色图，以及 [ADR-008](adr/ADR-008-dir-adapter-and-special-entries.md)                                                                                |
+| 树标签装饰扩展（非经典 GoF 包装链） | `TreeDecorator` 只读取画布或 `ShapeView` 并贡献可选标签，`TreeDecoratorRegistry` 按注册顺序组合；`TreeFormatter` 仍独占枝线、列对齐和主体文本，插件之间不互相包装           | §5.3 与 [ADR-010](adr/ADR-010-tree-decoration-and-dirty-semantics.md)；§3.2 另行说明 VSCode File Decoration API 也不等同于 GoF Decorator                           |
+
+插件注册表、`ShapeProvider`、组合根和安装事务是支撑开放封闭与依赖倒置的架构机制，不因名称相似而额外宣称为 GoF 模式。模式选择以真实变化点为依据：单次 DFS 没有抽象为 Iterator，新增图形也没有采用要求集中枚举类型的 Visitor。
+
+### 7.2 架构决策记录
+
 Phase 2 的重要取舍均以 ADR 固化，避免实现与报告采用不同语义：
 
 | ADR                                                           | 决策主题                                       |
