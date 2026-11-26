@@ -1,0 +1,10 @@
+{
+  "name": "@svgframe/plugin-shape-diamond",
+  "private": true,
+  "main": "./index.ts",
+  "contributes": {
+    "shapes": [
+      "diamond"
+    ]
+  }
+}
