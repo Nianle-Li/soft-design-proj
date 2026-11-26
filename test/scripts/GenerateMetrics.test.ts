@@ -43,4 +43,32 @@ describe("metrics generator", () => {
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("missing metrics ref: definitely-missing-metrics-ref");
   });
+
+  it("can label candidate metrics with the immutable release tag name", () => {
+    const directory = mkdtempSync(join(tmpdir(), "sw-design-metrics-"));
+    const output = join(directory, "metrics.md");
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [
+          "scripts/generate-metrics.mjs",
+          "--target",
+          "HEAD",
+          "--target-label",
+          "p2",
+          "--output",
+          output
+        ],
+        { encoding: "utf8" }
+      );
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(readFileSync(output, "utf8")).toContain("- 目标：`p2`");
+    } finally {
+      if (!directory.startsWith(`${tmpdir()}${sep}`)) {
+        throw new Error("temporary metrics output escaped the system temp directory");
+      }
+      rmSync(directory, { recursive: true, force: true });
+    }
+  }, 15000);
 });

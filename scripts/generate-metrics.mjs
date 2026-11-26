@@ -7,6 +7,7 @@ import ts from "typescript";
 const options = parseArguments(process.argv.slice(2));
 const base = options.base ?? "final";
 const target = options.target ?? "p2";
+const targetLabel = options.targetLabel ?? target;
 const output = resolve(options.output ?? "docs/metrics/metrics.md");
 
 assertRef(base);
@@ -14,7 +15,7 @@ assertRef(target);
 const baseMetrics = metricsFor(base);
 const targetMetrics = metricsFor(target);
 mkdirSync(dirname(output), { recursive: true });
-writeFileSync(output, render(base, target, baseMetrics, targetMetrics), "utf8");
+writeFileSync(output, render(base, targetLabel, baseMetrics, targetMetrics), "utf8");
 process.stdout.write(`Metrics written to ${output}\n`);
 
 function parseArguments(arguments_) {
@@ -22,10 +23,15 @@ function parseArguments(arguments_) {
   for (let index = 0; index < arguments_.length; index += 2) {
     const flag = arguments_[index];
     const value = arguments_[index + 1];
-    if (value === undefined || !["--base", "--target", "--output"].includes(flag)) {
-      throw new Error("usage: generate-metrics [--base <ref>] [--target <ref>] [--output <path>]");
+    if (
+      value === undefined ||
+      !["--base", "--target", "--target-label", "--output"].includes(flag)
+    ) {
+      throw new Error(
+        "usage: generate-metrics [--base <ref>] [--target <ref>] [--target-label <name>] [--output <path>]"
+      );
     }
-    parsed[flag.slice(2)] = value;
+    parsed[flag === "--target-label" ? "targetLabel" : flag.slice(2)] = value;
   }
   return parsed;
 }
