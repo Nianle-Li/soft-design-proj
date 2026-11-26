@@ -13,7 +13,7 @@ describe("repository plugin configuration", () => {
       []
     );
     const contributions = installer.contributions();
-    expect(contributions.shapes.map((shape) => shape.type)).toEqual(["box"]);
+    expect(contributions.shapes.map((shape) => shape.type)).toEqual(["box", "diamond"]);
     expect(contributions.commands.map((command) => command.name)).toEqual(["stats", "dir"]);
     expect(contributions.decorators.map((decorator) => decorator.name)).toEqual([
       "modified-star",
