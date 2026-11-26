@@ -27,7 +27,7 @@ npm run cli
 仓库级 `plugins.config.json` 装入同一组能力，并额外启用 `modified-star` 树标签：
 
 ```powershell
-npm run cli -- --config plugins.config.json
+npx tsx src/main.ts --config plugins.config.json
 ```
 
 配置中的相对模块路径以配置文件所在目录为基准；数组顺序决定安装顺序，`enabled: false` 可跳过单项插件。合法插件经过同一套清单校验、重名检查和原子注册流程，单个插件失败不会阻止后续插件加载。
