@@ -1,18 +1,38 @@
-# Lab1 Phase 2：插件实践与插件式重构
+# Lab1 Phase 2 实验报告：VSCode 插件实践与 SVG CLI 插件式重构
 
-## 1. 实验范围与基线
+## 1. 实验目标与完成结果
 
-本阶段包含两项任务：使用 VSCode 扩展 API 为 SVG 文件提供 Explorer 标记和原生 Outline；将 Phase 1 SVG CLI 重构为具有图形、命令、树标签和属性语义四个扩展点的插件式框架，并实现 `stats`、`dir`、`box`、`modified-star` 与 `(box)` 标签。
+本实验包含两个相互独立又共同体现扩展机制的任务：一是在 VSCode 中为 SVG 文件提供 Explorer 标记与原生 Outline；二是在保持 Phase 1 行为不变的前提下，将 SVG CLI 重构为可通过图形、命令、树标签和属性处理器扩展的插件式框架。
 
-Phase 1 的完整报告、源码和运行证据保存在不可移动的 `final` 标签。本文只保留理解重构所需的基线：当时 `src/model`、`src/editor`、`src/svg`、`src/cli` 分别承担领域、会话、持久化和命令行职责，具体图形创建和命令分派仍是封闭集合。重构前的源码依赖图见 [Phase 1 PlantUML](assets/architecture.plantuml)。Phase 2 继续以 Phase 1 的命令、输出和失败状态为兼容边界；两份 `final` 会话及保存 SVG 由自动测试逐字节比较。
+实现结果如下：
 
-## 2. VSCode 插件实践
+- VSCode 扩展通过 `FileDecorationProvider` 为普通 `.svg` 文件显示 `[]`，通过 `DocumentSymbolProvider` 提供嵌套 Outline、源码定位、编辑更新和不完整 XML 容错。
+- CLI 内核开放 `ShapeProvider`、`Command`、`TreeDecorator`、`AttributeHandler` 四个扩展点，并提供内置实现、注册表、缺省行为和契约校验。
+- 可选插件实现了 `stats`、`dir`、`box`、`modified-star` 与 `(box)` 标签；`dir` 通过文件系统 Adapter 工作。
+- 同一插件既可由代码组合根装入，也可由 JSON 配置动态装入；两种方式共用安装、清单校验、注册和应用构建路径。
+- Phase 1 的两份完整会话、标准输出和保存 SVG 均与 `final` 标签逐字节一致。
 
-### 2.1 功能、启动与验证
+Phase 1 的完整源码和报告保存在不可移动的 `final` 标签。本文仅说明 Phase 2 所需的基线、重构设计、实现结果与验证证据。
 
-扩展源码位于 `vscode-extension/`。在该目录执行：
+## 2. 环境与运行方法
+
+CLI 要求 Node.js `^22.20.0` 或 `>=24.12.0`。在仓库根目录执行：
 
 ```powershell
+npm ci
+npm run cli
+```
+
+使用配置装配时执行：
+
+```powershell
+npm run cli -- --config plugins.config.json
+```
+
+VSCode 扩展位于 `vscode-extension/`，可按以下方式启动隔离的 Extension Development Host：
+
+```powershell
+cd vscode-extension
 npm ci --cache ../.npm-cache
 npm test
 npm run typecheck
@@ -22,114 +42,269 @@ code --extensionDevelopmentPath="$PWD" --disable-extensions `
   --extensions-dir="$PWD/../tmp/vscode-ui-extensions" "$PWD"
 ```
 
-在隔离的 Extension Development Host 中以文本编辑器打开 `sample/example.svg`。扩展为普通 `.svg` 文件返回 `[]` 标记，不修改文件名或内容；目录和非 SVG 文件无标记。Document Symbol Provider 把 SVG 元素映射为嵌套的原生 Outline：有 id 时显示 `tag#id`，无 id 时显示 `tag`，选择节点可定位源码范围。XML 暂时不完整时返回空符号数组，不使扩展崩溃。
+VSCode 可能默认以图像预览打开 SVG。人工验收前，应在编辑器标签的 **Reopen Editor With... → Configure default editor for `*.svg`...** 中选择 **Text Editor**，关闭并重新打开 `sample/example.svg`。图片预览不提供文本源码，不能用于 Outline 定位验收。
 
-![SVG 文件标记](phase2/images/vscode-svg-badge.png)
+## 3. VSCode 插件实践
 
-![SVG 大纲与源码定位](phase2/images/vscode-svg-outline.png)
+### 3.1 文件标记与原生 Outline
 
-截图于 2026-11-23 在 VSCode 1.147.0 x64 的隔离宿主中取得，使用 `--disable-extensions` 禁用其他扩展并关闭 Git 装饰。隔离基线显示未加载本扩展时 SVG 文档没有符号，见[基线截图](phase2/images/vscode-baseline-outline.png)。磁盘内容改变后的 Outline 更新、不完整 XML 及恢复已实际观察；编辑器内直接输入后的可见刷新无法在本会话可靠观察，仍标为待人工验证。宿主测试已验证 `WorkspaceEdit` 后文档符号会更新。
+扩展只对本地普通 `.svg` 文件返回 `[]` 文件装饰，不修改文件名、文件内容或目录。`DocumentSymbolProvider` 将 SVG 元素投影为嵌套符号：节点至少显示标签名，存在 `id` 时显示 `tag#id`；符号的 `range` 覆盖元素，`selectionRange` 指向开始标签，因此选择 Outline 节点可以定位源码。
 
-### 2.2 VSCode、插件与设计模式
+解析器对每个编辑器快照独立工作。XML 暂时不完整时返回空符号数组，不抛出错误或保留过期结构；恢复为完整 XML 后，VSCode 再次请求符号并更新 Outline。
 
-VSCode 拥有 Explorer、Outline、生命周期和回调调度；扩展的 `activate` 只注册 `FileDecorationProvider` 与 `DocumentSymbolProvider`。VSCode 在渲染资源或请求当前文档符号时调用提供者，插件返回 UI 元数据和带源码范围的符号树。
+![Explorer 中的 SVG 文件标记](phase2/images/vscode-svg-badge.png)
 
-文件装饰比较过修改文件名/自建 Explorer 与使用 File Decoration API，选择后者，因为它只附加显示元数据，不拥有文件。它与经典 Decorator 都增加表现信息，但不是 GoF Decorator：没有以同一接口包装文件对象，也没有逐层委托链。两个提供者把 URI、文件类型和 XML 文本转换为 VSCode 的 `FileDecoration`、`DocumentSymbol` 契约，具有 Adapter 的接口转换作用。
+_图 1　`example.svg` 显示 `[]`，目录与普通文件没有该标记。_
 
-Outline 比较过自建 `TreeView` 与 `DocumentSymbolProvider`，选择后者以复用原生层级、定位和刷新协议。解析没有复用 Phase 1 `SvgCodec`：CLI 编解码器会执行 SVG 子集校验、生成缺失 id，且不保留源码范围；扩展需要容忍更宽的 SVG 输入并精确定位，因此使用轻量源码投影。若未来 CLI 也需要源码范围，再评估共享解析边界。
+![SVG 原生 Outline 与源码定位](phase2/images/vscode-svg-outline.png)
 
-## 3. Phase 2 CLI 架构
+_图 2　原生 Outline 显示 `svg → g#flow → rect#start/text`，选择 `rect#start` 后定位到对应开始标签。_
 
-### 3.1 模块与依赖方向
+以上截图取自 VSCode 1.147.0 x64 的隔离宿主，其他扩展和 Git 装饰均已禁用。未加载本扩展时，同一环境没有 SVG 文档符号，见[基线截图](phase2/images/vscode-baseline-outline.png)。
 
-| 区域     | 路径            | 职责与边界                                                             |
-| -------- | --------------- | ---------------------------------------------------------------------- |
-| 内核     | `src/core/`     | 文档、图形抽象、编辑历史及四种扩展契约；不导入宿主、适配器或具体插件。 |
-| 宿主     | `src/host/`     | CLI 协议、组合根、插件安装和配置加载；把实现注入内核契约。             |
-| 技术适配 | `src/adapters/` | SVG/XML 与文件边界；不拥有编辑历史或插件选择策略。                     |
-| 内置实现 | `src/builtin/`  | 六种 Phase 1 图形及提供者；仅依赖内核公开面。                          |
-| 可选插件 | `plugins/`      | `box`、`stats`、`dir`、`modified-star`；不依赖内核内部或宿主。         |
+<!-- 待补截图：在 Text Editor 中把 id="start" 改为 id="changed" 后，画面同时显示更新后的源码与 Outline 节点 rect#changed；建议文件：phase2/images/vscode-outline-live-update.png -->
 
-重构比较了“保留旧工厂，只给新类型使用注册表”和“内置与可选类型统一注册”两种方案。前者迁移少，却要求调用方同时理解中央分支和插件分派；最终采用后者，使创建、SVG 读回和禁用只有一条选择路径。命令同样由内置实现与插件共用 `CommandRegistry`，没有在旧分派末尾增加第二套查询。
+### 3.2 VSCode 与扩展的职责
 
-重构后的源码依赖图见 [Phase 2 PlantUML](phase2/architecture-after.plantuml)。图中箭头表示源码导入而非运行时回调；主要方向为 `host → core`、`adapters → core`、`builtin/plugins → core public API`。`scripts/check-dependencies.mjs` 及其反例测试持续约束这些方向，并拒绝已经迁出的旧目录。
+```mermaid
+sequenceDiagram
+    participant User as 用户
+    participant VSCode
+    participant Extension as SVG Lab Outline
+    User->>VSCode: 打开或编辑 SVG 文本
+    VSCode->>Extension: provideFileDecoration(uri)
+    Extension-->>VSCode: [] 与悬浮说明
+    VSCode->>Extension: provideDocumentSymbols(document)
+    Extension-->>VSCode: DocumentSymbol 层级与源码范围
+    VSCode-->>User: 渲染 Explorer、Outline 并处理定位
+```
 
-### 3.2 四个扩展点清单
+VSCode 拥有 Explorer、Outline、文本编辑器、生命周期和回调调度；扩展只注册两个 Provider，并把 URI 或文档文本转换为 VSCode 契约。扩展不创建替代界面，也不主动控制符号的点击行为。
 
-| 扩展点             | 接口职责                                    | 内核调用位置                                                                             | 已有实现                                    | 禁用可选插件时                                                   | 违反契约时                                                                        |
-| ------------------ | ------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `ShapeProvider`    | 按类型创建分离图形，可选地读回中性 SVG 节点 | `EditorSession.create` → `ShapeProviderRegistry.create`；`SvgCodec.decode` → `readSvg`   | 六种内置提供者、`BoxShapeProvider`          | 仍提供 `g/rect/circle/ellipse/line/text`；box 标记降级为普通 `g` | 重名、未知类型、缺少读回方法、非图形结果或错误 id 均拒绝；文档接入前再校验整树 id |
-| `Command`          | 提供名称、帮助文本和一次外部命令执行        | `CliApp.runLine` → `CommandRegistry.execute`                                             | 内置命令、`StatsCommand`、`DirCommand`      | 内置命令正常；未装命令返回 `error: unknown command: <name>`      | 重名拒绝；`EditorError` 统一转为 `error:`；失败不进入编辑历史                     |
-| `TreeDecorator`    | 为语义树行贡献可选后缀并拥有自身基线        | `TreeFormatter` → `TreeDecoratorRegistry.labels`；成功 init/read/save 后 `resetBaseline` | `ModifiedStarDecorator`、`BoxTypeDecorator` | 空注册表无后缀，Phase 1 `tree` 逐字节不变                        | 重名以及空白或含换行的标签拒绝；其余标签按注册顺序组合                            |
-| `AttributeHandler` | 选择特定图形/属性并准备可逆修改计划         | `SvgDocument.set` → `AttributeHandlerRegistry.prepare`                                   | `BoxAttributeHandler` 的 `fill`、`label`    | 无匹配时使用 Phase 1 图形属性规则                                | 重名或多重匹配拒绝；已匹配失败不回退；部分应用失败回滚且不改变历史                |
+文件装饰与经典 Decorator 都能增加表现信息，但这里不是 GoF Decorator：扩展没有以相同接口包装文件对象，也不存在逐层委托的包装链。两个 Provider 更接近 Adapter，它们把文件状态和 XML 文本转换为 `FileDecoration`、`DocumentSymbol`，而界面所有权仍属于 VSCode。
 
-接口由内核拥有，具体实现只通过构造注入或 `PluginContext` 进入系统。插件上下文仅暴露四个注册函数与延迟只读 `tree()`，不提供可变文档或装配器内部状态。`PluginInstaller.install` 为每个插件建立私有暂存区，核对清单后才一次公布，避免失败后残留部分注册。
+Outline 采用 `DocumentSymbolProvider` 而非自建 `TreeView`，从而直接复用原生层级、定位和刷新协议。解析没有复用 CLI 的 `SvgCodec`：`SvgCodec` 面向受限 SVG 子集，会执行领域校验并为缺失 id 的元素分配 id，但不保留源码位置；编辑器扩展需要容忍更宽的 SVG 内容并精确映射字符偏移。两者共享的是 SVG 树这一概念，不共享具有不同约束的解析实现。
 
-## 4. 插件能力与模式协作
+## 4. CLI 架构与依赖方向
 
-### 4.1 `stats`、`dir` 与 Adapter
+### 4.1 重构前后对比
 
-`StatsCommand` 只读取语义 `TreeView`，按画布顺序深度优先统计叶子和容器，不解析显示标签，也不访问可变文档。`DirCommand` 依赖插件自己拥有的 `DirectoryReader` Target；`NodeDirectoryReader` 是 Adapter，把 `process.cwd()` 和 `fs.readdirSync` 的 `Dirent` 转为 `directory/file/other` 中性条目。命令负责过滤、排序和题目文本，适配器不泄漏平台异常文本。
+Phase 1 由 `src/cli`、`src/editor`、`src/model` 和 `src/svg` 构成，具体图形创建和命令分派仍是封闭集合。原始 PlantUML 见[重构前架构图](assets/architecture.plantuml)。
 
-特殊目录项比较了“跟随符号链接按目标归类”和“按目录项自身类型归类并忽略特殊项”。采用后者，避免访问当前目录之外的目标并使结果依赖额外权限。目录先于文件，各组按名称升序；隐藏项照常显示，符号链接等 `other` 不显示。替身测试覆盖混合项、空目录、隐藏项、失败和稳定排序，临时目录测试覆盖真实 Node 适配器。详细决策见 [ADR-008](adr/ADR-008-dir-adapter-and-special-entries.md)。
+```mermaid
+flowchart LR
+    Main1[main.ts] --> Cli1[src/cli]
+    Main1 --> Editor1[src/editor]
+    Main1 --> Svg1[src/svg]
+    Cli1 --> Editor1
+    Editor1 --> Model1[src/model]
+    Svg1 --> Model1
+    Svg1 -. DocumentStore .-> Editor1
+```
 
-### 4.2 `box`、属性事务与读回
+Phase 2 按隐藏的设计知识划分内核、宿主、适配器、内置实现和可选插件。完整 PlantUML 见[重构后架构图](phase2/architecture-after.plantuml)。
 
-`BoxShape` 是包含必要矩形和文字的 Composite 容器。`BoxShapeProvider` 通过公开创建上下文取得内置 `rect`、`text`，不导入其具体类；整棵候选树通过文档 id 校验后一次接入。必要子部件不能被普通删除、移走或解组，额外内容仍可嵌套。
+```mermaid
+flowchart LR
+    Main[main.ts] --> Host[src/host]
+    Host --> Core[src/core]
+    Host --> Svg[src/adapters/svg]
+    Host --> Builtin[src/builtin/shapes]
+    Host --> Plugins[plugins/*]
+    Svg --> Core
+    Builtin --> API[src/core/plugin-api.ts]
+    Plugins --> API
+    API --> Core
+```
 
-`BoxAttributeHandler` 不直接管理历史，而是返回可应用、撤销和重做的修改计划。文档统一应用计划并签发一个回执，因此一次 `set` 保持一个 undo 单元；应用中途失败时按同一计划回滚。SVG 中 `data-kind="box"` 在插件存在时分派给 box 读回器，结构异常明确拒绝；插件缺失时去掉语义标记并按普通 `g` 读回。相关边界见 [ADR-009](adr/ADR-009-attribute-handler-contract.md)与 [ADR-011](adr/ADR-011-box-read-and-structure-protection.md)。
+| 区域       | 路径            | 主要职责                                                                       |
+| ---------- | --------------- | ------------------------------------------------------------------------------ |
+| 内核       | `src/core/`     | 文档与图形规则、编辑历史、四种扩展契约和注册表；不导入宿主、适配器或插件实现。 |
+| 宿主       | `src/host/`     | CLI 协议、应用装配、插件安装和配置加载。                                       |
+| 技术适配器 | `src/adapters/` | SVG/XML 与磁盘 I/O；不决定安装哪些插件。                                       |
+| 内置实现   | `src/builtin/`  | Phase 1 六种图形及其提供者。                                                   |
+| 可选插件   | `plugins/`      | `box`、`stats`、`dir`、`modified-star` 等独立能力。                            |
 
-### 4.3 树标签
+重构没有保留“旧工厂负责内置类型、注册表只负责新类型”的双分派。所有图形均通过 `ShapeProviderRegistry` 创建和读回，所有命令均通过 `CommandRegistry` 分派，调用方不需要同时理解封闭分支和插件查询。`scripts/check-dependencies.mjs` 对实际导入方向进行机械检查，并以反例测试拒绝内核反向依赖、插件越过公开入口和宿主硬编码插件等情况。
 
-树格式化器只负责枝线和主体文本，`TreeDecorator` 贡献语义后缀。`ModifiedStarDecorator` 以实例字段保存基线指纹，叶子变化传播到祖先；成功 init/read/save 后更新基线。`BoxTypeDecorator` 只读取稳定的 `ShapeView.kind`，不依赖 `BoxShape` 或解析标签文本。两个插件按注册顺序组合为 `* (box)`，互不感知；禁用后恢复 Phase 1 输出。dirty 与祖先传播决策见 [ADR-010](adr/ADR-010-tree-decoration-and-dirty-semantics.md)。
+### 4.2 四个扩展点
 
-## 5. 两种装配方式
+| 扩展点             | 职责                                        | 内核调用位置                                                         | 已有实现                                    | 禁用可选插件时                                                | 契约失败处理                                                                   |
+| ------------------ | ------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `ShapeProvider`    | 按类型创建分离图形，并可从中性 SVG 节点读回 | `EditorSession.create`、`SvgCodec.decode` 经 `ShapeProviderRegistry` | 六种内置提供者、`BoxShapeProvider`          | 六种 Phase 1 图形仍可用；box 标记按普通 `g` 读回              | 重名、未知类型、缺少读回器、错误对象或根 id 不符均拒绝；文档接入前校验整棵子树 |
+| `Command`          | 提供命令名、帮助文本和执行逻辑              | `CliApp.runLine` 经 `CommandRegistry.execute`                        | 内置命令、`StatsCommand`、`DirCommand`      | 内置命令正常；未安装命令返回 `error: unknown command: <name>` | 重名拒绝；领域错误统一显示为 `error:`，失败不进入编辑历史                      |
+| `TreeDecorator`    | 为语义树行追加独立标签并维护自身状态        | `TreeFormatter` 经 `TreeDecoratorRegistry.labels`                    | `ModifiedStarDecorator`、`BoxTypeDecorator` | 不追加标签，Phase 1 `tree` 输出逐字节不变                     | 重名、空白或含换行的标签拒绝；有效标签按注册顺序组合                           |
+| `AttributeHandler` | 为特定图形和属性准备可逆修改计划            | `SvgDocument.set` 经 `AttributeHandlerRegistry.prepare`              | `BoxAttributeHandler`                       | 无匹配时使用 Phase 1 属性规则                                 | 多重匹配拒绝；已匹配失败不回退；部分应用失败会回滚且不改变历史                 |
 
-代码方式由 `createCodeApplication` 调用 `installCodePlugins`；新增插件的唯一选择点是 `src/host/assembly/CodePlugins.ts`。配置方式由 `createConfiguredApplication` 调用 `PluginLoader`，已有运行源码不需要认识插件名称。两种方式进入同一个 `PluginInstaller`，最后由 `ApplicationAssembly.build` 构造注册表、会话、SVG 适配器和 CLI。
+四个接口由内核拥有，插件只依赖 `src/core/plugin-api.ts` 暴露的公开抽象。`PluginContext` 只提供四个注册函数和延迟只读 `tree()`，不暴露可变文档、编辑会话或装配内部状态。
 
-配置文件格式如下；数组顺序即安装顺序，`enabled: false` 完全跳过，相对模块路径以配置文件目录为基准，`options` 原样传给插件：
+## 5. 插件实现与模式协作
+
+### 5.1 `stats` 与 `dir`
+
+`StatsCommand` 读取语义树，按照画布子节点顺序深度优先遍历。叶子类型按首次出现顺序统计，普通 `g` 和 `box` 只计入容器数，根 SVG 不计；命令不修改文档和历史。
+
+```text
+svg> stats
+rect: 3  circle: 1  text: 2  (total 6, containers 2)
+```
+
+`DirCommand` 使用 Adapter 访问真实文件系统：
+
+```mermaid
+classDiagram
+    class DirCommand {
+      +execute(args) string[]
+    }
+    class DirectoryReader {
+      <<interface>>
+      +readCurrent() DirectoryEntry[]
+    }
+    class NodeDirectoryReader {
+      +readCurrent() DirectoryEntry[]
+    }
+    DirCommand --> DirectoryReader : Target
+    NodeDirectoryReader ..|> DirectoryReader : Adapter
+    NodeDirectoryReader --> NodeFS : Adaptee
+```
+
+`DirectoryReader` 是插件拥有的 Target，`NodeDirectoryReader` 将 `process.cwd()` 和 Node `Dirent` 转换为中性目录项。命令负责题目规定的过滤、分组、排序和输出，适配器负责隔离平台 API 与异常。符号链接等特殊项不跟随目标并作为 `other` 忽略，避免访问当前目录之外的对象。该选择记录于 [ADR-008](adr/ADR-008-dir-adapter-and-special-entries.md)。
+
+`dir` 不接收参数，也不依赖 SVG 文档；它只列出 CLI 进程当前工作目录的直接子项。目录在前、文件在后，各组按名称升序，隐藏项正常显示，标记与名称之间保留两个空格。空目录输出 `(empty directory)`；读取失败输出 `error: cannot read directory: <path>`，随后仍可继续执行命令。成功或失败均不改变文档、工作目录或 undo/redo 历史。
+
+### 5.2 `box`、Composite 与属性事务
+
+`BoxShape` 是 Composite 容器，必要子节点为 `<id>-rect` 和 `<id>-label`，其后仍可包含其他图形。`BoxShapeProvider` 通过公开创建上下文请求内置 `rect`、`text`，不导入具体实现；完整候选树经过环、对象身份和全局 id 唯一性检查后一次接入。普通命令不能删除、移走必要子节点或解组 box，从而保持结构不变量。
+
+```text
+svg> create box n1 120 100 160 60 "开始"
+box#n1 created (g#n1 + rect#n1-rect + text#n1-label)
+```
+
+`BoxAttributeHandler` 为 `fill` 和 `label` 返回可应用、撤销和重做的修改计划。文档统一执行计划并签发一个回执，因此一次 `set` 始终对应一个 undo 单元；应用途中抛错时，已经执行的步骤按逆序回滚，文档与 undo/redo 历史保持不变。契约见 [ADR-009](adr/ADR-009-attribute-handler-contract.md)。
+
+序列化后的 box 使用 `<g data-kind="box">`。安装插件时，读回器严格检查必要子节点的类型、派生 id 和顺序；结构异常或重复 id 会拒绝整次读取。未安装 box 插件时，语义标记被去除并按普通 `g` 读取，使旧框架仍可打开文件。读回与保护规则见 [ADR-011](adr/ADR-011-box-read-and-structure-protection.md)。
+
+### 5.3 相互独立的树标签
+
+`TreeFormatter` 只负责枝线和主体文本，`TreeDecorator` 根据稳定的 `ShapeView` 贡献后缀。`ModifiedStarDecorator` 在实例字段中保存上次成功 init/read/save 时的树指纹；叶子变化会标记自身及祖先，undo 回到保存点后标记消失。`BoxTypeDecorator` 只检查语义 `kind`，不依赖 `BoxShape` 的具体类，也不解析显示文本。两者按注册顺序组合为 `* (box)`，彼此没有引用。详细语义见 [ADR-010](adr/ADR-010-tree-decoration-and-dirty-semantics.md)。
+
+## 6. 两种插件装配方式
+
+```mermaid
+flowchart TD
+    A[代码清单 CodePlugins.ts] --> Installer[PluginInstaller.install]
+    B[JSON 配置 PluginLoader] --> Installer
+    Installer --> Stage[插件私有暂存区]
+    Stage --> Manifest[核对 package.json contributes]
+    Manifest -->|成功| Publish[一次公布四类贡献]
+    Manifest -->|失败| Discard[丢弃当前插件并继续]
+    Publish --> Build[ApplicationAssembly.build]
+```
+
+代码方式由 `createCodeApplication` 读取 `CodePlugins.ts`；新增插件只需在组合根选择安装项并重新构建。配置方式由 `createConfiguredApplication` 调用 `PluginLoader`，加载器不包含插件名称映射或插件专用分支。两种入口最终都调用 `PluginInstaller.install`，再由 `ApplicationAssembly.build` 使用同一组贡献构造注册表、编辑会话、SVG 适配器和 CLI。
+
+仓库根目录提交了可直接运行的 `plugins.config.json`。数组顺序就是安装顺序；`enabled: false` 完全跳过；相对模块路径以配置文件目录为基准；`options` 原样传入插件。带 UTF-8 BOM 的合法配置也可读取。
 
 ```json
 {
   "plugins": [
+    { "module": "./plugins/modified-star/index.ts" },
     { "module": "./plugins/box/index.ts" },
     { "module": "./plugins/stats/index.ts" },
-    { "module": "./plugins/dir/index.ts" },
-    { "module": "./plugins/modified-star/index.ts", "enabled": false }
+    { "module": "./plugins/dir/index.ts" }
   ]
 }
 ```
 
-插件 `package.json` 用 `contributes.shapes/commands/decorators/attributes` 声明稳定注册名。模块不存在、无默认导出、清单不符、激活异常或重复注册均转换为题目规定的错误；当前插件被丢弃，先前成功插件保留，并继续后续项。非法配置报告 `error: invalid plugin config`，然后仅以默认内置能力启动。事务决策见 [ADR-012](adr/ADR-012-plugin-installation-transaction.md)。
+插件包在 `package.json` 的 `contributes.shapes/commands/decorators/attributes` 中声明稳定名称。安装器为每个插件创建私有暂存区，只有在激活成功、清单与实际注册一致且不存在重名时才一次公布贡献；失败插件不会泄漏部分注册，先前成功插件保留，后续插件继续加载。完整事务见 [ADR-012](adr/ADR-012-plugin-installation-transaction.md)。
 
-在插件集合、顺序、输入、初始文件和固定工作目录一致时，两份 Phase 1 会话、box 会话以及 stats/dir 会话的代码/配置装配 stdout 已逐字节比较。历史接入提交的路径差异判据仍存在缺口，见第 7 节，不能由当前目录结构或运行一致性替代。
+| 失败类别           | CLI 输出与行为                                                         |
+| ------------------ | ---------------------------------------------------------------------- |
+| 配置语法或结构非法 | `error: invalid plugin config`，随后以默认内置能力启动                 |
+| 顶层模块不存在     | `error: plugin not found: <module>`                                    |
+| 模块没有默认导出   | `error: plugin has no default export: <module>`                        |
+| 声明与实际注册不符 | `error: plugin manifest mismatch: <name> (declared: …, registered: …)` |
+| 激活或模块求值失败 | `error: plugin failed to activate: <name> (<reason>)`                  |
+| 同类注册名重复     | `error: duplicate registration: <category>/<name>`                     |
 
-## 6. 验证与可复现证据
+在插件集合、顺序、options、输入、初始 SVG 和固定工作目录相同时，自动测试已经逐字节比较代码装配与配置装配的 Phase 1 会话、box 会话以及 stats/dir 会话。
 
-仓库根目录的常规门禁为：
+扩展性边界由依赖检查和装配职责共同保证：新增插件只实现公开接口并提供清单；方式 A 的 `0342080` 只在顶层装配入口启用已经独立实现的 `stats`，没有修改内核或既有插件；方式 B 的仓库级 `plugins.config.json` 不修改任何已有运行源码，并由端到端测试通过生产加载器安装完整插件集。内核、加载器与既有插件均不需要识别新插件名称。
+
+接入差异可直接复核。方式 A 的插件实现先独立提交，`0342080` 是接入提交；在运行源码范围中只修改顶层 `src/main.ts`，内核与既有插件差异为空：
 
 ```powershell
-npm test
+git diff --name-status 0342080^ 0342080 -- src plugins
+git diff --exit-code 0342080^ 0342080 -- src/core plugins
+```
+
+方式 B 的提交号可由仓库级配置文件唯一定位。该提交只增加配置、测试和说明，不修改 `src/` 或既有插件：
+
+```powershell
+$configCommit = git log -1 --format=%H -- plugins.config.json
+git diff --name-status "$configCommit^" $configCommit
+git diff --exit-code "$configCommit^" $configCommit -- src plugins
+```
+
+两组命令都先使用真实存在的路径，再检查内核与既有插件差异，避免把错误路径产生的空输出当作证据。
+
+## 7. 关键设计决策
+
+Phase 2 的重要取舍均以 ADR 固化，避免实现与报告采用不同语义：
+
+| ADR                                                           | 决策主题                                       |
+| ------------------------------------------------------------- | ---------------------------------------------- |
+| [ADR-005](adr/ADR-005-phase2-plugin-boundaries.md)            | 内核、宿主、适配器、内置实现和插件的依赖边界   |
+| [ADR-006](adr/ADR-006-shape-provider-and-model-split.md)      | 图形提供者构造分离树，文档统一验证、接入和撤销 |
+| [ADR-007](adr/ADR-007-command-registration.md)                | 内置命令与插件命令共用注册和分派路径           |
+| [ADR-008](adr/ADR-008-dir-adapter-and-special-entries.md)     | 目录访问端口及特殊文件项规则                   |
+| [ADR-009](adr/ADR-009-attribute-handler-contract.md)          | 属性处理器冲突、原子修改和失败回滚             |
+| [ADR-010](adr/ADR-010-tree-decoration-and-dirty-semantics.md) | 保存点、祖先传播和多标签顺序                   |
+| [ADR-011](adr/ADR-011-box-read-and-structure-protection.md)   | box 异常读回、缺省降级与必要子节点保护         |
+| [ADR-012](adr/ADR-012-plugin-installation-transaction.md)     | 清单校验时机、暂存注册和错误隔离               |
+
+## 8. 测试与质量保证
+
+常规质量门禁如下：
+
+```powershell
 npm run typecheck
 npm run lint
 npm run format:check
 npm run deps:check
 npm run tracked:check
+npm test
+npm run coverage
 ```
 
-当前全量测试为 404 项，覆盖四扩展点契约、插件独立行为、属性失败回滚、box 读回与结构保护、加载失败隔离、真实文件系统 Adapter、真实 CLI 进程、双装配一致性以及 Phase 1 输出和保存 SVG 的逐字节基线。验证场景与状态详见 [Phase 2 验收矩阵](phase2/requirements.md)。
+本轮验收实测 CLI 侧 87 个测试文件、439 项测试全部通过，VSCode 扩展 8 项单元测试通过。测试覆盖四个扩展点、插件独立行为、禁用路径、属性部分失败回滚、box 读回和结构保护、加载失败隔离、仓库级配置、真实文件系统 Adapter、真实 CLI 进程、代码/配置双装配，以及 Phase 1 标准输出和保存 SVG 的逐字节基线。CLI 覆盖率为 statements/lines 96.32%、branches 92.50%、functions 99.52%，通过仓库设置的全局门禁。
 
-指标由 `scripts/generate-metrics.mjs` 直接读取 Git 对象，按内核、装配、插件和 VSCode 分类统计物理行数与基于 TypeScript AST 的圈复杂度。默认比较 `final` 与 `p2`；`p2` 尚未创建，因此当前只验证了 `final→HEAD` 的脚本可复现性，没有提交伪造的最终指标。
+`scripts/generate-metrics.mjs` 直接读取 Git 对象，按“CLI 内核 / 装配与技术支持 / 内置及可选插件 / VSCode 扩展”统计文件、物理行数和基于 TypeScript AST 的圈复杂度。为避免生成物与最终标签互相依赖，先在功能、报告和截图均完成的候选提交上生成目标名为 `p2` 的指标：
 
-## 7. 过程决策、AI 复核与未决项
+```powershell
+npm run metrics:generate -- --base final --target HEAD --target-label p2 `
+  --output docs/metrics/metrics.md
+```
 
-本阶段的架构选择分别记录在 [ADR-005 至 ADR-012](adr/)；其中属性事务、读回降级、dirty 语义和配置清单校验均有独立 ADR。开发按“先缺陷测试、再最小实现、最后全量回归”推进。一次重要纠偏发生在报告预审：架构图把领域模型归入 `src/core/model`，但 `SvgDocument` 仍留在旧 `src/model`。没有在报告中解释不一致，而是先加依赖反例，再完成纯路径迁移并删除旧目录规则，使代码、依赖检查、指标分类和本文一致。
+只提交该生成文件后，源码统计范围不会变化。最终提交创建 `p2` 后，再以真实标签生成临时文件并与已提交结果逐字节比较：
 
-截至当前，功能和自动化证据基本齐备，但仍不能宣称 Phase 2 完成交付：
+```powershell
+npm run metrics:generate -- --base final --target p2 --output tmp/p2-metrics.md
+git diff --no-index -- docs/metrics/metrics.md tmp/p2-metrics.md
+```
 
-- 方式 A/B 的历史插件接入提交没有完整满足题目要求的两条 `git diff` 范围证据；当前边界合规不能追溯替代该证据。
-- VSCode 编辑器内直接输入后的 Outline 可见刷新仍待人工复核；只能报告宿主测试和已观察到的磁盘变更结果。
-- 最终指标必须在最终提交和 `p2` 存在后生成。
-- 远端核对、最终提交和 `p2` 标签均尚未执行。
+差异必须为空，生成文件才构成 `final → p2` 的可复现量化证据；不手填或推测最终数字。
 
-这些限制也保留在 [Phase 2 验收矩阵](phase2/requirements.md)，避免以报告文字覆盖尚未取得的证据。
+## 9. AI 协作与结果核验
+
+AI 用于需求追踪、备选方案比较、测试设计和报告审阅，所有建议均以题目原文、实际代码、独立测试和进程输出复核。一次具有代表性的纠偏是：早期架构图把 `SvgDocument` 归入 `src/core/model`，而源码仍处于旧目录；最终没有用文字掩盖差异，而是增加依赖反例、完成纯路径迁移并删除旧目录白名单，使实现、检查器、指标分类和报告一致。未能实际观察的 UI 行为不写成已验证结论。
+
+## 10. 交付证据与人工核验项
+
+代码、扩展源码、示例 SVG、ADR、两张架构图、自动测试和三张已取得的 VSCode 截图均位于仓库内。当前仍需由人工或最终发布动作补齐的证据为：
+
+1. 按第 3.1 节占位要求补充“编辑器内直接修改后 Outline 更新”的实际截图；补图前只能引用宿主 `WorkspaceEdit` 测试和磁盘更新观察，不能宣称该 UI 操作已人工通过。
+2. 按第 8 节流程生成并提交最终指标；最终提交确定后核对远端，再创建但不移动 `p2` 标签，并完成标签复算。
+
+详细的要求—证据对应关系见 [Phase 2 验收矩阵](phase2/requirements.md)。
