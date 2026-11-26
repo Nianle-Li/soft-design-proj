@@ -1,30 +1,37 @@
-# SVG 命令行编辑器
+# SVG 编辑器：VSCode 扩展与插件式 CLI
 
-已完成的 Phase 1 使用 TypeScript 实现 SVG 命令行编辑器，支持六种内置图形、嵌套容器、编辑命令的撤销重做，以及 SVG 文件读写。其架构设计、开发过程和验证证据见 [Phase 1 实验报告](doc/README.md)。
+本仓库是 Software Design Lab Phase 2 的完整实现。在保持 Phase 1 CLI 行为与输出兼容的基础上，CLI 已重构为支持图形、命令、树标签和属性语义四类扩展点的插件式框架；仓库同时提供 SVG 文件标记与原生 Outline 的 VSCode 扩展。
 
-Phase 2 的 VSCode 扩展实践已实现并取得隔离宿主截图；CLI 插件式重构进行中，目前保持 Phase 1 命令行为。[新增需求与验收矩阵](doc/phase2/requirements.md)记录已验证范围与未决事项，[开发流程与门禁](doc/phase2/workflow.md)约束后续工作。扩展启动步骤见 [VSCode 扩展说明](vscode-extension/README.md)。
+设计、实现和验收证据见 [Phase 2 实验报告](doc/README.md)，要求—证据对应关系见[验收矩阵](doc/phase2/requirements.md)，扩展的独立启动步骤见 [VSCode 扩展说明](vscode-extension/README.md)。Phase 1 的发布版本由不可移动的 `final` 标签保存。
 
 ## 运行
 
-使用 Node.js 22.20 或更高的 22.x 版本，或 Node.js 24.12 及更新版本。在仓库根目录执行：
+使用 Node.js `^22.20.0` 或 `>=24.12.0`。在仓库根目录执行：
 
-```text
+```powershell
 npm ci
 npm run cli
 ```
 
-启动后输入 `help` 查看命令语法。运行全部测试使用 `npm test`。
+启动后输入 `help` 查看命令语法。使用配置装配时执行：
+
+```powershell
+npm run cli -- --config plugins.config.json
+```
+
+完整质量门禁包括 `npm test`、`npm run coverage`、`npm run typecheck`、`npm run lint`、`npm run format:check`、`npm run deps:check` 和 `npm run tracked:check`。
 
 ## 目录
 
-| 路径                | 内容                               |
-| ------------------- | ---------------------------------- |
-| `src/model/`        | 图形对象、文档树与领域规则         |
-| `src/core/editor/`  | 编辑会话、命令与撤销重做历史       |
-| `src/adapters/svg/` | SVG 编解码与文件适配               |
-| `src/host/cli/`     | 命令解析、结果反馈与树形排版       |
-| `src/main.ts`       | 命令行入口与对象装配               |
-| `test/`             | 分层测试与验收会话素材             |
-| `doc/`              | 实验报告、架构决策与图示           |
-| `scripts/`          | 依赖边界和 Git 追踪范围检查        |
-| `vscode-extension/` | Phase 2 SVG 文件标记与原生大纲扩展 |
+| 路径                | 内容                                             |
+| ------------------- | ------------------------------------------------ |
+| `src/core/`         | 领域模型、编辑历史、扩展契约与注册表             |
+| `src/builtin/`      | Phase 1 六种内置图形及其提供者                   |
+| `src/adapters/`     | SVG/XML 与磁盘 I/O 适配                          |
+| `src/host/`         | CLI 协议、插件安装、配置加载与应用装配           |
+| `plugins/`          | box、diamond、stats、dir 与 modified-star 等插件 |
+| `test/`             | 单元、集成、进程级及 Phase 1 字节基线测试        |
+| `vscode-extension/` | SVG 文件标记与原生 Outline 扩展                  |
+| `doc/`              | 实验报告、ADR、验收矩阵、架构图与真实截图        |
+| `docs/metrics/`     | 从 Git 引用生成的可复现规模与复杂度指标          |
+| `scripts/`          | 依赖边界、追踪卫生和指标生成检查                 |
