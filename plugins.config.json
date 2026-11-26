@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    { "module": "./plugins/modified-star/index.ts" },
+    { "module": "./plugins/box/index.ts" },
+    { "module": "./plugins/stats/index.ts" },
+    { "module": "./plugins/dir/index.ts" }
+  ]
+}
