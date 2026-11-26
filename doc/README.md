@@ -8,7 +8,7 @@
 
 - VSCode 扩展通过 `FileDecorationProvider` 为普通 `.svg` 文件显示 `[]`，通过 `DocumentSymbolProvider` 提供嵌套 Outline、源码定位、编辑更新和不完整 XML 容错。
 - CLI 内核开放 `ShapeProvider`、`Command`、`TreeDecorator`、`AttributeHandler` 四个扩展点，并提供内置实现、注册表、缺省行为和契约校验。
-- 可选插件实现了 `stats`、`dir`、`box`、`modified-star` 与 `(box)` 标签；`dir` 通过文件系统 Adapter 工作。
+- 可选插件实现了 `stats`、`dir`、`box`、`diamond`、`modified-star` 与 `(box)` 标签；`dir` 通过文件系统 Adapter 工作。
 - 同一插件既可由代码组合根装入，也可由 JSON 配置动态装入；两种方式共用安装、清单校验、注册和应用构建路径。
 - Phase 1 的两份完整会话、标准输出和保存 SVG 均与 `final` 标签逐字节一致。
 
@@ -52,17 +52,19 @@ VSCode 可能默认以图像预览打开 SVG。人工验收前，应在编辑器
 
 解析器对每个编辑器快照独立工作。XML 暂时不完整时返回空符号数组，不抛出错误或保留过期结构；恢复为完整 XML 后，VSCode 再次请求符号并更新 Outline。
 
-![Explorer 中的 SVG 文件标记](phase2/images/vscode-svg-badge.png)
+![Explorer 中的 SVG 文件标记与提示](phase2/images/vscode-svg-badge-tooltip.png)
 
-_图 1　`example.svg` 显示 `[]`，目录与普通文件没有该标记。_
+_图 1　`example.svg` 显示紫色 `[]`，悬停提示仍表明它是原路径下的 SVG 文件。_
 
-![SVG 原生 Outline 与源码定位](phase2/images/vscode-svg-outline.png)
+![SVG 原生 Outline 与源码定位](phase2/images/vscode-outline-source-location.png)
 
 _图 2　原生 Outline 显示 `svg → g#flow → rect#start/text`，选择 `rect#start` 后定位到对应开始标签。_
 
-以上截图取自 VSCode 1.147.0 x64 的隔离宿主，其他扩展和 Git 装饰均已禁用。未加载本扩展时，同一环境没有 SVG 文档符号，见[基线截图](phase2/images/vscode-baseline-outline.png)。
+以上截图取自 VSCode 1.147.0 x64 的隔离宿主，其他扩展和 Git 装饰均已禁用。文件标记的[完整宿主画面](phase2/images/vscode-svg-badge.png)保留了窗口上下文；未加载本扩展时，同一环境没有 SVG 文档符号，见[基线截图](phase2/images/vscode-baseline-outline.png)。
 
-<!-- 待补截图：在 Text Editor 中把 id="start" 改为 id="changed" 后，画面同时显示更新后的源码与 Outline 节点 rect#changed；建议文件：phase2/images/vscode-outline-live-update.png -->
+![编辑 SVG 后 Outline 实时更新](phase2/images/vscode-outline-live-update.png)
+
+_图 3　在未保存的文本编辑器中把 `id="start"` 改为 `id="changed"` 后，源码、Breadcrumb 与 Outline 同步显示 `rect#changed`。_
 
 ### 3.2 VSCode 与扩展的职责
 
@@ -123,7 +125,7 @@ flowchart LR
 | 宿主       | `src/host/`     | CLI 协议、应用装配、插件安装和配置加载。                                       |
 | 技术适配器 | `src/adapters/` | SVG/XML 与磁盘 I/O；不决定安装哪些插件。                                       |
 | 内置实现   | `src/builtin/`  | Phase 1 六种图形及其提供者。                                                   |
-| 可选插件   | `plugins/`      | `box`、`stats`、`dir`、`modified-star` 等独立能力。                            |
+| 可选插件   | `plugins/`      | `box`、`diamond`、`stats`、`dir`、`modified-star` 等独立能力。                 |
 
 重构没有保留“旧工厂负责内置类型、注册表只负责新类型”的双分派。所有图形均通过 `ShapeProviderRegistry` 创建和读回，所有命令均通过 `CommandRegistry` 分派，调用方不需要同时理解封闭分支和插件查询。`scripts/check-dependencies.mjs` 对实际导入方向进行机械检查，并以反例测试拒绝内核反向依赖、插件越过公开入口和宿主硬编码插件等情况。
 
@@ -131,7 +133,7 @@ flowchart LR
 
 | 扩展点             | 职责                                        | 内核调用位置                                                         | 已有实现                                    | 禁用可选插件时                                                | 契约失败处理                                                                   |
 | ------------------ | ------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `ShapeProvider`    | 按类型创建分离图形，并可从中性 SVG 节点读回 | `EditorSession.create`、`SvgCodec.decode` 经 `ShapeProviderRegistry` | 六种内置提供者、`BoxShapeProvider`          | 六种 Phase 1 图形仍可用；box 标记按普通 `g` 读回              | 重名、未知类型、缺少读回器、错误对象或根 id 不符均拒绝；文档接入前校验整棵子树 |
+| `ShapeProvider`    | 按类型创建分离图形，并可从中性 SVG 节点读回 | `EditorSession.create`、`SvgCodec.decode` 经 `ShapeProviderRegistry` | 六种内置提供者、box 与 diamond 提供者       | 六种 Phase 1 图形仍可用；语义组合图形按普通 `g` 读回          | 重名、未知类型、缺少读回器、错误对象或根 id 不符均拒绝；文档接入前校验整棵子树 |
 | `Command`          | 提供命令名、帮助文本和执行逻辑              | `CliApp.runLine` 经 `CommandRegistry.execute`                        | 内置命令、`StatsCommand`、`DirCommand`      | 内置命令正常；未安装命令返回 `error: unknown command: <name>` | 重名拒绝；领域错误统一显示为 `error:`，失败不进入编辑历史                      |
 | `TreeDecorator`    | 为语义树行追加独立标签并维护自身状态        | `TreeFormatter` 经 `TreeDecoratorRegistry.labels`                    | `ModifiedStarDecorator`、`BoxTypeDecorator` | 不追加标签，Phase 1 `tree` 输出逐字节不变                     | 重名、空白或含换行的标签拒绝；有效标签按注册顺序组合                           |
 | `AttributeHandler` | 为特定图形和属性准备可逆修改计划            | `SvgDocument.set` 经 `AttributeHandlerRegistry.prepare`              | `BoxAttributeHandler`                       | 无匹配时使用 Phase 1 属性规则                                 | 多重匹配拒绝；已匹配失败不回退；部分应用失败会回滚且不改变历史                 |
@@ -189,6 +191,17 @@ box#n1 created (g#n1 + rect#n1-rect + text#n1-label)
 
 `TreeFormatter` 只负责枝线和主体文本，`TreeDecorator` 根据稳定的 `ShapeView` 贡献后缀。`ModifiedStarDecorator` 在实例字段中保存上次成功 init/read/save 时的树指纹；叶子变化会标记自身及祖先，undo 回到保存点后标记消失。`BoxTypeDecorator` 只检查语义 `kind`，不依赖 `BoxShape` 的具体类，也不解析显示文本。两者按注册顺序组合为 `* (box)`，彼此没有引用。详细语义见 [ADR-010](adr/ADR-010-tree-decoration-and-dirty-semantics.md)。
 
+### 5.4 选做扩展：`diamond`
+
+`diamond` 判断框是对图形扩展契约的额外验证。插件把边界框转换为四个顶点，并通过公开的 `ShapeCreationContext` 请求已注册的 `line` 提供者生成四条边；它不导入内置线段类，也不修改内核、SVG 适配器或既有插件。判断框作为一个受保护的 Composite 整体参与移动、缩放、删除及 undo/redo，必要边不能被单独删除、移出或解组。
+
+```text
+svg> create diamond decision 10 20 100 60 blue
+diamond#decision created (diamond#decision + line#decision-edge-1 + line#decision-edge-2 + line#decision-edge-3 + line#decision-edge-4)
+```
+
+序列化使用 `<g data-kind="diamond">` 和四个标准 `<line>` 子节点。安装插件时恢复语义对象并校验子节点类型、派生 id、顺序和数量；未安装时由既有 SVG 读回路径自然降级为普通 `g`。插件本体提交 `4ca73a5` 不修改 `src/`，代码装配提交 `2438607` 只修改组合根及测试，配置装配提交 `9458770` 不修改任何既有运行源码，因而直接证明新增图形不要求扩张内核分支。
+
 ## 6. 两种插件装配方式
 
 ```mermaid
@@ -211,6 +224,7 @@ flowchart TD
   "plugins": [
     { "module": "./plugins/modified-star/index.ts" },
     { "module": "./plugins/box/index.ts" },
+    { "module": "./plugins/diamond/index.ts" },
     { "module": "./plugins/stats/index.ts" },
     { "module": "./plugins/dir/index.ts" }
   ]
@@ -278,7 +292,7 @@ npm test
 npm run coverage
 ```
 
-本轮验收实测 CLI 侧 87 个测试文件、439 项测试全部通过，VSCode 扩展 8 项单元测试通过。测试覆盖四个扩展点、插件独立行为、禁用路径、属性部分失败回滚、box 读回和结构保护、加载失败隔离、仓库级配置、真实文件系统 Adapter、真实 CLI 进程、代码/配置双装配，以及 Phase 1 标准输出和保存 SVG 的逐字节基线。CLI 覆盖率为 statements/lines 96.32%、branches 92.50%、functions 99.52%，通过仓库设置的全局门禁。
+本轮验收实测 CLI 侧 89 个测试文件、452 项测试全部通过，VSCode 扩展 8 项单元测试通过。测试覆盖四个扩展点、插件独立行为、禁用路径、属性部分失败回滚、box 与 diamond 的读回和结构保护、加载失败隔离、仓库级配置、真实文件系统 Adapter、真实 CLI 进程、代码/配置双装配，以及 Phase 1 标准输出和保存 SVG 的逐字节基线。CLI 覆盖率为 statements/lines 96.28%、branches 92.37%、functions 99.31%，通过仓库设置的全局门禁。
 
 `scripts/generate-metrics.mjs` 直接读取 Git 对象，按“CLI 内核 / 装配与技术支持 / 内置及可选插件 / VSCode 扩展”统计文件、物理行数和基于 TypeScript AST 的圈复杂度。为避免生成物与最终标签互相依赖，先在功能、报告和截图均完成的候选提交上生成目标名为 `p2` 的指标：
 
@@ -302,9 +316,8 @@ AI 用于需求追踪、备选方案比较、测试设计和报告审阅，所�
 
 ## 10. 交付证据与人工核验项
 
-代码、扩展源码、示例 SVG、ADR、两张架构图、自动测试和三张已取得的 VSCode 截图均位于仓库内。当前仍需由人工或最终发布动作补齐的证据为：
+代码、扩展源码、示例 SVG、ADR、两张架构图、自动测试和六张已取得的 VSCode 界面证据均位于仓库内。当前只剩最终发布动作：
 
-1. 按第 3.1 节占位要求补充“编辑器内直接修改后 Outline 更新”的实际截图；补图前只能引用宿主 `WorkspaceEdit` 测试和磁盘更新观察，不能宣称该 UI 操作已人工通过。
-2. 按第 8 节流程生成并提交最终指标；最终提交确定后核对远端，再创建但不移动 `p2` 标签，并完成标签复算。
+1. 按第 8 节流程生成并提交最终指标；最终提交确定后核对远端，再创建但不移动 `p2` 标签，并完成标签复算。
 
 详细的要求—证据对应关系见 [Phase 2 验收矩阵](phase2/requirements.md)。
