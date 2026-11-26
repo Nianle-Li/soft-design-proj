@@ -24,6 +24,10 @@ describe("plugin configuration", () => {
     expect(parsePluginConfig('{"plugins":[]}')).toEqual([]);
   });
 
+  it("accepts a UTF-8 byte order mark before the JSON document", () => {
+    expect(parsePluginConfig('\uFEFF{"plugins":[{"module":"box"}]}')).toEqual([{ module: "box" }]);
+  });
+
   it.each([
     "not json",
     "null",

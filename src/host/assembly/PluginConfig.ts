@@ -9,7 +9,7 @@ export interface PluginConfigEntry {
 export function parsePluginConfig(source: string): readonly PluginConfigEntry[] {
   let parsed: unknown;
   try {
-    parsed = JSON.parse(source);
+    parsed = JSON.parse(source.replace(/^\uFEFF/u, ""));
   } catch {
     throw new EditorError("invalid plugin config");
   }

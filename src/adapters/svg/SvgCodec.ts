@@ -25,6 +25,7 @@ export class SvgCodec {
     count: number;
     assignedIds: readonly Readonly<{ id: string; tag: string }>[];
   }> {
+    xml = xml.replace(/^\uFEFF/u, "");
     // Do not let a parser expand a DTD that this editor would reject anyway.
     if (xml.includes("<!DOCTYPE")) {
       throw new EditorError("unsupported SVG document type");

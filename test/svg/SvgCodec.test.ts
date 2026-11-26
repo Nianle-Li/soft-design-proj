@@ -13,6 +13,12 @@ const wrap = (content: string, rootAttributes = "") =>
 describe("strict SVG codec", () => {
   const codec = new SvgCodec(createDefaultShapeProviders());
 
+  it("accepts a UTF-8 byte order mark before the SVG document", () => {
+    const result = codec.decode(`\uFEFF${wrap('<rect id="r" x="1" y="2" width="3" height="4"/>')}`);
+
+    expect(result.document.tree().roots.map((node) => node.label)).toEqual(["rect#r"]);
+  });
+
   it("loads the assignment's other.svg with one warning and seven ordered elements", () => {
     const xml = readFileSync(resolve("test/fixtures/svg/other.svg"), "utf8");
     const result = codec.decode(xml);
