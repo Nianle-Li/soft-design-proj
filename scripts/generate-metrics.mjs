@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import process from "node:process";
+import { format } from "prettier";
 import ts from "typescript";
 
 const options = parseArguments(process.argv.slice(2));
@@ -15,7 +16,10 @@ assertRef(target);
 const baseMetrics = metricsFor(base);
 const targetMetrics = metricsFor(target);
 mkdirSync(dirname(output), { recursive: true });
-writeFileSync(output, render(base, targetLabel, baseMetrics, targetMetrics), "utf8");
+const report = await format(render(base, targetLabel, baseMetrics, targetMetrics), {
+  parser: "markdown"
+});
+writeFileSync(output, report, "utf8");
 process.stdout.write(`Metrics written to ${output}\n`);
 
 function parseArguments(arguments_) {
