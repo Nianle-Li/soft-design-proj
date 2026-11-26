@@ -7,6 +7,7 @@ package "src/core（内核）" {
   component "editor\n会话、编辑命令与历史" as editor
   component "command\n命令扩展契约与注册" as command
   component "tree\n树装饰契约" as tree
+  component "plugin\n插件安装协议" as plugin
   interface "plugin-api\n受控公开面" as api
 }
 
@@ -21,13 +22,14 @@ component "plugins/*\n可选扩展" as plugins
 component "src/main.ts\n进程入口" as main
 
 editor --> model
-command --> editor : 公开会话能力
-command --> model : 只读视图
 tree --> model : 只读视图
+plugin ..> model : 图形、属性与只读树
+plugin ..> command : 命令贡献
+plugin ..> tree : 装饰器贡献
 api ..> model : 导出公开契约
-api ..> editor : 导出受控能力
 api ..> command : 导出命令契约
 api ..> tree : 导出装饰契约
+api ..> plugin : 导出安装协议
 cli --> command : 注册与执行
 cli --> editor : 会话结果
 cli --> tree : 树行包装接口
@@ -39,10 +41,11 @@ assembly --> model
 assembly --> editor
 assembly --> command
 assembly --> tree
+assembly --> plugin
+assembly --> cli
 assembly --> svg
 assembly --> builtin
 assembly --> plugins
-main --> cli
 main --> assembly
 
 note bottom of model

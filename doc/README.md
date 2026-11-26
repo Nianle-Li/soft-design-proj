@@ -8,9 +8,12 @@
 
 - VSCode 扩展通过 `FileDecorationProvider` 为普通 `.svg` 文件显示 `[]`，通过 `DocumentSymbolProvider` 提供嵌套 Outline、源码定位、编辑更新和不完整 XML 容错。
 - CLI 内核开放 `ShapeProvider`、`Command`、`TreeDecorator`、`AttributeHandler` 四个扩展点，并提供内置实现、注册表、缺省行为和契约校验。
-- 可选插件实现了 `stats`、`dir`、`box`、`diamond`、`modified-star` 与 `(box)` 标签；`dir` 通过文件系统 Adapter 工作。
+- 可选插件实现了 `stats`、`dir`、`box`、`modified-star` 与 `(box)` 标签；`dir` 通过文件系统 Adapter 工作。
+- 选做扩展 `diamond` 复用同一图形提供者与 Composite 契约接入内核，在不修改内核分支的情况下支持创建、编辑、序列化和语义读回。
 - 同一插件既可由代码组合根装入，也可由 JSON 配置动态装入；两种方式共用安装、清单校验、注册和应用构建路径。
 - Phase 1 的两份完整会话、标准输出和保存 SVG 均与 `final` 标签逐字节一致。
+
+**结论：Phase 2 的全部必做功能、四个扩展点、双装配路径和兼容性要求均已实现，并由自动测试、真实进程输出、Git 差异及 VSCode 人工截图共同验证。**
 
 Phase 1 的完整源码和报告保存在不可移动的 `final` 标签。本文仅说明 Phase 2 所需的基线、重构设计、实现结果与验证证据。
 
@@ -52,9 +55,11 @@ VSCode 可能默认以图像预览打开 SVG。人工验收前，应在编辑器
 
 解析器对每个编辑器快照独立工作。XML 暂时不完整时返回空符号数组，不抛出错误或保留过期结构；恢复为完整 XML 后，VSCode 再次请求符号并更新 Outline。
 
+扩展的 8 项单元测试覆盖 `.svg`/非 SVG/目录筛选、嵌套分组、无 id 元素、源码范围、编辑更新和不完整 XML；隔离宿主测试及实际界面进一步验证了原生 Outline 的层级、点击定位与可见刷新。
+
 ![Explorer 中的 SVG 文件标记与提示](phase2/images/vscode-svg-badge-tooltip.png)
 
-_图 1　`example.svg` 显示紫色 `[]`，悬停提示仍表明它是原路径下的 SVG 文件。_
+_图 1　`example.svg` 显示 `[]`，悬停提示仍表明它是原路径下的 SVG 文件。_
 
 ![SVG 原生 Outline 与源码定位](phase2/images/vscode-outline-source-location.png)
 
@@ -73,12 +78,14 @@ sequenceDiagram
     participant User as 用户
     participant VSCode
     participant Extension as SVG Lab Outline
-    User->>VSCode: 打开或编辑 SVG 文本
+    User->>VSCode: 在 Explorer 显示 SVG 文件
     VSCode->>Extension: provideFileDecoration(uri)
     Extension-->>VSCode: [] 与悬浮说明
+    VSCode-->>User: 渲染文件徽标
+    User->>VSCode: 打开或编辑 SVG 文本
     VSCode->>Extension: provideDocumentSymbols(document)
     Extension-->>VSCode: DocumentSymbol 层级与源码范围
-    VSCode-->>User: 渲染 Explorer、Outline 并处理定位
+    VSCode-->>User: 渲染 Outline 并处理定位
 ```
 
 VSCode 拥有 Explorer、Outline、文本编辑器、生命周期和回调调度；扩展只注册两个 Provider，并把 URI 或文档文本转换为 VSCode 契约。扩展不创建替代界面，也不主动控制符号的点击行为。
@@ -144,12 +151,13 @@ flowchart LR
 
 ### 5.1 `stats` 与 `dir`
 
-`StatsCommand` 读取语义树，按照画布子节点顺序深度优先遍历。叶子类型按首次出现顺序统计，普通 `g` 和 `box` 只计入容器数，根 SVG 不计；命令不修改文档和历史。
+`StatsCommand` 读取语义树，按照画布子节点顺序深度优先遍历。叶子类型按首次出现顺序统计，普通 `g` 和 `box` 只计入容器数，box 内部叶子照常计入 total，根 SVG 不计；命令不修改文档和历史。
 
-```text
-svg> stats
-rect: 3  circle: 1  text: 2  (total 6, containers 2)
-```
+<p align="center"><img src="phase2/images/stats-cli.png" alt="stats 命令输出" width="52%"></p>
+
+_图 4　`stats` 按首次出现顺序统计当前文档的叶子图形，并单独给出容器数。_
+
+空文档精确输出 `(total 0, containers 0)`。插件启用时 `help` 包含 `stats`，禁用时执行该名称精确输出 `error: unknown command: stats`；两种路径都不会写入 undo/redo 历史。
 
 `DirCommand` 使用 Adapter 访问真实文件系统：
 
@@ -160,10 +168,16 @@ classDiagram
     }
     class DirectoryReader {
       <<interface>>
-      +readCurrent() DirectoryEntry[]
+      +currentPath() string
+      +read(path) DirectoryEntry[]
     }
     class NodeDirectoryReader {
-      +readCurrent() DirectoryEntry[]
+      +currentPath() string
+      +read(path) DirectoryEntry[]
+    }
+    class NodeFS {
+      <<library>>
+      +readdirSync(path, options) Dirent[]
     }
     DirCommand --> DirectoryReader : Target
     NodeDirectoryReader ..|> DirectoryReader : Adapter
@@ -172,33 +186,33 @@ classDiagram
 
 `DirectoryReader` 是插件拥有的 Target，`NodeDirectoryReader` 将 `process.cwd()` 和 Node `Dirent` 转换为中性目录项。命令负责题目规定的过滤、分组、排序和输出，适配器负责隔离平台 API 与异常。符号链接等特殊项不跟随目标并作为 `other` 忽略，避免访问当前目录之外的对象。该选择记录于 [ADR-008](adr/ADR-008-dir-adapter-and-special-entries.md)。
 
-`dir` 不接收参数，也不依赖 SVG 文档；它只列出 CLI 进程当前工作目录的直接子项。目录在前、文件在后，各组按名称升序，隐藏项正常显示，标记与名称之间保留两个空格。空目录输出 `(empty directory)`；读取失败输出 `error: cannot read directory: <path>`，随后仍可继续执行命令。成功或失败均不改变文档、工作目录或 undo/redo 历史。
+`dir` 不接收参数，也不依赖 SVG 文档；未执行 `init` 或 `read` 时仍可使用。它只列出 CLI 进程当前工作目录的直接子项，`read`/`save` 不会把工作目录切换为 SVG 所在目录。目录在前、文件在后，各组按名称升序，隐藏项正常显示，标记与名称之间保留两个空格。空目录输出 `(empty directory)`；读取失败输出 `error: cannot read directory: <path>`，随后仍可继续执行命令。成功或失败均不改变文档、dirty、工作目录或 undo/redo 历史。启用时 `help` 包含 `dir`，禁用时精确输出 `error: unknown command: dir`。
+
+命令逻辑通过 `DirectoryReader` 替身覆盖混合项、空目录、隐藏项、失败和稳定排序，并使用临时目录验证同一个 `DirCommand` 与真实 `NodeDirectoryReader` 的组合；代码装配与配置装配在固定目录上的输出逐字节一致。
 
 ### 5.2 `box`、Composite 与属性事务
 
-`BoxShape` 是 Composite 容器，必要子节点为 `<id>-rect` 和 `<id>-label`，其后仍可包含其他图形。`BoxShapeProvider` 通过公开创建上下文请求内置 `rect`、`text`，不导入具体实现；完整候选树经过环、对象身份和全局 id 唯一性检查后一次接入。普通命令不能删除、移走必要子节点或解组 box，从而保持结构不变量。
+`BoxShape` 是 Composite 容器，必要子节点为 `<id>-rect` 和 `<id>-label`，默认框体填充为 `#4a90d9`，其后仍可包含其他图形。它支持 `in` 子句、整体移动、删除、缩放、嵌套及 undo/redo；`ungroup` 精确拒绝为 `error: cannot ungroup composite shape: <id>`。`BoxShapeProvider` 通过公开创建上下文请求内置 `rect`、`text`，不导入具体实现；完整候选树经过环、对象身份和全局 id 唯一性检查后一次接入，任一派生 id 冲突都会使整条创建命令原子失败。普通命令不能删除、移走或重新分组必要子节点，从而保持结构不变量。
 
-```text
-svg> create box n1 120 100 160 60 "开始"
-box#n1 created (g#n1 + rect#n1-rect + text#n1-label)
-```
+<p align="center"><img src="phase2/images/box-create-cli.png" alt="创建 box 复合图形的 CLI 输出" width="62%"></p>
 
-`BoxAttributeHandler` 为 `fill` 和 `label` 返回可应用、撤销和重做的修改计划。文档统一执行计划并签发一个回执，因此一次 `set` 始终对应一个 undo 单元；应用途中抛错时，已经执行的步骤按逆序回滚，文档与 undo/redo 历史保持不变。契约见 [ADR-009](adr/ADR-009-attribute-handler-contract.md)。
+_图 5　创建 `box#n1` 时，CLI 在一条结果中列出复合根及两个必要子节点。_
 
-序列化后的 box 使用 `<g data-kind="box">`。安装插件时，读回器严格检查必要子节点的类型、派生 id 和顺序；结构异常或重复 id 会拒绝整次读取。未安装 box 插件时，语义标记被去除并按普通 `g` 读取，使旧框架仍可打开文件。读回与保护规则见 [ADR-011](adr/ADR-011-box-read-and-structure-protection.md)。
+`BoxAttributeHandler` 为 `fill` 和 `label` 返回可应用、撤销和重做的 `PreparedSet`：前者修改内部矩形，后者修改内部文字。文档统一执行计划并签发一个回执，因此一次 `set` 始终对应一个 undo 单元，可由一次 `undo`/`redo` 整体恢复或重做。无处理器命中时沿用 Phase 1 属性白名单；一个处理器命中后失败不回退；多个处理器命中时在修改前拒绝并列出冲突处理器。应用途中抛错时，已执行步骤按逆序回滚，文档与 undo/redo 历史保持不变。契约见 [ADR-009](adr/ADR-009-attribute-handler-contract.md)。
+
+序列化后的 box 使用 `<g data-kind="box">`。安装插件时，读回器严格检查必要子节点的类型、派生 id 和顺序；结构异常、重复 id 或非法子树会拒绝整次读取，并保留读入前的会话。未安装 box 插件时，语义标记被去除并按普通 `g` 读取，完整可见子树与顺序仍保留。插件独立测试使用公开创建上下文替身，Phase 1 §6.1 的 box 会话也已完整复现。读回与保护规则见 [ADR-011](adr/ADR-011-box-read-and-structure-protection.md)。
 
 ### 5.3 相互独立的树标签
 
-`TreeFormatter` 只负责枝线和主体文本，`TreeDecorator` 根据稳定的 `ShapeView` 贡献后缀。`ModifiedStarDecorator` 在实例字段中保存上次成功 init/read/save 时的树指纹；叶子变化会标记自身及祖先，undo 回到保存点后标记消失。`BoxTypeDecorator` 只检查语义 `kind`，不依赖 `BoxShape` 的具体类，也不解析显示文本。两者按注册顺序组合为 `* (box)`，彼此没有引用。详细语义见 [ADR-010](adr/ADR-010-tree-decoration-and-dirty-semantics.md)。
+`TreeFormatter` 只负责枝线和主体文本，`TreeDecorator` 根据稳定的 `ShapeView` 贡献后缀。`ModifiedStarDecorator` 在实例字段中保存上次成功 init/read/save 时的树指纹，采用“内容是否偏离保存点”的 dirty 语义：新建节点立即标记，叶子变化标记自身及祖先，未受影响的兄弟不标记，`undo` 回到保存点后标记消失，`redo` 后重新出现。`BoxTypeDecorator` 只检查语义 `kind`，不依赖 `BoxShape` 的具体类，也不解析显示文本。两者互不感知，按注册顺序组合为 `* (box)`；禁用全部标签时 Phase 1 `tree` 输出逐字节不变。新增任一标签只增加插件及装配，不修改内核或 `TreeFormatter`。详细语义见 [ADR-010](adr/ADR-010-tree-decoration-and-dirty-semantics.md)。
 
 ### 5.4 选做扩展：`diamond`
 
 `diamond` 判断框是对图形扩展契约的额外验证。插件把边界框转换为四个顶点，并通过公开的 `ShapeCreationContext` 请求已注册的 `line` 提供者生成四条边；它不导入内置线段类，也不修改内核、SVG 适配器或既有插件。判断框作为一个受保护的 Composite 整体参与移动、缩放、删除及 undo/redo，必要边不能被单独删除、移出或解组。
 
-```text
-svg> create diamond decision 10 20 100 60 blue
-diamond#decision created (diamond#decision + line#decision-edge-1 + line#decision-edge-2 + line#decision-edge-3 + line#decision-edge-4)
-```
+<p align="center"><img src="phase2/images/diamond-create-cli.png" alt="创建 diamond 复合图形的 CLI 输出" width="96%"></p>
+
+_图 6　`diamond` 插件通过已注册的 `line` 提供者创建四条必要边，并以一个复合图形返回。_
 
 序列化使用 `<g data-kind="diamond">` 和四个标准 `<line>` 子节点。安装插件时恢复语义对象并校验子节点类型、派生 id、顺序和数量；未安装时由既有 SVG 读回路径自然降级为普通 `g`。插件本体提交 `4ca73a5` 不修改 `src/`，代码装配提交 `2438607` 只修改组合根及测试，配置装配提交 `9458770` 不修改任何既有运行源码，因而直接证明新增图形不要求扩张内核分支。
 
@@ -211,13 +225,14 @@ flowchart TD
     Installer --> Stage[插件私有暂存区]
     Stage --> Manifest[核对 package.json contributes]
     Manifest -->|成功| Publish[一次公布四类贡献]
-    Manifest -->|失败| Discard[丢弃当前插件并继续]
+    Manifest -->|失败| Discard[丢弃当前插件贡献]
+    Discard --> Continue[配置加载器记录错误并继续后项]
     Publish --> Build[ApplicationAssembly.build]
 ```
 
 代码方式由 `createCodeApplication` 读取 `CodePlugins.ts`；新增插件只需在组合根选择安装项并重新构建。配置方式由 `createConfiguredApplication` 调用 `PluginLoader`，加载器不包含插件名称映射或插件专用分支。两种入口最终都调用 `PluginInstaller.install`，再由 `ApplicationAssembly.build` 使用同一组贡献构造注册表、编辑会话、SVG 适配器和 CLI。
 
-仓库根目录提交了可直接运行的 `plugins.config.json`。数组顺序就是安装顺序；`enabled: false` 完全跳过；相对模块路径以配置文件目录为基准；`options` 原样传入插件。带 UTF-8 BOM 的合法配置也可读取。
+仓库根目录提交了可直接运行的 `plugins.config.json`。数组顺序就是安装顺序；`enabled: false` 完全跳过；相对模块路径以配置文件目录为基准，包名按当前 Node 模块解析环境处理；`options` 作为只读未知值原样传给插件并由插件解释。带 UTF-8 BOM 的合法配置也可读取。
 
 ```json
 {
@@ -231,7 +246,7 @@ flowchart TD
 }
 ```
 
-插件包在 `package.json` 的 `contributes.shapes/commands/decorators/attributes` 中声明稳定名称。安装器为每个插件创建私有暂存区，只有在激活成功、清单与实际注册一致且不存在重名时才一次公布贡献；失败插件不会泄漏部分注册，先前成功插件保留，后续插件继续加载。完整事务见 [ADR-012](adr/ADR-012-plugin-installation-transaction.md)。
+插件包在 `package.json` 的 `contributes.shapes/commands/decorators/attributes` 中声明稳定名称，缺省类别按空集合处理。安装器为每个插件创建私有暂存区，只有在激活成功、四类清单与实际注册集合一致且不存在重名时才一次公布贡献。清单不符、重名或激活失败都只丢弃当前插件的全部暂存贡献，先前成功插件保持可用；配置加载器捕获单项错误后继续处理后续插件。模块入口存在但求值或内部依赖失败归为插件激活失败，不误报为顶层模块不存在。完整事务见 [ADR-012](adr/ADR-012-plugin-installation-transaction.md)。
 
 | 失败类别           | CLI 输出与行为                                                         |
 | ------------------ | ---------------------------------------------------------------------- |
@@ -242,26 +257,23 @@ flowchart TD
 | 激活或模块求值失败 | `error: plugin failed to activate: <name> (<reason>)`                  |
 | 同类注册名重复     | `error: duplicate registration: <category>/<name>`                     |
 
-在插件集合、顺序、options、输入、初始 SVG 和固定工作目录相同时，自动测试已经逐字节比较代码装配与配置装配的 Phase 1 会话、box 会话以及 stats/dir 会话。
+在插件集合、顺序、options、输入、初始 SVG 和固定工作目录相同时，自动测试已经逐字节比较代码装配与配置装配的 Phase 1 §6 基础会话、§6.1 box 会话以及 stats/dir 会话。输入夹具只包含命令和注释，不混入提示符或预期输出；`dir` 使用内容固定的临时目录，并把日志置于目录之外。禁用全部可选插件时，两份 Phase 1 会话的标准输出和保存 SVG 与 `final` 基线逐字节一致。
 
 扩展性边界由依赖检查和装配职责共同保证：新增插件只实现公开接口并提供清单；方式 A 的 `0342080` 只在顶层装配入口启用已经独立实现的 `stats`，没有修改内核或既有插件；方式 B 的仓库级 `plugins.config.json` 不修改任何已有运行源码，并由端到端测试通过生产加载器安装完整插件集。内核、加载器与既有插件均不需要识别新插件名称。
 
 接入差异可直接复核。方式 A 的插件实现先独立提交，`0342080` 是接入提交；在运行源码范围中只修改顶层 `src/main.ts`，内核与既有插件差异为空：
 
-```powershell
-git diff --name-status 0342080^ 0342080 -- src plugins
-git diff --exit-code 0342080^ 0342080 -- src/core plugins
-```
+<p align="center"><img src="phase2/images/code-assembly-diff.png" alt="代码装配提交的 Git 差异核验" width="96%"></p>
+
+_图 7　代码装配接入只修改顶层入口；针对 `src/core` 与既有 `plugins` 的差异检查为空。_
 
 方式 B 的提交号可由仓库级配置文件唯一定位。该提交只增加配置、测试和说明，不修改 `src/` 或既有插件：
 
-```powershell
-$configCommit = git log -1 --format=%H -- plugins.config.json
-git diff --name-status "$configCommit^" $configCommit
-git diff --exit-code "$configCommit^" $configCommit -- src plugins
-```
+<p align="center"><img src="phase2/images/config-assembly-diff.png" alt="配置装配提交的 Git 差异核验" width="96%"></p>
 
-两组命令都先使用真实存在的路径，再检查内核与既有插件差异，避免把错误路径产生的空输出当作证据。
+_图 8　配置装配提交只修改仓库配置及其测试；针对 `src` 与既有 `plugins` 的差异检查为空。_
+
+图 7、图 8 中的命令都先使用真实存在的路径，再检查内核与既有插件差异，避免把错误路径产生的空输出当作证据。
 
 ## 7. 关键设计决策
 
@@ -280,6 +292,8 @@ Phase 2 的重要取舍均以 ADR 固化，避免实现与报告采用不同语�
 
 ## 8. 测试与质量保证
 
+### 8.1 验收覆盖
+
 常规质量门禁如下：
 
 ```powershell
@@ -292,32 +306,54 @@ npm test
 npm run coverage
 ```
 
-本轮验收实测 CLI 侧 89 个测试文件、452 项测试全部通过，VSCode 扩展 8 项单元测试通过。测试覆盖四个扩展点、插件独立行为、禁用路径、属性部分失败回滚、box 与 diamond 的读回和结构保护、加载失败隔离、仓库级配置、真实文件系统 Adapter、真实 CLI 进程、代码/配置双装配，以及 Phase 1 标准输出和保存 SVG 的逐字节基线。CLI 覆盖率为 statements/lines 96.28%、branches 92.37%、functions 99.31%，通过仓库设置的全局门禁。
+验收测试中，CLI 侧 89 个测试文件、452 项测试全部通过，VSCode 扩展 8 项单元测试通过。测试覆盖四个扩展点、插件独立行为、禁用路径、属性部分失败回滚、box 与 diamond 的读回和结构保护、加载失败隔离、仓库级配置、真实文件系统 Adapter、真实 CLI 进程、代码/配置双装配，以及 Phase 1 标准输出和保存 SVG 的逐字节基线。CLI 覆盖率为 statements/lines 96.28%、branches 92.37%、functions 99.31%，通过仓库设置的全局门禁。
 
-`scripts/generate-metrics.mjs` 直接读取 Git 对象，按“CLI 内核 / 装配与技术支持 / 内置及可选插件 / VSCode 扩展”统计文件、物理行数和基于 TypeScript AST 的圈复杂度。为避免生成物与最终标签互相依赖，先在功能、报告和截图均完成的候选提交上生成目标名为 `p2` 的指标：
+题目中的功能判据与最终证据对应如下：
+
+| 验收域           | 关键判据                                                                                       | 报告与验证证据                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| VSCode A.1–A.3   | 仅 SVG 文件显示 `[]`；原生 Outline 层级、定位、编辑刷新与不完整 XML 容错；职责、模式和复用分析 | 第 3 节、8 项单元测试、隔离宿主测试及图 1～3           |
+| 四个扩展点       | 接口归内核；插件只依赖公开面；注册、调用、缺省和违规契约均可核验                               | 第 4.2 节扩展点清单、依赖反例及各注册表契约测试        |
+| `stats` 与 `dir` | 精确输出、帮助与启停；不改变历史；`dir` 无文档可用并通过 Adapter 访问真实文件系统              | 第 5.1 节、图 4、替身/临时目录测试及双装配会话         |
+| 属性与 `box`     | fill/label 一次撤销；冲突和部分失败原子回滚；box 创建、嵌套、读回降级及必要子部件保护          | 第 5.2 节、图 5、ADR-009/011 及 Phase 1 §6.1 会话      |
+| 树标签           | 保存点 dirty、新节点与祖先传播、标签顺序、实例状态；无标签时保持旧输出                         | 第 5.3 节、ADR-010、状态机测试及 Phase 1 tree 字节基线 |
+| 两种装配         | 同一安装路径；清单、重名和四类加载故障可回滚并继续；A/B 输出逐字节相同                         | 第 6 节、图 7～8、加载器测试和 A/B 进程级比较          |
+
+其中两条跨功能不变量由全部错误路径共同验证：**失败不改变文档、dirty 或 undo/redo 历史；禁用可选插件时 Phase 1 输出与保存 SVG 逐字节不变。** 更细的要求—证据映射见 [Phase 2 验收矩阵](phase2/requirements.md)。
+
+### 8.2 架构规模与复杂度对照
+
+`scripts/generate-metrics.mjs` 直接读取 Git 对象，按“CLI 内核 / 装配与技术支持 / 内置及可选插件 / VSCode 扩展”统计文件、物理行数和基于 TypeScript AST 的圈复杂度。下表以 `final` 为 Phase 1 基线，以本报告对应的 Phase 2 交付树为对照：
+
+| 分类                | Phase 1 行数 | Phase 2 行数 | Δ行数 | Phase 1 圈复杂度 | Phase 2 圈复杂度 | Δ复杂度 |
+| ------------------- | -----------: | -----------: | ----: | ---------------: | ---------------: | ------: |
+| CLI 内核            |         2606 |         2253 |  -353 |              486 |              425 |     -61 |
+| 装配与技术支持      |          693 |         1220 |  +527 |              222 |              337 |    +115 |
+| 内置及可选插件      |            0 |         1362 | +1362 |                0 |              271 |    +271 |
+| VSCode 扩展（单列） |            0 |          118 |  +118 |                0 |               19 |     +19 |
+
+内核行数减少 353、圈复杂度减少 61，表明具体图形、插件命令和标签行为已从稳定内核中分离；装配与插件代码的增长来自新增的加载、契约校验和可选能力。完整的统计口径、文件职责、行数和复杂度清单见[可复现指标](../docs/metrics/metrics.md)。指标可由下列命令从 Git 对象重新生成，无需依赖工作区文件或人工填写数值：
 
 ```powershell
 npm run metrics:generate -- --base final --target HEAD --target-label p2 `
   --output docs/metrics/metrics.md
 ```
 
-只提交该生成文件后，源码统计范围不会变化。最终提交创建 `p2` 后，再以真实标签生成临时文件并与已提交结果逐字节比较：
-
-```powershell
-npm run metrics:generate -- --base final --target p2 --output tmp/p2-metrics.md
-git diff --no-index -- docs/metrics/metrics.md tmp/p2-metrics.md
-```
-
-差异必须为空，生成文件才构成 `final → p2` 的可复现量化证据；不手填或推测最终数字。
-
 ## 9. AI 协作与结果核验
 
-AI 用于需求追踪、备选方案比较、测试设计和报告审阅，所有建议均以题目原文、实际代码、独立测试和进程输出复核。一次具有代表性的纠偏是：早期架构图把 `SvgDocument` 归入 `src/core/model`，而源码仍处于旧目录；最终没有用文字掩盖差异，而是增加依赖反例、完成纯路径迁移并删除旧目录白名单，使实现、检查器、指标分类和报告一致。未能实际观察的 UI 行为不写成已验证结论。
+AI 作为分析与审阅工具，用于需求条目归纳、设计方案比较、测试边界补充以及文档一致性检查，不直接作为功能正确性的证明。所有进入交付成果的建议均经过独立证据核验：
 
-## 10. 交付证据与人工核验项
+| 协作事项       | 核验依据                                          | 修正与控制结果                                                     |
+| -------------- | ------------------------------------------------- | ------------------------------------------------------------------ |
+| 需求与行为判据 | Phase 1/2 题目原文、逐字节基线、真实 CLI 进程输出 | 将错误文本、原子性、禁用路径和兼容性落实为可重复执行的测试         |
+| 架构与依赖方向 | 实际导入关系、ADR、`deps:check` 和架构预检        | 使架构图、源码目录、依赖白名单和指标分类采用同一模块边界           |
+| 插件契约       | 契约测试、故障注入、代码与配置双装配 A/B 比较     | 覆盖重名、清单不符、激活失败、回滚和后续插件继续加载等反例         |
+| 界面与报告证据 | VSCode 隔离宿主、人工操作截图、仓库内原始图片     | 仅陈述可观察的 Outline、定位、刷新和装饰结果，不以推断代替界面验证 |
 
-代码、扩展源码、示例 SVG、ADR、两张架构图、自动测试和五张已取得的 VSCode 界面证据均位于仓库内。候选指标已经生成并提交，当前只剩最终标签发布：
+核验过程中发现的表述或模型不一致均以实现事实为准修正。例如，架构图按真实导入关系区分内核、装配层和插件；SVG 图片预览被识别为编辑器关联行为，而非 Outline 定位失败；带 UTF-8 BOM 的 JSON 配置则通过真实进程测试纳入兼容性验证。相关修正已体现在代码、测试、架构图和本报告中。
 
-1. 最终提交确定后核对远端，创建但不移动 `p2` 标签，并按第 8 节完成标签复算。
+## 10. 交付证据与发布规则
+
+代码、扩展源码、示例 SVG、ADR、两张架构图、自动测试、可复现指标、五张 VSCode 界面证据及五张 CLI/Git 终端证据均位于仓库内。`final` 固定指向 Phase 1 基线，`p2` 用于标识与本报告、源码和验证材料一致的 Phase 2 交付版本。
 
 详细的要求—证据对应关系见 [Phase 2 验收矩阵](phase2/requirements.md)。

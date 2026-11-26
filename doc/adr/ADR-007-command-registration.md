@@ -1,6 +1,6 @@
 # ADR-007：CLI 命令注册与分派契约
 
-- 状态：已接受，按切片实施。
+- 状态：已接受并实现。
 - 依据：Phase 2 §1、§2.3、§6；Phase 1 命令、帮助和错误文本保持不变。
 
 ## 问题与方案
@@ -14,4 +14,4 @@
 
 选择第二种。内核的 `Command` 只规定名称、未缩进的帮助语法行和 `execute(args)`；命令对象由装配方提供其所需依赖，注册表按名称执行并保留登记顺序。`EditCommand` 仍是编辑历史中的可撤销请求，不与外部 CLI 命令合并。宿主负责分词、`help` 的行缩进、旧命令反馈和 `EditorError` 的 `error:` 前缀；各插件负责自己的参数规则及输出行。无文档命令不必访问 `EditorSession`，执行本身不触碰编辑历史。
 
-注册表遇到重名报 `duplicate registration: commands/<name>`，缺少名称报 `unknown command: <name>`。此切片先用假命令验证注册、调用、禁用、帮助顺序、内置冲突及无文档执行，再让现有命令走同一注册表。`stats` 的只读树访问和 `dir` 的目录适配器由各自实现切片确定窄依赖，不提前扩大公共命令接口；配置加载的注册事务仍由装配 ADR 决定。
+注册表遇到重名报 `duplicate registration: commands/<name>`，缺少名称报 `unknown command: <name>`。内置命令与插件命令均通过同一注册表分派；测试覆盖注册、调用、禁用、帮助顺序、名称冲突及无文档执行。`stats` 只读取树投影，`dir` 只依赖自身的目录端口，二者均未扩大公共命令接口。插件贡献通过 [ADR-012](ADR-012-plugin-installation-transaction.md) 定义的事务统一安装。
